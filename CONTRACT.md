@@ -87,8 +87,9 @@ Save this as `CONTRACT.md` in the repo root before anyone writes code. Frontend,
 | --- | --- | --- |
 | POST | `/api/chaos/{scenario}` | Inject `db_oom`, `bad_config`, `cpu_spike` or `slow_leak` |
 | POST | `/api/reset` | Everything back to green |
-| POST | `/api/incidents/{id}/approve` | Authorize the playbook (UI button and Telegram bot both call this) |
+| POST | `/api/incidents/{id}/approve` | Authorize the playbook (body `{"approved_by": string}`; M1 and M4 both call this) |
 | POST | `/api/incidents/{id}/reject` | Cancel the playbook |
+| GET | `/api/incidents/{id}/audit` | (added, M2) Chronological audit log of playbook execution decisions |
 | GET | `/api/incidents/{id}/postmortem` | Generated postmortem as markdown |
 | GET | `/api/blast-radius/{service}` | Services and users affected if this one fails |
 | POST | `/api/autonomy` | (added, M3) body {"level": 1-3}, returns {"level": n} |

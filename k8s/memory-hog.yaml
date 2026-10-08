@@ -1,23 +1,35 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: pg-memory-hog
+  name: memory-hog
+  namespace: agnitia
 spec:
+  backoffLimit: 0
   template:
+    metadata:
+      labels:
+        app: memory-hog
     spec:
+      restartPolicy: Never
       containers:
-      - name: hog
-        image: postgres:15
+      - name: memory-hog
+        image: postgres:16-alpine
+        env:
+        - name: PGPASSWORD
+          value: "demo"
         command:
         - /bin/sh
         - -c
         - |
-          echo "Starting memory hog..."
-          export PGPASSWORD=secret
-          # Create a huge table in memory using generate_series and cross joins
-          psql -h postgres -U postgres -c "
-            CREATE TEMP TABLE hog AS
-            SELECT x.id, repeat('A', 1000) as padding
-            FROM generate_series(1, 1000000) as x(id);
-          "
-      restartPolicy: Never
+          echo "Connecting to postgres-0 and spawning parallel memory-intensive query sessions..."
+          for i in $(seq 1 10); do
+            psql -h postgres.agnitia.svc.cluster.local -U postgres -d postgres -c "
+              SET work_mem = '64MB';
+              SELECT count(*) FROM (
+                SELECT x, repeat('OOM_KILL_TEST_PAYLOAD_', 2000)
+                FROM generate_series(1, 2000000) AS x
+                ORDER BY 2
+              ) AS t;
+            " &
+          done
+          wait
