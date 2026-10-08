@@ -14,6 +14,7 @@ load_dotenv()
 
 from backend.bus import bus, emit
 import backend.graph as graph
+from backend.executor import execute as execute_playbook, get_audit_log
 from backend.models import Incident, ServiceNode, TimelineItem
 
 logger = logging.getLogger(__name__)
@@ -234,7 +235,14 @@ async def list_services():
 
 @app.post("/api/incidents/{id}/approve")
 async def approve_incident(id: str):
-    raise HTTPException(status_code=501, detail="not implemented yet")
+    global INCIDENTS
+    target_id = id if id in INCIDENTS else LATEST_ID
+    if not target_id or target_id not in INCIDENTS:
+        raise HTTPException(status_code=404, detail=f"Incident '{id}' not found")
+    inc = INCIDENTS[target_id]
+    task = asyncio.create_task(execute_playbook(inc, adapter, approved_by="human_operator"))
+    BACKGROUND_TASKS.add(task)
+    return {"ok": True, "incident_id": target_id, "status": "healing"}
 
 
 @app.post("/api/incidents/{id}/reject")
@@ -259,7 +267,7 @@ async def get_incident_audit(id: str):
 
 @app.get("/api/audit")
 async def get_audit():
-    raise HTTPException(status_code=501, detail="not implemented yet")
+    return {"audit_log": get_audit_log()}
 
 
 @app.post("/api/autonomy")

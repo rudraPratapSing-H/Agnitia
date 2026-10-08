@@ -68,17 +68,32 @@ export function clearActiveSimulation() {
 }
 
 // Deterministic Mock Event Replayer for Zero-Backend Standalone Demo
-export function playScenario(scenarioId) {
+export function playScenario(scenarioId: string) {
   clearActiveSimulation();
   resetStore();
 
   const isLiveConnected = socket && socket.readyState === WebSocket.OPEN;
 
-  // If live backend is connected, notify backend
+  // If live backend is connected, trigger backend injection endpoint
   if (isLiveConnected) {
-    sendWsMessage('chaos_inject', { scenario: scenarioId });
+    fetch(`http://localhost:8000/api/chaos/${scenarioId}`, { method: 'POST' })
+      .then(res => {
+        if (!res.ok) {
+          console.warn('Backend injection returned error status, falling back to local simulator');
+          runLocalSimulation(scenarioId);
+        }
+      })
+      .catch(() => {
+        console.warn('Backend unreachable, falling back to local simulator');
+        runLocalSimulation(scenarioId);
+      });
     return;
   }
+
+  runLocalSimulation(scenarioId);
+}
+
+function runLocalSimulation(scenarioId: string) {
 
   // Otherwise, use client-side deterministic simulator (Guaranteed demo safety!)
   console.log(`Running standalone deterministic simulation for: ${scenarioId}`);
@@ -252,4 +267,8 @@ function getSlowLeakMockEvents() {
     },
     { delay: 2600, type: 'agent_step', payload: { agent: 'plan', text: 'PREDICTIVE SHIELD: Generated pre-emptive memory patch before crash occurs.', status: 'done' } }
   ];
+}
+
+export function triggerBackendReset() {
+  fetch('http://localhost:8000/api/reset', { method: 'POST' }).catch(() => {});
 }
