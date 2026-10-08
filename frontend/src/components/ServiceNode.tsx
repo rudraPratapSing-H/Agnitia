@@ -1,16 +1,22 @@
-// frontend/src/components/ServiceNode.jsx - Custom React Flow Node with 4 Status States
+// D:\CoffeeOverflow\Agnitia\frontend\src\components\ServiceNode.tsx - Fixed Width, Spacious Node
 import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Database, Shield, Server, Globe, Cpu, AlertTriangle, CheckCircle2, RotateCw, Flame } from 'lucide-react';
+import { ServiceNode as ServiceNodeType } from '../types';
 
-const TIER_ICONS = {
+const TIER_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   data: Database,
   backend: Server,
   edge: Shield,
   frontend: Globe
 };
 
-export default function ServiceNode({ data, selected }) {
+interface ServiceNodeProps {
+  data: ServiceNodeType;
+  selected?: boolean;
+}
+
+export default function ServiceNode({ data, selected }: ServiceNodeProps) {
   const { id, label, tier, status, metrics } = data;
   const Icon = TIER_ICONS[tier] || Server;
 
@@ -20,117 +26,116 @@ export default function ServiceNode({ data, selected }) {
   const cpuPct = metrics?.cpu_pct ?? 0;
   const restarts = metrics?.restarts ?? 0;
 
-  // Status-specific classes & glowing themes
   const statusStyles = {
     healthy: {
-      border: 'border-emerald-500/50 hover:border-emerald-400',
-      glow: 'shadow-[0_0_15px_rgba(16,185,129,0.15)]',
-      badgeBg: 'bg-emerald-950/80 text-emerald-400 border-emerald-800',
+      border: 'border-stone-200/90 hover:border-stone-300',
+      badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       badgeText: 'HEALTHY',
-      barColor: 'bg-emerald-500',
-      iconColor: 'text-emerald-400'
+      barColor: 'bg-emerald-600',
+      iconBg: 'bg-stone-100 text-stone-600',
+      accent: 'bg-white'
     },
     root_cause: {
-      border: 'border-red-500 animate-pulse-glow',
-      glow: 'shadow-[0_0_30px_rgba(239,68,68,0.5)]',
-      badgeBg: 'bg-red-950/90 text-red-300 border-red-700 animate-pulse',
+      border: 'border-rose-500 animate-pulse-root',
+      badgeBg: 'bg-rose-50 text-rose-800 border-rose-300 font-bold',
       badgeText: 'ROOT CAUSE',
-      barColor: 'bg-red-500',
-      iconColor: 'text-red-400'
+      barColor: 'bg-rose-600',
+      iconBg: 'bg-rose-100 text-rose-700',
+      accent: 'bg-rose-50/40'
     },
     impacted: {
-      border: 'border-amber-500/80',
-      glow: 'shadow-[0_0_20px_rgba(245,158,11,0.25)]',
-      badgeBg: 'bg-amber-950/80 text-amber-300 border-amber-700',
+      border: 'border-amber-400',
+      badgeBg: 'bg-amber-50 text-amber-800 border-amber-300',
       badgeText: 'IMPACTED',
       barColor: 'bg-amber-500',
-      iconColor: 'text-amber-400'
+      iconBg: 'bg-amber-100 text-amber-700',
+      accent: 'bg-amber-50/20'
     },
     recovering: {
-      border: 'border-cyan-500 animate-pulse',
-      glow: 'shadow-[0_0_25px_rgba(6,182,212,0.35)]',
-      badgeBg: 'bg-cyan-950/80 text-cyan-300 border-cyan-700',
+      border: 'border-sky-400',
+      badgeBg: 'bg-sky-50 text-sky-800 border-sky-300',
       badgeText: 'RECOVERING',
-      barColor: 'bg-cyan-400',
-      iconColor: 'text-cyan-400'
+      barColor: 'bg-sky-500',
+      iconBg: 'bg-sky-100 text-sky-700',
+      accent: 'bg-sky-50/20'
     }
   }[status] || {
-    border: 'border-zinc-700',
-    glow: '',
-    badgeBg: 'bg-zinc-800 text-zinc-400 border-zinc-700',
+    border: 'border-stone-200',
+    badgeBg: 'bg-stone-100 text-stone-700 border-stone-200',
     badgeText: status.toUpperCase(),
-    barColor: 'bg-zinc-500',
-    iconColor: 'text-zinc-400'
+    barColor: 'bg-stone-400',
+    iconBg: 'bg-stone-100 text-stone-600',
+    accent: 'bg-white'
   };
 
   return (
     <div
-      className={`relative min-w-[210px] rounded-xl bg-zinc-900/95 backdrop-blur-md border ${statusStyles.border} ${statusStyles.glow} p-3.5 transition-all duration-300 ${
-        selected ? 'ring-2 ring-indigo-400 scale-[1.02]' : ''
+      className={`relative w-[220px] rounded-xl border ${statusStyles.border} ${statusStyles.accent} shadow-sm hover:shadow-md p-3.5 transition-all duration-200 ${
+        selected ? 'ring-2 ring-stone-800 scale-[1.01]' : ''
       }`}
     >
-      {/* React Flow Handles */}
+      {/* Top Handle (Incoming dependencies) */}
       <Handle
         type="target"
-        position={Position.Left}
-        className="!w-3 !h-3 !bg-zinc-600 !border-2 !border-zinc-900 hover:!bg-indigo-400 !-left-1.5 transition-colors"
+        position={Position.Top}
+        className="!w-3 !h-3 !-top-1.5 !bg-stone-400 !border-2 !border-white hover:!bg-stone-800"
       />
+      {/* Bottom Handle (Outgoing dependencies) */}
       <Handle
         type="source"
-        position={Position.Right}
-        className="!w-3 !h-3 !bg-zinc-600 !border-2 !border-zinc-900 hover:!bg-indigo-400 !-right-1.5 transition-colors"
+        position={Position.Bottom}
+        className="!w-3 !h-3 !-bottom-1.5 !bg-stone-400 !border-2 !border-white hover:!bg-stone-800"
       />
 
-      {/* Header: Tier + Status Chip */}
-      <div className="flex items-center justify-between gap-2 mb-2">
+      {/* Header: Tier + Status */}
+      <div className="flex items-center justify-between gap-1.5 mb-2">
         <div className="flex items-center gap-1.5">
-          <div className={`p-1.5 rounded-lg bg-zinc-800/80 ${statusStyles.iconColor}`}>
-            <Icon size={15} />
+          <div className={`p-1 rounded-md ${statusStyles.iconBg}`}>
+            <Icon size={14} />
           </div>
-          <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-400">
+          <span className="text-[10px] font-mono font-medium uppercase tracking-wider text-stone-500">
             {tier}
           </span>
         </div>
 
         <span
-          className={`text-[9px] font-semibold tracking-wider px-2 py-0.5 rounded-full border ${statusStyles.badgeBg} flex items-center gap-1`}
+          className={`text-[9px] font-semibold tracking-wider px-1.5 py-0.5 rounded border ${statusStyles.badgeBg} flex items-center gap-1 font-mono`}
         >
-          {status === 'root_cause' && <Flame size={10} className="animate-bounce" />}
-          {status === 'impacted' && <AlertTriangle size={10} />}
-          {status === 'recovering' && <RotateCw size={10} className="animate-spin" />}
-          {status === 'healthy' && <CheckCircle2 size={10} />}
+          {status === 'root_cause' && <Flame size={10} className="text-rose-600" />}
+          {status === 'impacted' && <AlertTriangle size={10} className="text-amber-600" />}
+          {status === 'recovering' && <RotateCw size={10} className="text-sky-600 animate-spin" />}
+          {status === 'healthy' && <CheckCircle2 size={10} className="text-emerald-600" />}
           {statusStyles.badgeText}
         </span>
       </div>
 
-      {/* Service Name */}
-      <div className="mb-2.5">
-        <h4 className="text-sm font-bold text-zinc-100 tracking-tight flex items-center justify-between">
-          {label}
+      {/* Service Name & Restart Badge */}
+      <div className="mb-2">
+        <h4 className="text-xs font-bold text-stone-900 tracking-tight flex items-center justify-between">
+          <span className="truncate">{label}</span>
           {restarts > 0 && (
-            <span className="text-[10px] font-mono font-normal text-rose-400 bg-rose-950/60 px-1.5 py-0.2 rounded border border-rose-800">
-              {restarts} restarts
+            <span className="text-[9px] font-mono font-normal text-rose-700 bg-rose-50 px-1 py-0.2 rounded border border-rose-200 shrink-0">
+              {restarts}r
             </span>
           )}
         </h4>
-        <span className="text-[10px] font-mono text-zinc-500">{id}</span>
+        <span className="text-[10px] font-mono text-stone-400 block truncate">{id}</span>
       </div>
 
       {/* Telemetry Metrics Bar */}
-      <div className="space-y-1.5 bg-zinc-950/70 p-2 rounded-lg border border-zinc-800/80">
-        {/* Memory Bar */}
+      <div className="space-y-1.5 bg-stone-50/90 p-2 rounded-lg border border-stone-200/60">
         <div>
           <div className="flex justify-between text-[10px] font-mono mb-1">
-            <span className="text-zinc-400">MEM</span>
-            <span className={memPercent >= 90 ? 'text-rose-400 font-bold' : 'text-zinc-300'}>
-              {memMb} / {memLimit} MB ({memPercent}%)
+            <span className="text-stone-500">Memory</span>
+            <span className={memPercent >= 90 ? 'text-rose-700 font-bold' : 'text-stone-700 font-medium'}>
+              {memMb}/{memLimit}MB ({memPercent}%)
             </span>
           </div>
-          <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-stone-200 rounded-full overflow-hidden">
             <div
-              className={`h-full transition-all duration-500 rounded-full ${
+              className={`h-full transition-all duration-300 rounded-full ${
                 memPercent >= 95
-                  ? 'bg-red-500 animate-pulse'
+                  ? 'bg-rose-600'
                   : memPercent >= 75
                   ? 'bg-amber-500'
                   : statusStyles.barColor
@@ -140,13 +145,12 @@ export default function ServiceNode({ data, selected }) {
           </div>
         </div>
 
-        {/* CPU & Sub-metrics */}
-        <div className="flex items-center justify-between text-[10px] font-mono pt-0.5 text-zinc-400">
+        <div className="flex items-center justify-between text-[10px] font-mono pt-0.5 text-stone-500">
           <div className="flex items-center gap-1">
-            <Cpu size={11} className="text-zinc-500" />
+            <Cpu size={11} className="text-stone-400" />
             <span>CPU</span>
           </div>
-          <span className={cpuPct >= 80 ? 'text-rose-400 font-bold' : 'text-zinc-300'}>
+          <span className={cpuPct >= 80 ? 'text-rose-700 font-bold' : 'text-stone-700 font-medium'}>
             {cpuPct}%
           </span>
         </div>

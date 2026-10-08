@@ -1,6 +1,7 @@
-// frontend/src/components/AgentStrip.jsx - 5-Stage Agent Pipeline Status Strip
+// D:\CoffeeOverflow\Agnitia\frontend\src\components\AgentStrip.tsx
 import React from 'react';
 import { Search, Stethoscope, Wrench, Play, CheckCheck, Loader2 } from 'lucide-react';
+import { AgentStep, Incident } from '../types';
 
 const AGENT_STAGES = [
   { id: 'triage', label: 'TRIAGE', desc: 'Alert Filtering', icon: Search },
@@ -10,9 +11,13 @@ const AGENT_STAGES = [
   { id: 'verify', label: 'VERIFY', desc: 'Health Probes', icon: CheckCheck }
 ];
 
-export default function AgentStrip({ agentSteps, incident }) {
-  // Determine the status of each stage from agentSteps and incident status
-  const getStageState = (stageId) => {
+interface AgentStripProps {
+  agentSteps: AgentStep[];
+  incident: Incident | null;
+}
+
+export default function AgentStrip({ agentSteps, incident }: AgentStripProps) {
+  const getStageState = (stageId: string) => {
     const stepsForStage = agentSteps.filter(s => s.agent === stageId);
     if (stepsForStage.length === 0) {
       if (stageId === 'triage' && incident) return 'done';
@@ -23,31 +28,31 @@ export default function AgentStrip({ agentSteps, incident }) {
   };
 
   return (
-    <div className="bg-zinc-900/90 rounded-xl border border-zinc-800 p-2.5 backdrop-blur-md shadow-lg">
+    <div className="bg-white rounded-xl border border-stone-200 p-2 shadow-xs">
       <div className="flex items-center justify-between gap-1 overflow-x-auto pb-0.5">
         {AGENT_STAGES.map((stage, idx) => {
           const state = getStageState(stage.id);
           const Icon = stage.icon;
 
-          let badgeStyles = 'border-zinc-800 bg-zinc-950/60 text-zinc-500';
-          let iconColor = 'text-zinc-600';
+          let badgeStyles = 'border-stone-200 bg-stone-50/80 text-stone-400';
+          let iconColor = 'text-stone-400';
 
           if (state === 'running') {
-            badgeStyles = 'border-amber-500/80 bg-amber-950/50 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.25)]';
-            iconColor = 'text-amber-400';
+            badgeStyles = 'border-amber-300 bg-amber-50 text-amber-800';
+            iconColor = 'text-amber-600';
           } else if (state === 'done') {
-            badgeStyles = 'border-emerald-600/60 bg-emerald-950/40 text-emerald-300';
-            iconColor = 'text-emerald-400';
+            badgeStyles = 'border-emerald-200 bg-emerald-50 text-emerald-800';
+            iconColor = 'text-emerald-600';
           }
 
           return (
             <React.Fragment key={stage.id}>
               <div
-                className={`flex-1 min-w-[90px] py-1.5 px-2 rounded-lg border ${badgeStyles} flex items-center gap-2 transition-all duration-300 font-mono`}
+                className={`flex-1 min-w-[85px] py-1.5 px-2 rounded-lg border ${badgeStyles} flex items-center gap-2 transition-all duration-200 font-mono`}
               >
-                <div className="relative">
+                <div>
                   {state === 'running' ? (
-                    <Loader2 size={13} className="animate-spin text-amber-400" />
+                    <Loader2 size={13} className="animate-spin text-amber-600" />
                   ) : (
                     <Icon size={13} className={iconColor} />
                   )}
@@ -56,16 +61,16 @@ export default function AgentStrip({ agentSteps, incident }) {
                 <div className="overflow-hidden">
                   <div className="text-[10px] font-bold tracking-wider leading-none flex items-center gap-1">
                     {stage.label}
-                    {state === 'done' && <span className="text-[8px] text-emerald-400">✓</span>}
+                    {state === 'done' && <span className="text-[8px] text-emerald-600 font-bold">✓</span>}
                   </div>
-                  <div className="text-[8px] text-zinc-500 truncate mt-0.5">
+                  <div className="text-[8px] text-stone-500 truncate mt-0.5">
                     {stage.desc}
                   </div>
                 </div>
               </div>
 
               {idx < AGENT_STAGES.length - 1 && (
-                <div className="text-zinc-700 text-xs px-0.5">→</div>
+                <div className="text-stone-300 text-xs px-0.5 select-none">→</div>
               )}
             </React.Fragment>
           );

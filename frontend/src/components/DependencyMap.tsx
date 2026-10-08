@@ -1,10 +1,12 @@
-// frontend/src/components/DependencyMap.jsx - Interactive React Flow Topology Graph
+// D:\CoffeeOverflow\Agnitia\frontend\src\components\DependencyMap.tsx - Spacious Vertical Architecture Map
 import React, { useMemo } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
-  MarkerType
+  MarkerType,
+  Node,
+  Edge
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import ServiceNode from './ServiceNode';
@@ -13,36 +15,39 @@ const nodeTypes = {
   serviceNode: ServiceNode
 };
 
-// Fixed Left-to-Right Topology layout coordinates
-const NODE_POSITIONS = {
-  postgres: { x: 40, y: 70 },
-  redis: { x: 40, y: 290 },
-  "auth-service": { x: 330, y: 90 },
-  "payment-service": { x: 330, y: 280 },
-  "api-gateway": { x: 620, y: 180 },
-  "web-ui": { x: 910, y: 180 }
+// Spacious Vertical Layout (Each node is w: 220px, with generous 75px vertical & 100px horizontal gutters)
+const VERTICAL_POSITIONS: Record<string, { x: number; y: number }> = {
+  "web-ui": { x: 230, y: 30 },
+  "api-gateway": { x: 230, y: 220 },
+  "auth-service": { x: 50, y: 420 },
+  "payment-service": { x: 410, y: 420 },
+  "redis": { x: 50, y: 620 },
+  "postgres": { x: 410, y: 620 }
 };
 
-export default function DependencyMap({ services, activeScenario }) {
-  // Convert services dictionary to React Flow nodes
-  const nodes = useMemo(() => {
+interface DependencyMapProps {
+  services: Record<string, any>;
+  activeScenario?: string | null;
+}
+
+export default function DependencyMap({ services, activeScenario }: DependencyMapProps) {
+  const nodes = useMemo<Node[]>(() => {
     return Object.values(services).map((srv: any) => ({
       id: srv.id,
       type: 'serviceNode',
-      position: NODE_POSITIONS[srv.id] || { x: 100, y: 100 },
+      position: VERTICAL_POSITIONS[srv.id] || { x: 200, y: 200 },
       data: srv as Record<string, any>
     }));
   }, [services]);
 
-  // Generate dynamic edges with animated blast-radius styling
-  const edges = useMemo(() => {
+  const edges = useMemo<Edge[]>(() => {
     const rawEdges = [
-      { id: 'e-pg-auth', source: 'postgres', target: 'auth-service' },
-      { id: 'e-pg-pay', source: 'postgres', target: 'payment-service' },
-      { id: 'e-redis-auth', source: 'redis', target: 'auth-service' },
-      { id: 'e-auth-gw', source: 'auth-service', target: 'api-gateway' },
-      { id: 'e-pay-gw', source: 'payment-service', target: 'api-gateway' },
-      { id: 'e-gw-web', source: 'api-gateway', target: 'web-ui' }
+      { id: 'e-web-gw', source: 'web-ui', target: 'api-gateway' },
+      { id: 'e-gw-auth', source: 'api-gateway', target: 'auth-service' },
+      { id: 'e-gw-pay', source: 'api-gateway', target: 'payment-service' },
+      { id: 'e-auth-redis', source: 'auth-service', target: 'redis' },
+      { id: 'e-auth-pg', source: 'auth-service', target: 'postgres' },
+      { id: 'e-pay-pg', source: 'payment-service', target: 'postgres' }
     ];
 
     return rawEdges.map((edge) => {
@@ -52,79 +57,83 @@ export default function DependencyMap({ services, activeScenario }) {
       const isRootImpact = srcStatus === 'root_cause' || tgtStatus === 'root_cause';
       const isVictimImpact = srcStatus === 'impacted' || tgtStatus === 'impacted';
 
-      let strokeColor = '#3f3f46'; // zinc-700
-      let strokeWidth = 2;
+      let strokeColor = '#94a3b8'; // slate-400
+      let strokeWidth = 1.8;
       let isAnimated = false;
 
       if (isRootImpact) {
-        strokeColor = '#ef4444'; // red-500
-        strokeWidth = 3;
+        strokeColor = '#e11d48'; // rose-600
+        strokeWidth = 2.5;
         isAnimated = true;
       } else if (isVictimImpact) {
-        strokeColor = '#f59e0b'; // amber-500
-        strokeWidth = 2.5;
+        strokeColor = '#d97706'; // amber-600
+        strokeWidth = 2;
         isAnimated = true;
       } else if (srcStatus === 'healthy' && tgtStatus === 'healthy') {
         strokeColor = '#10b981'; // emerald-500
-        strokeWidth = 1.8;
+        strokeWidth = 1.6;
       }
 
       return {
         ...edge,
+        type: 'smoothstep', // Clean architectural orthogonal curves
         animated: isAnimated,
+        pathOptions: {
+          borderRadius: 14
+        },
         style: {
           stroke: strokeColor,
           strokeWidth,
-          transition: 'stroke 0.4s ease, stroke-width 0.4s ease'
+          transition: 'stroke 0.3s ease, stroke-width 0.3s ease'
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           color: strokeColor,
-          width: 14,
-          height: 14
+          width: 12,
+          height: 12
         }
       };
     });
   }, [services]);
 
   return (
-    <div className="w-full h-full relative rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-950/70 shadow-2xl">
-      {/* Topology Header Overlay */}
-      <div className="absolute top-3 left-4 z-10 pointer-events-none flex items-center gap-3">
-        <div className="bg-zinc-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-zinc-800 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span className="text-xs font-semibold text-zinc-200 uppercase tracking-wider font-mono">
-            LIVE TOPOLOGY (DAG)
+    <div className="w-full h-full relative rounded-xl overflow-hidden border border-stone-200/90 bg-[#faf8f5] shadow-sm">
+      {/* Header Overlay */}
+      <div className="absolute top-3.5 left-4 z-10 pointer-events-none flex items-center gap-2.5">
+        <div className="bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-lg border border-stone-200 shadow-xs flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="text-[11px] font-bold text-stone-800 tracking-wider font-mono uppercase">
+            System Topology
           </span>
-          <span className="text-[10px] text-zinc-500 font-mono">
-            {Object.keys(services).length} NODES · 6 EDGES
+          <span className="text-[10px] text-stone-400 font-mono">
+            Vertical Architecture DAG
           </span>
         </div>
 
         {activeScenario && (
-          <div className="bg-red-950/80 backdrop-blur-md px-3 py-1 rounded-lg border border-red-800/80 text-[11px] font-mono text-red-300 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+          <div className="bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 text-[10px] font-mono text-rose-800 font-semibold flex items-center gap-1.5 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
             BLAST RADIUS ACTIVE
           </div>
         )}
       </div>
 
       {/* Legend Overlay */}
-      <div className="absolute bottom-3 left-4 z-10 pointer-events-none bg-zinc-900/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-zinc-800 flex items-center gap-4 text-[10px] font-mono text-zinc-400">
+      <div className="absolute bottom-3.5 left-4 z-10 pointer-events-none bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-stone-200 shadow-xs flex items-center gap-3.5 text-[10px] font-mono text-stone-600">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
           <span>Healthy</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]" />
+          <span className="w-2 h-2 rounded-full bg-rose-500" />
           <span>Root Cause</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-          <span>Cascading Victim</span>
+          <span className="w-2 h-2 rounded-full bg-amber-500" />
+          <span>Impacted</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
+          <span className="w-2 h-2 rounded-full bg-sky-500" />
           <span>Recovering</span>
         </div>
       </div>
@@ -134,13 +143,13 @@ export default function DependencyMap({ services, activeScenario }) {
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.18 }}
+        fitViewOptions={{ padding: 0.2 }}
         proOptions={{ hideAttribution: true }}
-        minZoom={0.5}
+        minZoom={0.4}
         maxZoom={1.5}
       >
-        <Background color="#27272a" gap={20} size={1} />
-        <Controls className="!bg-zinc-900 !border-zinc-800 !fill-zinc-300" />
+        <Background color="#e2ded7" gap={22} size={1.2} />
+        <Controls className="!bg-white !border-stone-200 !fill-stone-600 !shadow-xs" />
       </ReactFlow>
     </div>
   );
