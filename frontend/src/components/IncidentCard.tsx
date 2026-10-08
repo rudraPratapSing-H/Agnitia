@@ -8,7 +8,8 @@ import {
   ArrowRight,
   ShieldCheck,
   FileText,
-  ExternalLink
+  ExternalLink,
+  Download
 } from 'lucide-react';
 import { Incident } from '../types';
 import { executeFullHealFlow } from '../ws';
@@ -18,13 +19,15 @@ interface IncidentCardProps {
   stepStatus: Record<number, 'pending' | 'running' | 'done' | 'failed'>;
   onOpenEvidence?: () => void;
   onOpenApproval?: () => void;
+  onOpenPostmortem?: () => void;
 }
 
 export default function IncidentCard({
   incident,
   stepStatus,
   onOpenEvidence,
-  onOpenApproval
+  onOpenApproval,
+  onOpenPostmortem
 }: IncidentCardProps) {
   const [authorizing, setAuthorizing] = useState(false);
 
@@ -218,16 +221,32 @@ export default function IncidentCard({
         </div>
       )}
 
-      {/* Resolved State Feedback */}
+      {/* Resolved State Feedback + Postmortem View Button */}
       {isResolved && (
-        <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-center text-xs text-emerald-800 font-bold flex flex-col items-center justify-center gap-1">
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 size={15} className="text-emerald-600" />
-            <span>INCIDENT RESOLVED & VERIFIED IN 38s</span>
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-bold space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 size={16} className="text-emerald-600" />
+              <span>INCIDENT RESOLVED & VERIFIED IN 38s</span>
+            </div>
+            <span className="text-[10px] text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-200 font-mono">
+              0 DATA LOSS
+            </span>
           </div>
-          <span className="text-[10px] text-emerald-700 font-normal">
-            Zero data loss &bull; Health probes 200 OK &bull; Cgroup limit patched to 256Mi
-          </span>
+
+          <p className="text-[10px] text-emerald-800 font-normal font-sans">
+            All services restored to nominal health. Dependency-ordered restart sequence verified.
+          </p>
+
+          {onOpenPostmortem && (
+            <button
+              onClick={onOpenPostmortem}
+              className="w-full py-2 px-3 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-2xs"
+            >
+              <FileText size={13} />
+              <span>VIEW SRE POSTMORTEM REPORT</span>
+            </button>
+          )}
         </div>
       )}
     </div>
