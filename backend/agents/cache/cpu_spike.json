@@ -1,52 +1,105 @@
 {
   "rca": {
-    "root_cause": "Auth Service CPU saturation due to bcrypt password hashing thread contention",
-    "category": "CPUSaturation",
-    "confidence": 0.93,
+    "root_cause": "The auth-service is experiencing severe CPU throttling and worker saturation due to heavy bcrypt processing, leading to request latency spikes.",
+    "category": "CPUThrottling",
+    "confidence": 0.95,
     "evidence": [
       {
+        "type": "log",
+        "source": "auth-service-0",
+        "text": "Bcrypt worker threads saturated: 1000 tasks queued",
+        "line": 1,
+        "verified": true
+      },
+      {
+        "type": "log",
+        "source": "auth-service-0",
+        "text": "Request latency p99 exceeded 4500ms",
+        "line": 2,
+        "verified": true
+      },
+      {
         "type": "k8s_event",
-        "source": "auth-service-pod",
-        "line": null,
+        "source": "auth-service-0",
         "text": "Warning: CPU Throttled for 85% of period",
+        "line": null,
         "verified": true
       },
       {
         "type": "metric",
-        "source": "auth-service-pod",
+        "source": "auth-service-0",
+        "text": "cpu_pct: 98.5",
         "line": null,
-        "text": "CPU utilization 98% > 85% threshold",
         "verified": true
       }
     ],
     "similar_incident": {
       "id": "INC-065",
-      "similarity": 0.89
-    }
+      "similarity": 0.98
+    },
+    "warning": null
   },
   "playbook": {
-    "diff": "spec.replicas: 1 -> 3",
+    "diff": "resources.limits.cpu: 1000m -> 2000m",
     "steps": [
       {
         "order": 1,
         "service": "auth-service",
-        "action": "scale_replicas",
+        "action": "patch_cpu_limit",
         "params": {
-          "from": 1,
-          "to": 3
+          "from": "1000m",
+          "to": "2000m"
         },
-        "risk": "medium",
-        "requires_approval": false,
-        "verify": "replicas ready 3/3"
+        "risk": "high",
+        "requires_approval": true,
+        "verify": "Verify auth-service CPU throttling metrics drop below 5%."
       },
       {
         "order": 2,
-        "service": "api-gateway",
-        "action": "verify_health",
-        "params": {},
+        "service": "auth-service",
+        "action": "rollout_restart",
+        "params": null,
         "risk": "low",
         "requires_approval": false,
-        "verify": "upstream response time < 100ms"
+        "verify": "Verify auth-service restarts successfully."
+      },
+      {
+        "order": 3,
+        "service": "auth-service",
+        "action": "wait_for_ready",
+        "params": {
+          "timeout_s": 60
+        },
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Verify auth-service is ready and accepting traffic."
+      },
+      {
+        "order": 4,
+        "service": "auth-service",
+        "action": "verify_health",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Verify auth-service p99 request latency is under 500ms."
+      },
+      {
+        "order": 5,
+        "service": "api-gateway",
+        "action": "verify_health",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Verify api-gateway successfully communicates with auth-service."
+      },
+      {
+        "order": 6,
+        "service": "web-ui",
+        "action": "verify_health",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Verify web-ui operates normally without authentication errors."
       }
     ]
   }

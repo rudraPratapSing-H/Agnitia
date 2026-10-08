@@ -1,38 +1,46 @@
 {
   "rca": {
-    "root_cause": "PostgreSQL was killed for exceeding its 64Mi memory limit",
+    "root_cause": "The postgres-0 pod exceeded its memory limit and was terminated with exit code 137 (OOMKilled).",
     "category": "OOMKilled",
-    "confidence": 0.97,
+    "confidence": 1.0,
     "evidence": [
       {
-        "type": "k8s_event",
+        "type": "log",
         "source": "postgres-0",
-        "line": null,
-        "text": "Reason: OOMKilled, Exit Code: 137",
+        "text": "FATAL: out of memory (allocated 67108864 bytes, limit 67108864 bytes)",
+        "line": 42,
         "verified": true
       },
       {
         "type": "log",
         "source": "postgres-0",
-        "line": 42,
-        "text": "FATAL: out of memory (allocated 67108864 bytes, limit 67108864 bytes)",
+        "text": "2026-10-09 03:14:16 [ERROR] terminated unexpectedly with exit code 137",
+        "line": 43,
+        "verified": true
+      },
+      {
+        "type": "k8s_event",
+        "source": "postgres-0",
+        "text": "Reason: OOMKilled, Exit Code: 137",
+        "line": null,
         "verified": true
       },
       {
         "type": "metric",
         "source": "postgres-0",
+        "text": "mem_mb: 64.0",
         "line": null,
-        "text": "memory 64.0Mi of 64Mi limit",
         "verified": true
       }
     ],
     "similar_incident": {
       "id": "INC-087",
       "similarity": 0.94
-    }
+    },
+    "warning": null
   },
   "playbook": {
-    "diff": "resources.limits.memory: 64Mi -> 256Mi",
+    "diff": "resources.limits.memory: 64Mi -> 128Mi",
     "steps": [
       {
         "order": 1,
@@ -40,49 +48,120 @@
         "action": "patch_memory_limit",
         "params": {
           "from": "64Mi",
-          "to": "256Mi"
+          "to": "128Mi"
         },
         "risk": "high",
         "requires_approval": true,
-        "verify": "port 5432 accepting connections"
+        "verify": "Verify postgres memory limit is updated to 128Mi"
       },
       {
         "order": 2,
         "service": "postgres",
-        "action": "wait_for_ready",
-        "params": {
-          "timeout_s": 30
-        },
+        "action": "rollout_restart",
+        "params": null,
         "risk": "low",
         "requires_approval": false,
-        "verify": "readiness probe passes"
+        "verify": "Verify postgres pod is restarting"
       },
       {
         "order": 3,
-        "service": "auth-service",
-        "action": "rollout_restart",
-        "params": {},
+        "service": "postgres",
+        "action": "wait_for_ready",
+        "params": {
+          "timeout_s": 60
+        },
         "risk": "low",
         "requires_approval": false,
-        "verify": "health endpoint 200"
+        "verify": "Verify postgres readiness probe passes"
       },
       {
         "order": 4,
-        "service": "payment-service",
-        "action": "rollout_restart",
-        "params": {},
+        "service": "postgres",
+        "action": "verify_health",
+        "params": null,
         "risk": "low",
         "requires_approval": false,
-        "verify": "health endpoint 200"
+        "verify": "Verify postgres health endpoint returns healthy"
       },
       {
         "order": 5,
-        "service": "api-gateway",
-        "action": "verify_health",
-        "params": {},
+        "service": "auth-service",
+        "action": "rollout_restart",
+        "params": null,
         "risk": "low",
         "requires_approval": false,
-        "verify": "error rate below 1%"
+        "verify": "Verify auth-service pod is restarting"
+      },
+      {
+        "order": 6,
+        "service": "auth-service",
+        "action": "wait_for_ready",
+        "params": {
+          "timeout_s": 60
+        },
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Verify auth-service is ready"
+      },
+      {
+        "order": 7,
+        "service": "payment-service",
+        "action": "rollout_restart",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Verify payment-service pod is restarting"
+      },
+      {
+        "order": 8,
+        "service": "payment-service",
+        "action": "wait_for_ready",
+        "params": {
+          "timeout_s": 60
+        },
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Verify payment-service is ready"
+      },
+      {
+        "order": 9,
+        "service": "api-gateway",
+        "action": "rollout_restart",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Verify api-gateway pod is restarting"
+      },
+      {
+        "order": 10,
+        "service": "api-gateway",
+        "action": "wait_for_ready",
+        "params": {
+          "timeout_s": 60
+        },
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Verify api-gateway is ready"
+      },
+      {
+        "order": 11,
+        "service": "web-ui",
+        "action": "rollout_restart",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Verify web-ui pod is restarting"
+      },
+      {
+        "order": 12,
+        "service": "web-ui",
+        "action": "wait_for_ready",
+        "params": {
+          "timeout_s": 60
+        },
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Verify web-ui is ready and fully operational"
       }
     ]
   }

@@ -1,83 +1,114 @@
-"""Pydantic models mirroring CONTRACT.md"""
+"""Pydantic v2 models mirroring CONTRACT.md exactly"""
 
 from typing import Literal, Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
-TierType = Literal["data", "backend", "edge", "frontend"]
-ServiceStatus = Literal["healthy", "root_cause", "impacted", "recovering"]
-SeverityType = Literal["info", "warning", "error", "critical"]
+# Literal enum types
+NodeStatus = Literal["healthy", "root_cause", "impacted", "recovering"]
+Tier = Literal["data", "backend", "edge", "frontend"]
+Severity = Literal["info", "warning", "error", "critical"]
+Risk = Literal["low", "high"]
+EvidenceType = Literal["log", "k8s_event", "metric"]
 IncidentStatus = Literal["detected", "analyzing", "awaiting_approval", "healing", "resolved"]
-RiskLevel = Literal["low", "medium", "high"]
-EvidenceType = Literal["k8s_event", "log", "metric"]
+WsEventType = Literal[
+    "alert",
+    "service_update",
+    "incident_update",
+    "agent_step",
+    "playbook_step",
+    "metric_point",
+    "prediction",
+    "reset",
+]
 
 
 class ServiceMetrics(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     mem_mb: float = 0.0
     mem_limit_mb: float = 64.0
     cpu_pct: float = 0.0
     restarts: int = 0
 
 
+Metrics = ServiceMetrics
+
+
 class ServiceNode(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     id: str
     label: str
-    tier: TierType
+    tier: Tier
     depends_on: list[str] = Field(default_factory=list)
-    status: ServiceStatus = "healthy"
-    metrics: ServiceMetrics = Field(default_factory=ServiceMetrics)
+    status: NodeStatus = "healthy"
+    metrics: ServiceMetrics
 
 
 class Alert(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     id: str
     ts: str
     service: str
-    severity: SeverityType
+    severity: Severity
     message: str
     incident_id: Optional[str] = None
 
 
-class EvidenceItem(BaseModel):
+class Evidence(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     type: EvidenceType
     source: str
-    line: Optional[int] = None
     text: str
-    verified: bool = True
+    line: Optional[int] = None
+    verified: bool = False
+
+
+EvidenceItem = Evidence
 
 
 class SimilarIncident(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     id: str
     similarity: float
 
 
 class RCA(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     root_cause: str
     category: str
     confidence: float
-    evidence: list[EvidenceItem] = Field(default_factory=list)
+    evidence: list[Evidence] = Field(default_factory=list)
     similar_incident: Optional[SimilarIncident] = None
+    warning: Optional[str] = None
 
 
 class PlaybookStep(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     order: int
     service: str
     action: str
-    params: dict[str, Any] = Field(default_factory=dict)
-    risk: RiskLevel = "low"
+    params: Optional[dict[str, Any]] = None
+    risk: Risk = "low"
     requires_approval: bool = False
-    verify: str
+    verify: Optional[str] = None
 
 
 class Playbook(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     diff: Optional[str] = None
     steps: list[PlaybookStep] = Field(default_factory=list)
 
 
-class TimelineItem(BaseModel):
+class TimelineEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     t_s: float
     event: str
 
 
+TimelineItem = TimelineEntry
+
+
 class Incident(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     id: str
     status: IncidentStatus = "detected"
     scenario: str
@@ -88,25 +119,19 @@ class Incident(BaseModel):
     resolved_at: Optional[str] = None
     rca: Optional[RCA] = None
     playbook: Optional[Playbook] = None
-    timeline: list[TimelineItem] = Field(default_factory=list)
+    timeline: list[TimelineEntry] = Field(default_factory=list)
 
 
 class WsEvent(BaseModel):
-    type: Literal[
-        "alert",
-        "service_update",
-        "incident_update",
-        "agent_step",
-        "playbook_step",
-        "metric_point",
-        "prediction",
-        "reset",
-    ]
+    model_config = ConfigDict(extra="forbid")
+    type: WsEventType
     ts: str
     payload: dict[str, Any]
 
 
+# Supporting types for ClusterAdapter interfaces
 class LogLine(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     line: int
     t_s: float
     text: str
@@ -114,6 +139,7 @@ class LogLine(BaseModel):
 
 
 class MetricPoint(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     t_s: float
     mem_mb: float
     cpu_pct: float
@@ -121,12 +147,14 @@ class MetricPoint(BaseModel):
 
 
 class K8sEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     t_s: float
     service: str
     text: str
 
 
 class ActionResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     ok: bool = True
     message: str = ""
     step_order: Optional[int] = None
@@ -139,4 +167,34 @@ class ActionResult(BaseModel):
             self.success = self.ok
         elif self.ok and not self.success:
             self.ok = self.success
+
+
+# Scenario file format models
+class ScenarioAlert(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: Optional[str] = None
+    t_s: float
+    service: str
+    severity: Severity
+    message: str
+
+
+class ScenarioFix(BaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    action: str
+    from_val: Optional[str] = Field(default=None, alias="from")
+    to_val: Optional[str] = Field(default=None, alias="to")
+
+
+class Scenario(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str
+    title: str
+    root_service: str
+    duration_s: float
+    metrics: dict[str, list[MetricPoint]]
+    events: list[K8sEvent]
+    logs: dict[str, list[LogLine]]
+    alerts: list[ScenarioAlert]
+    fix: ScenarioFix
 

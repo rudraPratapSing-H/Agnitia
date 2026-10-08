@@ -9,10 +9,12 @@ from typing import Any, Dict, Optional, Set
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 load_dotenv()
 
 from backend.bus import bus, emit
+import backend.executor as executor
 import backend.graph as graph
 from backend.executor import execute as execute_playbook, get_audit_log
 from backend.models import Incident, ServiceNode, TimelineItem
@@ -120,6 +122,15 @@ async def on_alerts_complete(scenario_or_alerts: Any, maybe_alerts: Optional[lis
         if run_pipeline is not None:
             try:
                 updated_incident = await run_pipeline(incident, adapter)
+                if updated_incident.playbook is None:
+                    try:
+                        from backend.agents.planner import plan_recovery
+                        updated_incident.playbook = await plan_recovery(updated_incident)
+                    except Exception:
+                        pass
+                if updated_incident.status != "awaiting_approval":
+                    updated_incident.status = "awaiting_approval"
+
                 INCIDENTS[updated_incident.id] = updated_incident
                 LATEST_ID = updated_incident.id
                 await emit("incident_update", updated_incident)
@@ -205,6 +216,7 @@ async def reset():
     await adapter.reset()
     INCIDENTS.clear()
     LATEST_ID = None
+    executor.clear_audit()
 
     await emit("reset", {})
     services = await adapter.list_services()
@@ -231,43 +243,133 @@ async def list_services():
     return await adapter.list_services()
 
 
-# ── Placeholders returning 501 ───────────────────────────────────────────────
+# ── Incident Lifecycle Routes (TASK 2.6) ──────────────────────────────────────
 
-@app.post("/api/incidents/{id}/approve")
-async def approve_incident(id: str):
-    global INCIDENTS
-    target_id = id if id in INCIDENTS else LATEST_ID
-    if not target_id or target_id not in INCIDENTS:
+@app.post("/api/incidents/{id}/approve", status_code=202)
+async def approve_incident(id: str, body: Optional[dict] = None):
+    if id not in INCIDENTS:
         raise HTTPException(status_code=404, detail=f"Incident '{id}' not found")
-    inc = INCIDENTS[target_id]
-    task = asyncio.create_task(execute_playbook(inc, adapter, approved_by="human_operator"))
-    BACKGROUND_TASKS.add(task)
-    return {"ok": True, "incident_id": target_id, "status": "healing"}
+
+    incident = INCIDENTS[id]
+    if incident.status != "awaiting_approval":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Incident '{id}' is currently '{incident.status}', not 'awaiting_approval'",
+        )
+
+    actor = "ui"
+    if body and isinstance(body, dict):
+        actor = body.get("approved_by") or body.get("actor") or "ui"
+
+    incident.status = "healing"
+    await emit("incident_update", incident)
+
+    async def _execute_and_update(inc: Incident, adp: Any, approved_by_name: str) -> None:
+        curr = asyncio.current_task()
+        try:
+            resolved_incident = await executor.execute(inc, adp, approved_by_name)
+            INCIDENTS[resolved_incident.id] = resolved_incident
+            global LATEST_ID
+            LATEST_ID = resolved_incident.id
+            await emit("incident_update", resolved_incident)
+        except asyncio.CancelledError:
+            logger.info("Execution task for %s was cancelled", inc.id)
+            raise
+        except Exception as exc:
+            logger.exception("Unexpected error in execution task: %s", exc)
+        finally:
+            if curr:
+                BACKGROUND_TASKS.discard(curr)
+
+    exec_task = asyncio.create_task(_execute_and_update(incident, adapter, actor))
+    BACKGROUND_TASKS.add(exec_task)
+    exec_task.add_done_callback(BACKGROUND_TASKS.discard)
+
+    return JSONResponse(status_code=202, content={"ok": True, "status": "healing"})
 
 
 @app.post("/api/incidents/{id}/reject")
-async def reject_incident(id: str):
-    raise HTTPException(status_code=501, detail="not implemented yet")
+async def reject_incident(id: str, body: Optional[dict] = None):
+    if id not in INCIDENTS:
+        raise HTTPException(status_code=404, detail=f"Incident '{id}' not found")
 
+    incident = INCIDENTS[id]
+    if incident.status != "awaiting_approval":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Incident '{id}' is currently '{incident.status}', not 'awaiting_approval'",
+        )
 
-@app.get("/api/incidents/{id}/postmortem")
-async def get_postmortem(id: str):
-    raise HTTPException(status_code=501, detail="not implemented yet")
+    actor = "ui"
+    if body and isinstance(body, dict):
+        actor = body.get("rejected_by") or body.get("approved_by") or body.get("actor") or "ui"
 
+    try:
+        started = datetime.fromisoformat(incident.started_at.replace("Z", "+00:00"))
+        if started.tzinfo is None:
+            started = started.replace(tzinfo=timezone.utc)
+        t_s = max(0.0, round((datetime.now(timezone.utc) - started).total_seconds(), 2))
+    except Exception:
+        t_s = 0.0
 
-@app.get("/api/blast-radius/{service}")
-async def get_blast_radius(service: str):
-    raise HTTPException(status_code=501, detail="not implemented yet")
+    incident.timeline.append(TimelineItem(t_s=t_s, event=f"Playbook rejected by {actor}"))
+    incident.status = "detected"
+    incident.playbook = None
+
+    await emit("incident_update", incident)
+    return {"ok": True}
 
 
 @app.get("/api/incidents/{id}/audit")
 async def get_incident_audit(id: str):
-    raise HTTPException(status_code=501, detail="not implemented yet")
+    if id not in INCIDENTS:
+        raise HTTPException(status_code=404, detail=f"Incident '{id}' not found")
+    return executor.get_audit(id)
 
 
 @app.get("/api/audit")
 async def get_audit():
-    return {"audit_log": get_audit_log()}
+    if LATEST_ID and LATEST_ID in INCIDENTS:
+        return executor.get_audit(LATEST_ID)
+    return []
+
+
+# Postmortem route: owned by Member 3. Include router if present, fallback to 501.
+try:
+    from backend.agents.postmortem import router as postmortem_router
+    app.include_router(postmortem_router)
+except (ImportError, AttributeError):
+    @app.get("/api/incidents/{id}/postmortem")
+    async def get_postmortem(id: str):
+        raise HTTPException(status_code=501, detail="not implemented yet")
+
+
+# Illustrative simulated percentage of users affected if a service fails (simulated, never measured).
+USER_IMPACT_PCT: Dict[str, int] = {
+    "postgres": 100,
+    "redis": 70,
+    "auth-service": 70,
+    "payment-service": 40,
+    "api-gateway": 100,
+    "web-ui": 100,
+}
+
+
+@app.get("/api/blast-radius/{service}")
+async def get_blast_radius(service: str):
+    if service not in graph.DEPENDS_ON:
+        raise HTTPException(status_code=404, detail=f"Service '{service}' not found")
+    try:
+        affected = graph.blast_radius(service)
+    except ValueError:
+        raise HTTPException(status_code=404, detail=f"Service '{service}' not found")
+
+    return {
+        "service": service,
+        "affected_services": affected,
+        "users_affected_pct": USER_IMPACT_PCT.get(service, 0),
+        "note": "illustrative simulator figure",
+    }
 
 
 @app.post("/api/autonomy")
