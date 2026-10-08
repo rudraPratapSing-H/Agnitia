@@ -19,7 +19,9 @@ from backend.models import Incident, K8sEvent, LogLine, MetricPoint, Playbook, R
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCENARIOS_DIR = REPO_ROOT / "backend" / "scenarios"
 
-CACHED_ROOT_CAUSE = "PostgreSQL was killed for exceeding its 64Mi memory limit"
+CACHED_ROOT_CAUSE = (
+    "The postgres-0 pod exceeded its memory limit and was terminated with exit code 137 (OOMKilled)."
+)  # must match backend/agents/cache/db_oom.json's "rca.root_cause" verbatim
 LIVE_ROOT_CAUSE = "PostgreSQL exceeded its 64Mi memory limit and was OOMKilled (fake model)"
 
 
@@ -372,7 +374,9 @@ def test_f5_never_raises_when_adapter_and_emit_break(env, install_llm, monkeypat
 
     assert result.status == "awaiting_approval"
     assert result.rca.root_cause == CACHED_ROOT_CAUSE
-    assert result.rca.confidence == pytest.approx(0.77)
+    # Cached confidence is 1.0 (see backend/agents/cache/db_oom.json); the citation
+    # penalty for unverifiable evidence (missing adapter) drops it by 0.2.
+    assert result.rca.confidence == pytest.approx(0.8)
 
 
 # ── (g) event order and content ──────────────────────────────────────────────

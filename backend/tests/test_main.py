@@ -25,6 +25,10 @@ from backend.models import Alert
 @pytest.fixture(autouse=True)
 def ensure_sim_speed(monkeypatch):
     adapter.speed = 200.0
+    # Force the cached pipeline path: a live LLM round trip (~4-8s) blows past
+    # these tests' poll windows regardless of SIM_SPEED, since that's real
+    # network latency, not simulated time asyncio.sleep can fast-forward.
+    monkeypatch.setenv("DEMO_MODE", "cache")
     orig_sleep = asyncio.sleep
     async def fast_sleep(s, *args, **kwargs):
         return await orig_sleep(s / 200.0, *args, **kwargs)
