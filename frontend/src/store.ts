@@ -1,4 +1,4 @@
-// frontend/src/store.js - Central State Store for Agnitia Mission Control
+// frontend/src/store.ts - Central State Store with Phase 3 Autonomy & What-If Mode
 import { useState, useEffect } from 'react';
 
 export const INITIAL_SERVICES = {
@@ -54,15 +54,18 @@ export const INITIAL_SERVICES = {
 
 let globalState = {
   services: { ...INITIAL_SERVICES },
-  alerts: [],
-  incident: null,
-  agentSteps: [],
-  stepStatus: {},
-  metrics: {},
-  prediction: null,
-  activeScenario: null,
+  alerts: [] as any[],
+  incident: null as any,
+  agentSteps: [] as any[],
+  stepStatus: {} as Record<number, 'pending' | 'running' | 'done' | 'failed'>,
+  metrics: {} as Record<string, any[]>,
+  prediction: null as any,
+  activeScenario: null as string | null,
   isSimulating: false,
-  wsConnected: false
+  wsConnected: false,
+  autonomyLevel: 2, // Level 1: Strict, Level 2: Balanced, Level 3: Autonomous
+  whatIfNode: null as string | null,
+  soundMuted: false
 };
 
 const listeners = new Set<(state: any) => void>();
@@ -87,7 +90,7 @@ export function useAgnitiaStore() {
 }
 
 // Event Reducer: The ONLY place events change state (as per CONTRACT.md)
-export function applyWsEvent(event) {
+export function applyWsEvent(event: any) {
   if (!event || !event.type) return;
 
   const { type, payload } = event;
@@ -206,21 +209,39 @@ export function resetStore() {
     prediction: null,
     activeScenario: null,
     isSimulating: false,
-    wsConnected: globalState.wsConnected
+    wsConnected: globalState.wsConnected,
+    autonomyLevel: globalState.autonomyLevel,
+    whatIfNode: null,
+    soundMuted: globalState.soundMuted
   };
   emitChange();
 }
 
-export function setWsConnected(status) {
+export function setWsConnected(status: boolean) {
   globalState = { ...globalState, wsConnected: status };
   emitChange();
 }
 
-export function setSimulating(status, scenarioName = null) {
+export function setSimulating(status: boolean, scenarioName: string | null = null) {
   globalState = {
     ...globalState,
     isSimulating: status,
     activeScenario: scenarioName
   };
+  emitChange();
+}
+
+export function setAutonomyLevel(level: number) {
+  globalState = { ...globalState, autonomyLevel: level };
+  emitChange();
+}
+
+export function setWhatIfNode(nodeId: string | null) {
+  globalState = { ...globalState, whatIfNode: nodeId };
+  emitChange();
+}
+
+export function setSoundMuted(muted: boolean) {
+  globalState = { ...globalState, soundMuted: muted };
   emitChange();
 }

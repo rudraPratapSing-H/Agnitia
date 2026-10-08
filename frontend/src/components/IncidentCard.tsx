@@ -6,7 +6,10 @@ import {
   FileCheck2,
   GitCommit,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  FileText,
+  ExternalLink,
+  Download
 } from 'lucide-react';
 import { Incident } from '../types';
 import { executeFullHealFlow } from '../ws';
@@ -14,9 +17,18 @@ import { executeFullHealFlow } from '../ws';
 interface IncidentCardProps {
   incident: Incident | null;
   stepStatus: Record<number, 'pending' | 'running' | 'done' | 'failed'>;
+  onOpenEvidence?: () => void;
+  onOpenApproval?: () => void;
+  onOpenPostmortem?: () => void;
 }
 
-export default function IncidentCard({ incident, stepStatus }: IncidentCardProps) {
+export default function IncidentCard({
+  incident,
+  stepStatus,
+  onOpenEvidence,
+  onOpenApproval,
+  onOpenPostmortem
+}: IncidentCardProps) {
   const [authorizing, setAuthorizing] = useState(false);
 
   if (!incident) {
@@ -32,14 +44,19 @@ export default function IncidentCard({ incident, stepStatus }: IncidentCardProps
   const isAwaiting = status === 'awaiting_approval';
   const isResolved = status === 'resolved';
 
-  const handleAuthorize = () => {
-    setAuthorizing(true);
-    executeFullHealFlow();
-    setTimeout(() => setAuthorizing(false), 2000);
+  const handleAuthorizeClick = () => {
+    if (onOpenApproval) {
+      onOpenApproval();
+    } else {
+      setAuthorizing(true);
+      executeFullHealFlow();
+      setTimeout(() => setAuthorizing(false), 2000);
+    }
   };
 
   return (
     <div className="bg-white rounded-xl border border-stone-200 p-3.5 shadow-sm font-mono space-y-3">
+      {/* Incident Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm font-extrabold tracking-tight text-stone-900 flex items-center gap-1.5">
@@ -64,6 +81,7 @@ export default function IncidentCard({ incident, stepStatus }: IncidentCardProps
         </span>
       </div>
 
+      {/* RCA & Evidence Box */}
       {rca && (
         <div className="bg-stone-50/80 p-2.5 rounded-lg border border-stone-200/80 space-y-1.5">
           <div className="flex items-center justify-between text-[10px]">
@@ -80,18 +98,37 @@ export default function IncidentCard({ incident, stepStatus }: IncidentCardProps
             {rca.root_cause}
           </p>
 
+          {/* Machine-Checked Evidence items */}
           {rca.evidence && (
             <div className="space-y-1 pt-1 border-t border-stone-200">
-              <span className="text-[9px] text-stone-500 uppercase tracking-wider block">
-                MACHINE-CHECKED EVIDENCE:
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] text-stone-500 uppercase tracking-wider block">
+                  MACHINE-CHECKED EVIDENCE:
+                </span>
+                {onOpenEvidence && (
+                  <button
+                    onClick={onOpenEvidence}
+                    className="text-[9px] text-stone-700 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-1.5 py-0.5 rounded border border-stone-300 font-bold flex items-center gap-1 transition-colors"
+                  >
+                    <FileText size={9} />
+                    <span>OPEN EVIDENCE LOCKER ({rca.evidence.length}) &rarr;</span>
+                  </button>
+                )}
+              </div>
+
               {rca.evidence.map((ev, idx) => (
-                <div key={idx} className="flex items-center gap-1.5 text-[10px] text-stone-700 bg-white px-2 py-1 rounded border border-stone-200/60 shadow-2xs">
+                <div
+                  key={idx}
+                  onClick={onOpenEvidence}
+                  className="flex items-center gap-1.5 text-[10px] text-stone-700 bg-white hover:bg-stone-50 cursor-pointer px-2 py-1 rounded border border-stone-200/60 shadow-2xs transition-colors"
+                  title="Click to view raw logs and verification proof"
+                >
                   <CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
                   <span className="text-stone-500 uppercase font-bold text-[8px] bg-stone-100 border border-stone-200 px-1 rounded">
                     {ev.type}
                   </span>
                   <span className="truncate">{ev.text}</span>
+                  <ExternalLink size={9} className="text-stone-400 shrink-0 ml-auto" />
                 </div>
               ))}
             </div>
@@ -99,6 +136,7 @@ export default function IncidentCard({ incident, stepStatus }: IncidentCardProps
         </div>
       )}
 
+      {/* Sequential Playbook Preview */}
       {playbook && playbook.steps && playbook.steps.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-[10px] text-stone-600">
@@ -113,7 +151,17 @@ export default function IncidentCard({ incident, stepStatus }: IncidentCardProps
 
           {playbook.diff && (
             <div className="p-2 bg-stone-900 text-stone-100 rounded border border-stone-800 text-[10px] font-mono shadow-inner">
-              <span className="text-stone-400 block text-[8px] mb-0.5">PROPOSED SPEC CHANGE:</span>
+              <div className="flex items-center justify-between text-[8px] text-stone-400 mb-0.5">
+                <span>PROPOSED SPEC CHANGE:</span>
+                {onOpenApproval && (
+                  <button
+                    onClick={onOpenApproval}
+                    className="text-stone-300 hover:text-white underline"
+                  >
+                    View Diff &rarr;
+                  </button>
+                )}
+              </div>
               <pre className="text-emerald-400 whitespace-pre-wrap">{playbook.diff}</pre>
             </div>
           )}
@@ -150,10 +198,11 @@ export default function IncidentCard({ incident, stepStatus }: IncidentCardProps
         </div>
       )}
 
+      {/* Authorize Button & Safety Warning */}
       {isAwaiting && (
         <div className="pt-1">
           <button
-            onClick={handleAuthorize}
+            onClick={handleAuthorizeClick}
             disabled={authorizing}
             className="w-full py-2.5 px-4 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.99]"
           >
@@ -161,21 +210,43 @@ export default function IncidentCard({ incident, stepStatus }: IncidentCardProps
               <span>SEQUENCING PLAYBOOK...</span>
             ) : (
               <>
-                <span>AUTHORIZE RECOVERY PLAYBOOK</span>
+                <span>REVIEW & AUTHORIZE PLAYBOOK</span>
                 <ArrowRight size={13} />
               </>
             )}
           </button>
           <span className="block text-center text-[9px] text-stone-500 mt-1">
-            Safety Gate: Requires explicit human authorization before applying spec changes.
+            Safety Gate APEX-04: Operator review required before modifying production specs.
           </span>
         </div>
       )}
 
+      {/* Resolved State Feedback + Postmortem View Button */}
       {isResolved && (
-        <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-center text-xs text-emerald-800 font-bold flex items-center justify-center gap-1.5">
-          <CheckCircle2 size={15} className="text-emerald-600" />
-          SYSTEM HEALED & ALL PROBES NOMINAL
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-bold space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 size={16} className="text-emerald-600" />
+              <span>INCIDENT RESOLVED & VERIFIED IN 38s</span>
+            </div>
+            <span className="text-[10px] text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-200 font-mono">
+              0 DATA LOSS
+            </span>
+          </div>
+
+          <p className="text-[10px] text-emerald-800 font-normal font-sans">
+            All services restored to nominal health. Dependency-ordered restart sequence verified.
+          </p>
+
+          {onOpenPostmortem && (
+            <button
+              onClick={onOpenPostmortem}
+              className="w-full py-2 px-3 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-2xs"
+            >
+              <FileText size={13} />
+              <span>VIEW SRE POSTMORTEM REPORT</span>
+            </button>
+          )}
         </div>
       )}
     </div>
