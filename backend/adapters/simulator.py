@@ -90,7 +90,30 @@ class SimulatorAdapter(ClusterAdapter):
         with open(scenario_file, "r", encoding="utf-8") as f:
             data = json.load(f)
         self.active_scenario = data
+
+        # Populate telemetry stores from scenario dataset (handoff from Member 4)
+        for svc, lines in data.get("logs", {}).items():
+            self.logs_store[svc] = [
+                LogLine(line=l.get("line", idx + 1), t_s=l.get("t_s", 0.0), text=l.get("text", ""), service=svc)
+                for idx, l in enumerate(lines)
+            ]
+
+        for ev in data.get("events", []):
+            ev_svc = ev.get("service", "postgres")
+            if ev_svc in self.events_store:
+                self.events_store[ev_svc].append(
+                    K8sEvent(t_s=ev.get("t_s", 0.0), service=ev_svc, text=ev.get("text", ""))
+                )
+
+        for svc, pts in data.get("metrics", {}).items():
+            if svc in self.metrics_store:
+                self.metrics_store[svc] = [
+                    MetricPoint(t_s=p.get("t_s", 0.0), mem_mb=p.get("mem_mb", 0.0), cpu_pct=p.get("cpu_pct", 0.0), service=svc)
+                    for p in pts
+                ]
+
         return data
+
 
     async def list_services(self) -> List[ServiceNode]:
         return list(self.services.values())

@@ -331,6 +331,1014 @@
         "t_s": 6.8,
         "text": "2026-10-09 03:14:16 [ERROR] terminated unexpectedly with exit code 137"
       }
+    ],
+    "auth-service": [
+      {
+        "line": 1,
+        "t_s": 1.14,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1001 successfully"
+      },
+      {
+        "line": 2,
+        "t_s": 1.28,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1002 successfully"
+      },
+      {
+        "line": 3,
+        "t_s": 1.42,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1003 successfully"
+      },
+      {
+        "line": 4,
+        "t_s": 1.56,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1004 successfully"
+      },
+      {
+        "line": 5,
+        "t_s": 1.7,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1005 successfully"
+      },
+      {
+        "line": 6,
+        "t_s": 1.84,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1006 successfully"
+      },
+      {
+        "line": 7,
+        "t_s": 1.98,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1007 successfully"
+      },
+      {
+        "line": 8,
+        "t_s": 2.12,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1008 successfully"
+      },
+      {
+        "line": 9,
+        "t_s": 2.26,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1009 successfully"
+      },
+      {
+        "line": 10,
+        "t_s": 2.4,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1010 successfully"
+      },
+      {
+        "line": 11,
+        "t_s": 2.54,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1011 successfully"
+      },
+      {
+        "line": 12,
+        "t_s": 2.68,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1012 successfully"
+      },
+      {
+        "line": 13,
+        "t_s": 2.82,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1013 successfully"
+      },
+      {
+        "line": 14,
+        "t_s": 2.96,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1014 successfully"
+      },
+      {
+        "line": 15,
+        "t_s": 3.1,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1015 successfully"
+      },
+      {
+        "line": 16,
+        "t_s": 3.24,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1016 successfully"
+      },
+      {
+        "line": 17,
+        "t_s": 3.38,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1017 successfully"
+      },
+      {
+        "line": 18,
+        "t_s": 3.52,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1018 successfully"
+      },
+      {
+        "line": 19,
+        "t_s": 3.66,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1019 successfully"
+      },
+      {
+        "line": 20,
+        "t_s": 3.8,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1020 successfully"
+      },
+      {
+        "line": 21,
+        "t_s": 3.94,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1021 successfully"
+      },
+      {
+        "line": 22,
+        "t_s": 4.08,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1022 successfully"
+      },
+      {
+        "line": 23,
+        "t_s": 4.22,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1023 successfully"
+      },
+      {
+        "line": 24,
+        "t_s": 4.36,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1024 successfully"
+      },
+      {
+        "line": 25,
+        "t_s": 4.5,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1025 successfully"
+      },
+      {
+        "line": 26,
+        "t_s": 4.64,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1026 successfully"
+      },
+      {
+        "line": 27,
+        "t_s": 4.78,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1027 successfully"
+      },
+      {
+        "line": 28,
+        "t_s": 4.92,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1028 successfully"
+      },
+      {
+        "line": 29,
+        "t_s": 5.06,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1029 successfully"
+      },
+      {
+        "line": 30,
+        "t_s": 5.2,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1030 successfully"
+      },
+      {
+        "line": 31,
+        "t_s": 5.34,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1031 successfully"
+      },
+      {
+        "line": 32,
+        "t_s": 5.48,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1032 successfully"
+      },
+      {
+        "line": 33,
+        "t_s": 5.62,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1033 successfully"
+      },
+      {
+        "line": 34,
+        "t_s": 5.76,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1034 successfully"
+      },
+      {
+        "line": 35,
+        "t_s": 5.9,
+        "text": "2026-10-09 03:14:10 [INFO] Authenticated user session #1035 successfully"
+      },
+      {
+        "line": 36,
+        "t_s": 6.05,
+        "text": "2026-10-09 03:14:16 [ERROR] Failed to acquire connection from pool: postgres:5432 connection refused"
+      },
+      {
+        "line": 37,
+        "t_s": 6.1,
+        "text": "2026-10-09 03:14:16 [ERROR] PostgreSQL backend is unreachable: dial tcp 10.96.0.42:5432: connect: connection refused"
+      },
+      {
+        "line": 38,
+        "t_s": 6.15,
+        "text": "2026-10-09 03:14:16 [FATAL] DB connection pool exhausted: 20/20 active connections severed"
+      },
+      {
+        "line": 39,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_3998a: database connection refused"
+      },
+      {
+        "line": 40,
+        "t_s": 6.32,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_4098a: database connection refused"
+      },
+      {
+        "line": 41,
+        "t_s": 6.44,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_4198a: database connection refused"
+      },
+      {
+        "line": 42,
+        "t_s": 6.56,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_4298a: database connection refused"
+      },
+      {
+        "line": 43,
+        "t_s": 6.68,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_4398a: database connection refused"
+      },
+      {
+        "line": 44,
+        "t_s": 6.8,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_4498a: database connection refused"
+      },
+      {
+        "line": 45,
+        "t_s": 6.92,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_4598a: database connection refused"
+      },
+      {
+        "line": 46,
+        "t_s": 7.04,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_4698a: database connection refused"
+      },
+      {
+        "line": 47,
+        "t_s": 7.16,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_4798a: database connection refused"
+      },
+      {
+        "line": 48,
+        "t_s": 7.28,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_4898a: database connection refused"
+      },
+      {
+        "line": 49,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_4998a: database connection refused"
+      },
+      {
+        "line": 50,
+        "t_s": 7.52,
+        "text": "2026-10-09 03:14:17 [ERROR] Session validation failed for token tk_5098a: database connection refused"
+      }
+    ],
+    "payment-service": [
+      {
+        "line": 1,
+        "t_s": 1.14,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2001 processed successfully"
+      },
+      {
+        "line": 2,
+        "t_s": 1.28,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2002 processed successfully"
+      },
+      {
+        "line": 3,
+        "t_s": 1.42,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2003 processed successfully"
+      },
+      {
+        "line": 4,
+        "t_s": 1.56,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2004 processed successfully"
+      },
+      {
+        "line": 5,
+        "t_s": 1.7,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2005 processed successfully"
+      },
+      {
+        "line": 6,
+        "t_s": 1.84,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2006 processed successfully"
+      },
+      {
+        "line": 7,
+        "t_s": 1.98,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2007 processed successfully"
+      },
+      {
+        "line": 8,
+        "t_s": 2.12,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2008 processed successfully"
+      },
+      {
+        "line": 9,
+        "t_s": 2.26,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2009 processed successfully"
+      },
+      {
+        "line": 10,
+        "t_s": 2.4,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2010 processed successfully"
+      },
+      {
+        "line": 11,
+        "t_s": 2.54,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2011 processed successfully"
+      },
+      {
+        "line": 12,
+        "t_s": 2.68,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2012 processed successfully"
+      },
+      {
+        "line": 13,
+        "t_s": 2.82,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2013 processed successfully"
+      },
+      {
+        "line": 14,
+        "t_s": 2.96,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2014 processed successfully"
+      },
+      {
+        "line": 15,
+        "t_s": 3.1,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2015 processed successfully"
+      },
+      {
+        "line": 16,
+        "t_s": 3.24,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2016 processed successfully"
+      },
+      {
+        "line": 17,
+        "t_s": 3.38,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2017 processed successfully"
+      },
+      {
+        "line": 18,
+        "t_s": 3.52,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2018 processed successfully"
+      },
+      {
+        "line": 19,
+        "t_s": 3.66,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2019 processed successfully"
+      },
+      {
+        "line": 20,
+        "t_s": 3.8,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2020 processed successfully"
+      },
+      {
+        "line": 21,
+        "t_s": 3.94,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2021 processed successfully"
+      },
+      {
+        "line": 22,
+        "t_s": 4.08,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2022 processed successfully"
+      },
+      {
+        "line": 23,
+        "t_s": 4.22,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2023 processed successfully"
+      },
+      {
+        "line": 24,
+        "t_s": 4.36,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2024 processed successfully"
+      },
+      {
+        "line": 25,
+        "t_s": 4.5,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2025 processed successfully"
+      },
+      {
+        "line": 26,
+        "t_s": 4.64,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2026 processed successfully"
+      },
+      {
+        "line": 27,
+        "t_s": 4.78,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2027 processed successfully"
+      },
+      {
+        "line": 28,
+        "t_s": 4.92,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2028 processed successfully"
+      },
+      {
+        "line": 29,
+        "t_s": 5.06,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2029 processed successfully"
+      },
+      {
+        "line": 30,
+        "t_s": 5.2,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2030 processed successfully"
+      },
+      {
+        "line": 31,
+        "t_s": 5.34,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2031 processed successfully"
+      },
+      {
+        "line": 32,
+        "t_s": 5.48,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2032 processed successfully"
+      },
+      {
+        "line": 33,
+        "t_s": 5.62,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2033 processed successfully"
+      },
+      {
+        "line": 34,
+        "t_s": 5.76,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2034 processed successfully"
+      },
+      {
+        "line": 35,
+        "t_s": 5.9,
+        "text": "2026-10-09 03:14:10 [INFO] Payment intent pi_2035 processed successfully"
+      },
+      {
+        "line": 36,
+        "t_s": 6.06,
+        "text": "2026-10-09 03:14:16 [ERROR] Database write transaction failed: connection to server on socket postgres:5432 was closed"
+      },
+      {
+        "line": 37,
+        "t_s": 6.12,
+        "text": "2026-10-09 03:14:16 [ERROR] Failed to commit order ledger row: connection reset by peer"
+      },
+      {
+        "line": 38,
+        "t_s": 6.18,
+        "text": "2026-10-09 03:14:16 [WARN] Circuit breaker tripped for database cluster: STATE=OPEN"
+      },
+      {
+        "line": 39,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_390 failed: upstream database down"
+      },
+      {
+        "line": 40,
+        "t_s": 6.32,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_400 failed: upstream database down"
+      },
+      {
+        "line": 41,
+        "t_s": 6.44,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_410 failed: upstream database down"
+      },
+      {
+        "line": 42,
+        "t_s": 6.56,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_420 failed: upstream database down"
+      },
+      {
+        "line": 43,
+        "t_s": 6.68,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_430 failed: upstream database down"
+      },
+      {
+        "line": 44,
+        "t_s": 6.8,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_440 failed: upstream database down"
+      },
+      {
+        "line": 45,
+        "t_s": 6.92,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_450 failed: upstream database down"
+      },
+      {
+        "line": 46,
+        "t_s": 7.04,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_460 failed: upstream database down"
+      },
+      {
+        "line": 47,
+        "t_s": 7.16,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_470 failed: upstream database down"
+      },
+      {
+        "line": 48,
+        "t_s": 7.28,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_480 failed: upstream database down"
+      },
+      {
+        "line": 49,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_490 failed: upstream database down"
+      },
+      {
+        "line": 50,
+        "t_s": 7.52,
+        "text": "2026-10-09 03:14:17 [CRITICAL] Checkout transaction tx_500 failed: upstream database down"
+      }
+    ],
+    "api-gateway": [
+      {
+        "line": 1,
+        "t_s": 1.14,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 2,
+        "t_s": 1.28,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 3,
+        "t_s": 1.42,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 4,
+        "t_s": 1.56,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 5,
+        "t_s": 1.7,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 6,
+        "t_s": 1.84,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 7,
+        "t_s": 1.98,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 8,
+        "t_s": 2.12,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 9,
+        "t_s": 2.26,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 10,
+        "t_s": 2.4,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 11,
+        "t_s": 2.54,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 12,
+        "t_s": 2.68,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 13,
+        "t_s": 2.82,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 14,
+        "t_s": 2.96,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 15,
+        "t_s": 3.1,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 16,
+        "t_s": 3.24,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 17,
+        "t_s": 3.38,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 18,
+        "t_s": 3.52,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 19,
+        "t_s": 3.66,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 20,
+        "t_s": 3.8,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 21,
+        "t_s": 3.94,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 22,
+        "t_s": 4.08,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 23,
+        "t_s": 4.22,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 24,
+        "t_s": 4.36,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 25,
+        "t_s": 4.5,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 26,
+        "t_s": 4.64,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 27,
+        "t_s": 4.78,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 28,
+        "t_s": 4.92,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 29,
+        "t_s": 5.06,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 30,
+        "t_s": 5.2,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 31,
+        "t_s": 5.34,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 32,
+        "t_s": 5.48,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 33,
+        "t_s": 5.62,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 34,
+        "t_s": 5.76,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 35,
+        "t_s": 5.9,
+        "text": "2026-10-09 03:14:10 [INFO] HTTP GET /api/v1/health 200 OK - 2ms"
+      },
+      {
+        "line": 36,
+        "t_s": 6.15,
+        "text": "2026-10-09 03:14:16 [ERROR] Upstream auth-service returned HTTP 503 Service Unavailable"
+      },
+      {
+        "line": 37,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:16 [ERROR] 502 Bad Gateway: upstream auth-service unavailable"
+      },
+      {
+        "line": 38,
+        "t_s": 6.25,
+        "text": "2026-10-09 03:14:16 [ERROR] 502 Bad Gateway: upstream payment-service timed out after 5000ms"
+      },
+      {
+        "line": 39,
+        "t_s": 6.3,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #3900)"
+      },
+      {
+        "line": 40,
+        "t_s": 6.41,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #4000)"
+      },
+      {
+        "line": 41,
+        "t_s": 6.52,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #4100)"
+      },
+      {
+        "line": 42,
+        "t_s": 6.63,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #4200)"
+      },
+      {
+        "line": 43,
+        "t_s": 6.74,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #4300)"
+      },
+      {
+        "line": 44,
+        "t_s": 6.85,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #4400)"
+      },
+      {
+        "line": 45,
+        "t_s": 6.96,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #4500)"
+      },
+      {
+        "line": 46,
+        "t_s": 7.07,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #4600)"
+      },
+      {
+        "line": 47,
+        "t_s": 7.18,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #4700)"
+      },
+      {
+        "line": 48,
+        "t_s": 7.29,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #4800)"
+      },
+      {
+        "line": 49,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #4900)"
+      },
+      {
+        "line": 50,
+        "t_s": 7.51,
+        "text": "2026-10-09 03:14:17 [WARN] Rate limiting and failing client requests: 502 Bad Gateway (req_id #5000)"
+      }
+    ],
+    "web-ui": [
+      {
+        "line": 1,
+        "t_s": 1.14,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 2,
+        "t_s": 1.28,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 3,
+        "t_s": 1.42,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 4,
+        "t_s": 1.56,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 5,
+        "t_s": 1.7,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 6,
+        "t_s": 1.84,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 7,
+        "t_s": 1.98,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 8,
+        "t_s": 2.12,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 9,
+        "t_s": 2.26,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 10,
+        "t_s": 2.4,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 11,
+        "t_s": 2.54,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 12,
+        "t_s": 2.68,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 13,
+        "t_s": 2.82,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 14,
+        "t_s": 2.96,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 15,
+        "t_s": 3.1,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 16,
+        "t_s": 3.24,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 17,
+        "t_s": 3.38,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 18,
+        "t_s": 3.52,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 19,
+        "t_s": 3.66,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 20,
+        "t_s": 3.8,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 21,
+        "t_s": 3.94,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 22,
+        "t_s": 4.08,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 23,
+        "t_s": 4.22,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 24,
+        "t_s": 4.36,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 25,
+        "t_s": 4.5,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 26,
+        "t_s": 4.64,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 27,
+        "t_s": 4.78,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 28,
+        "t_s": 4.92,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 29,
+        "t_s": 5.06,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 30,
+        "t_s": 5.2,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 31,
+        "t_s": 5.34,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 32,
+        "t_s": 5.48,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 33,
+        "t_s": 5.62,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 34,
+        "t_s": 5.76,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 35,
+        "t_s": 5.9,
+        "text": "2026-10-09 03:14:10 [DEBUG] React hydrated successfully; polling metrics telemetry"
+      },
+      {
+        "line": 36,
+        "t_s": 6.25,
+        "text": "2026-10-09 03:14:16 [ERROR] Client RPC failed: 502 returned from api-gateway for user session #200"
+      },
+      {
+        "line": 37,
+        "t_s": 6.3,
+        "text": "2026-10-09 03:14:16 [WARN] UI entering degraded state: displaying connection error banner"
+      },
+      {
+        "line": 38,
+        "t_s": 6.35,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #38: 502 Bad Gateway"
+      },
+      {
+        "line": 39,
+        "t_s": 6.46,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #39: 502 Bad Gateway"
+      },
+      {
+        "line": 40,
+        "t_s": 6.57,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #40: 502 Bad Gateway"
+      },
+      {
+        "line": 41,
+        "t_s": 6.68,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #41: 502 Bad Gateway"
+      },
+      {
+        "line": 42,
+        "t_s": 6.79,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #42: 502 Bad Gateway"
+      },
+      {
+        "line": 43,
+        "t_s": 6.9,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #43: 502 Bad Gateway"
+      },
+      {
+        "line": 44,
+        "t_s": 7.01,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #44: 502 Bad Gateway"
+      },
+      {
+        "line": 45,
+        "t_s": 7.12,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #45: 502 Bad Gateway"
+      },
+      {
+        "line": 46,
+        "t_s": 7.23,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #46: 502 Bad Gateway"
+      },
+      {
+        "line": 47,
+        "t_s": 7.34,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #47: 502 Bad Gateway"
+      },
+      {
+        "line": 48,
+        "t_s": 7.45,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #48: 502 Bad Gateway"
+      },
+      {
+        "line": 49,
+        "t_s": 7.56,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #49: 502 Bad Gateway"
+      },
+      {
+        "line": 50,
+        "t_s": 7.67,
+        "text": "2026-10-09 03:14:17 [ERROR] Network request failed for view #50: 502 Bad Gateway"
+      }
     ]
   },
   "alerts": [
