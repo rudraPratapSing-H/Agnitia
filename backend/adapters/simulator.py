@@ -52,64 +52,66 @@ _DEFAULT_METRICS: Dict[str, Dict[str, float]] = {
     "web-ui": {"mem_mb": 42.0, "cpu_pct": 5.0},
 }
 
-class SimulatorAdapter(ClusterAdapter):
-    def __init__(self):
-        self.services: Dict[str, ServiceNode] = {}
-        self.active_scenario: Optional[dict] = None
-        self.logs_store: Dict[str, List[LogLine]] = {svc: [] for svc in DEFAULT_SERVICES}
-        self.metrics_store: Dict[str, List[MetricPoint]] = {svc: [] for svc in DEFAULT_SERVICES}
-        self.events_store: Dict[str, List[K8sEvent]] = {svc: [] for svc in DEFAULT_SERVICES}
-        self.reset()
 
-    def reset(self):
-        """Resets all monitored services to healthy status and clears active incidents."""
-        self.services = {
-            s_id: ServiceNode(
-                id=s_id,
-                label=data["label"],
-                tier=data["tier"],
-                depends_on=data["depends_on"],
-                status="healthy",
-                metrics=ServiceMetrics(**data["metrics"]),
-            )
-            for s_id, data in DEFAULT_SERVICES.items()
-        }
-        self.active_scenario = None
-        self.logs_store = {svc: [] for svc in DEFAULT_SERVICES}
-        self.metrics_store = {svc: [] for svc in DEFAULT_SERVICES}
-        self.events_store = {svc: [] for svc in DEFAULT_SERVICES}
+def _build_default_services() -> Dict[str, ServiceNode]:
+    """Builds fresh healthy ServiceNodes from graph constants."""
+    services: Dict[str, ServiceNode] = {}
+    for svc_id in DEPENDS_ON:
+        defaults = _DEFAULT_METRICS.get(svc_id, {"mem_mb": 50.0, "cpu_pct": 10.0})
+        limit = _DEFAULT_MEM_LIMITS.get(svc_id, 128.0)
+        services[svc_id] = ServiceNode(
+            id=svc_id,
+            label=SERVICE_LABELS[svc_id],
+            tier=TIERS[svc_id],
+            depends_on=list(DEPENDS_ON[svc_id]),
+            status="healthy",
+            metrics=ServiceMetrics(
+                mem_mb=defaults["mem_mb"],
+                mem_limit_mb=limit,
+                cpu_pct=defaults["cpu_pct"],
+                restarts=0,
+            ),
+        )
+    return services
 
-    def load_scenario(self, scenario_id: str) -> Optional[dict]:
-        scenario_file = SCENARIOS_DIR / f"{scenario_id}.json"
-        if not scenario_file.exists():
-            return None
-        with open(scenario_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        self.active_scenario = data
 
-        # Populate telemetry stores from scenario dataset (handoff from Member 4)
-        for svc, lines in data.get("logs", {}).items():
-            self.logs_store[svc] = [
-                LogLine(line=l.get("line", idx + 1), t_s=l.get("t_s", 0.0), text=l.get("text", ""), service=svc)
-                for idx, l in enumerate(lines)
-            ]
+class SimulatorAdapter:
+    """Deterministic cluster simulator that plays scenario files on a timeline."""
 
-        for ev in data.get("events", []):
-            ev_svc = ev.get("service", "postgres")
-            if ev_svc in self.events_store:
-                self.events_store[ev_svc].append(
-                    K8sEvent(t_s=ev.get("t_s", 0.0), service=ev_svc, text=ev.get("text", ""))
-                )
+    def __init__(
+        self,
+        speed: Optional[float] = None,
+        step_delay_s: Optional[float] = None,
+    ) -> None:
+        self.speed: float = speed if speed is not None else float(os.getenv("SIM_SPEED", "1.0"))
+        self.step_delay_s: float = (
+            step_delay_s if step_delay_s is not None else float(os.getenv("SIM_STEP_DELAY_S", "2.0"))
+        )
 
-        for svc, pts in data.get("metrics", {}).items():
-            if svc in self.metrics_store:
-                self.metrics_store[svc] = [
-                    MetricPoint(t_s=p.get("t_s", 0.0), mem_mb=p.get("mem_mb", 0.0), cpu_pct=p.get("cpu_pct", 0.0), service=svc)
-                    for p in pts
-                ]
+        # State
+        self.services: Dict[str, ServiceNode] = _build_default_services()
+        self._logs: Dict[str, List[LogLine]] = {s: [] for s in DEPENDS_ON}
+        self._metrics: Dict[str, List[MetricPoint]] = {s: [] for s in DEPENDS_ON}
+        self._events: Dict[str, List[K8sEvent]] = {s: [] for s in DEPENDS_ON}
 
-        return data
+        self._scenario: Optional[Dict[str, Any]] = None
+        self._incident_counter: int = 104
+        self._current_incident_id: Optional[str] = None
+        self._playback_time: float = 0.0
+        self._fault_fixed: bool = False
+        self._restarted_since_fault: Set[str] = set()
+        self._running_tasks: List[asyncio.Task] = []
 
+        # Callback set by main.py
+        self.on_alerts_complete: Optional[Callable] = None
+
+    async def _sleep(self, seconds: float) -> None:
+        """All waiting goes through here so tests can run at speed=200."""
+        if seconds <= 0:
+            return
+        await asyncio.sleep(seconds / self.speed)
+
+    # ── ClusterAdapter Protocol methods ──────────────────────────────────
 
     async def list_services(self) -> List[ServiceNode]:
         """Returns copies of current ServiceNodes."""
