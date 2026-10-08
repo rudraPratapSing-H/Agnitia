@@ -214,3 +214,122 @@ def test_empty_evidence_list(sample_telemetry):
     # Empty evidence list: change nothing except warning = "No evidence cited"
     assert verified_rca.confidence == 0.85
     assert verified_rca.warning == "No evidence cited"
+
+
+def test_log_without_line_number_verified(sample_telemetry):
+    logs, events, metrics = sample_telemetry
+
+    rca = RCA(
+        root_cause="PostgreSQL OOM",
+        category="OOMKilled",
+        confidence=0.90,
+        evidence=[
+            Evidence(type="log", source="postgres-0", line=None, text="server process terminated"),
+        ],
+    )
+
+    verified_rca = verify_citations(rca, logs, events, metrics)
+    assert verified_rca.evidence[0].verified is True
+    assert verified_rca.confidence == 0.90
+    assert verified_rca.warning is None
+
+
+def test_case_sensitivity(sample_telemetry):
+    logs, events, metrics = sample_telemetry
+
+    # Text matches in lowercase but not exact case ("fatal: out of memory" vs "FATAL: out of memory")
+    rca = RCA(
+        root_cause="PostgreSQL OOM",
+        category="OOMKilled",
+        confidence=0.90,
+        evidence=[
+            Evidence(type="log", source="postgres-0", line=42, text="fatal: out of memory"),
+        ],
+    )
+
+    verified_rca = verify_citations(rca, logs, events, metrics)
+    assert verified_rca.evidence[0].verified is False
+    assert verified_rca.confidence == 0.70
+    assert verified_rca.warning is not None
+
+
+def test_multiple_failures_penalty_applied_once(sample_telemetry):
+    logs, events, metrics = sample_telemetry
+
+    rca = RCA(
+        root_cause="PostgreSQL failure",
+        category="OOMKilled",
+        confidence=0.95,
+        evidence=[
+            Evidence(type="log", source="postgres-0", line=42, text="FATAL: disk full"),
+            Evidence(type="metric", source="postgres-0", text="memory 999.0Mi exceeded"),
+        ],
+    )
+
+    verified_rca = verify_citations(rca, logs, events, metrics)
+    # Penalty of 0.2 applied ONCE even when two citations fail
+    assert verified_rca.confidence == 0.75
+    assert verified_rca.warning is not None
+    assert "2 citation(s) could not be verified against the raw data" in verified_rca.warning
+    assert "FATAL: disk full" in verified_rca.warning
+    assert "memory 999.0Mi exceeded" in verified_rca.warning
+
+
+def test_metric_cpu_pct_and_boundary(sample_telemetry):
+    logs, events, metrics = sample_telemetry
+
+    # Telemetry has cpu_pct=25.0 and mem_mb=63.8
+    # 25.05 is within +-0.1 of 25.0
+    # 63.7 is within +-0.1 of 63.8 (testing float representation precision)
+    rca = RCA(
+        root_cause="PostgreSQL resource spike",
+        category="OOMKilled",
+        confidence=0.90,
+        evidence=[
+            Evidence(type="metric", source="postgres-0", text="cpu reached 25.05% at peak"),
+            Evidence(type="metric", source="postgres-0", text="memory 63.7Mi observed"),
+        ],
+    )
+
+    verified_rca = verify_citations(rca, logs, events, metrics)
+    assert verified_rca.evidence[0].verified is True
+    assert verified_rca.evidence[1].verified is True
+    assert verified_rca.confidence == 0.90
+    assert verified_rca.warning is None
+
+
+def test_metric_without_number_unverified(sample_telemetry):
+    logs, events, metrics = sample_telemetry
+
+    rca = RCA(
+        root_cause="PostgreSQL crash",
+        category="OOMKilled",
+        confidence=0.90,
+        evidence=[
+            Evidence(type="metric", source="postgres-0", text="memory exhausted without numbers"),
+        ],
+    )
+
+    verified_rca = verify_citations(rca, logs, events, metrics)
+    assert verified_rca.evidence[0].verified is False
+    assert verified_rca.confidence == 0.70
+    assert verified_rca.warning is not None
+
+
+def test_deep_copy_evidence_isolation(sample_telemetry):
+    logs, events, metrics = sample_telemetry
+
+    ev = Evidence(type="log", source="postgres-0", line=42, text="FATAL: disk full", verified=False)
+    rca = RCA(
+        root_cause="PostgreSQL crash",
+        category="OOMKilled",
+        confidence=0.90,
+        evidence=[ev],
+    )
+
+    verified_rca = verify_citations(rca, logs, events, metrics)
+    # Mutating verified_rca evidence directly does not affect input rca
+    verified_rca.evidence[0].verified = True
+    assert rca.evidence[0].verified is False
+    assert rca.evidence[0] is not verified_rca.evidence[0]
+

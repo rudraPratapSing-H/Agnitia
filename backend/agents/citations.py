@@ -1,7 +1,6 @@
 """Citation Verifier: Verifies that LLM claims directly match raw logs, events, and metrics"""
 
 import re
-from typing import List
 from backend.models import RCA, LogLine, K8sEvent, MetricPoint
 
 
@@ -23,9 +22,9 @@ def _extract_first_number(text: str) -> float | None:
 
 def verify_citations(
     rca: RCA,
-    logs: List[LogLine],
-    events: List[K8sEvent],
-    metrics: List[MetricPoint],
+    logs: list[LogLine],
+    events: list[K8sEvent],
+    metrics: list[MetricPoint],
 ) -> RCA:
     """
     Verifies cited evidence items against raw cluster telemetry.
@@ -37,7 +36,7 @@ def verify_citations(
         rca_copy.warning = "No evidence cited"
         return rca_copy
 
-    failing_texts: List[str] = []
+    failing_texts: list[str] = []
 
     for ev in rca_copy.evidence:
         norm_text = _normalise(ev.text)
@@ -68,7 +67,8 @@ def verify_citations(
             first_num = _extract_first_number(ev.text)
             if first_num is not None:
                 verified = any(
-                    abs(pt.mem_mb - first_num) <= 0.1 or abs(pt.cpu_pct - first_num) <= 0.1
+                    abs(pt.mem_mb - first_num) <= 0.1 + 1e-7
+                    or abs(pt.cpu_pct - first_num) <= 0.1 + 1e-7
                     for pt in metrics
                 )
             else:
