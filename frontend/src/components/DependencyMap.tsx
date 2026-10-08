@@ -1,4 +1,4 @@
-// D:\CoffeeOverflow\Agnitia\frontend\src\components\DependencyMap.tsx - Spacious Vertical Architecture Map
+// D:\CoffeeOverflow\Agnitia\frontend\src\components\DependencyMap.tsx - Root-Cause Waterfall Flow (Database -> UI)
 import React, { useMemo } from 'react';
 import {
   ReactFlow,
@@ -15,14 +15,18 @@ const nodeTypes = {
   serviceNode: ServiceNode
 };
 
-// Spacious Vertical Layout (Each node is w: 220px, with generous 75px vertical & 100px horizontal gutters)
+// Causal Waterfall Layout:
+// Tier 1 (Top / Root Sources): PostgreSQL & Redis
+// Tier 2 (Backend Services): Auth & Payment
+// Tier 3 (Edge Routing): API Gateway
+// Tier 4 (Bottom / End User): Web Storefront
 const VERTICAL_POSITIONS: Record<string, { x: number; y: number }> = {
-  "web-ui": { x: 230, y: 30 },
-  "api-gateway": { x: 230, y: 220 },
-  "auth-service": { x: 50, y: 420 },
-  "payment-service": { x: 410, y: 420 },
-  "redis": { x: 50, y: 620 },
-  "postgres": { x: 410, y: 620 }
+  "redis": { x: 50, y: 30 },
+  "postgres": { x: 410, y: 30 },
+  "auth-service": { x: 50, y: 230 },
+  "payment-service": { x: 410, y: 230 },
+  "api-gateway": { x: 230, y: 430 },
+  "web-ui": { x: 230, y: 630 }
 };
 
 interface DependencyMapProps {
@@ -41,13 +45,14 @@ export default function DependencyMap({ services, activeScenario }: DependencyMa
   }, [services]);
 
   const edges = useMemo<Edge[]>(() => {
+    // Causal Cascade Flow: Failures & data flow downward from Database/Cache -> Services -> Gateway -> UI
     const rawEdges = [
-      { id: 'e-web-gw', source: 'web-ui', target: 'api-gateway' },
-      { id: 'e-gw-auth', source: 'api-gateway', target: 'auth-service' },
-      { id: 'e-gw-pay', source: 'api-gateway', target: 'payment-service' },
-      { id: 'e-auth-redis', source: 'auth-service', target: 'redis' },
-      { id: 'e-auth-pg', source: 'auth-service', target: 'postgres' },
-      { id: 'e-pay-pg', source: 'payment-service', target: 'postgres' }
+      { id: 'e-redis-auth', source: 'redis', target: 'auth-service' },
+      { id: 'e-pg-auth', source: 'postgres', target: 'auth-service' },
+      { id: 'e-pg-pay', source: 'postgres', target: 'payment-service' },
+      { id: 'e-auth-gw', source: 'auth-service', target: 'api-gateway' },
+      { id: 'e-pay-gw', source: 'payment-service', target: 'api-gateway' },
+      { id: 'e-gw-web', source: 'api-gateway', target: 'web-ui' }
     ];
 
     return rawEdges.map((edge) => {
@@ -76,7 +81,7 @@ export default function DependencyMap({ services, activeScenario }: DependencyMa
 
       return {
         ...edge,
-        type: 'smoothstep', // Clean architectural orthogonal curves
+        type: 'smoothstep',
         animated: isAnimated,
         pathOptions: {
           borderRadius: 14
@@ -103,17 +108,17 @@ export default function DependencyMap({ services, activeScenario }: DependencyMa
         <div className="bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-lg border border-stone-200 shadow-xs flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           <span className="text-[11px] font-bold text-stone-800 tracking-wider font-mono uppercase">
-            System Topology
+            Causal Blast Radius Flow
           </span>
           <span className="text-[10px] text-stone-400 font-mono">
-            Vertical Architecture DAG
+            Root (Top) &rarr; Consumers (Bottom)
           </span>
         </div>
 
         {activeScenario && (
           <div className="bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 text-[10px] font-mono text-rose-800 font-semibold flex items-center gap-1.5 shadow-2xs">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
-            BLAST RADIUS ACTIVE
+            DOWNSTREAM CASCADE ACTIVE
           </div>
         )}
       </div>
@@ -130,7 +135,7 @@ export default function DependencyMap({ services, activeScenario }: DependencyMa
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-amber-500" />
-          <span>Impacted</span>
+          <span>Cascading Victim</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-sky-500" />

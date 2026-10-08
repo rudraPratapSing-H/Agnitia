@@ -1,13 +1,17 @@
 // D:\CoffeeOverflow\Agnitia\frontend\src\App.tsx - Clean SRE Mission Control
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAgnitiaStore } from './store';
-import { connectWebSocket } from './ws';
+import { connectWebSocket, executeFullHealFlow } from './ws';
 import DependencyMap from './components/DependencyMap';
 import AlertFunnel from './components/AlertFunnel';
 import IncidentCard from './components/IncidentCard';
 import AgentStrip from './components/AgentStrip';
 import ChaosPanel from './components/ChaosPanel';
+import EvidenceDrawer from './components/EvidenceDrawer';
+import ApprovalModal from './components/ApprovalModal';
 import ReasoningPanel from './components/extras/ReasoningPanel';
+import Stopwatch from './components/extras/Stopwatch';
+import CostTicker from './components/extras/CostTicker';
 import { Shield, AlertTriangle } from 'lucide-react';
 
 export default function App() {
@@ -23,14 +27,27 @@ export default function App() {
     wsConnected
   } = useAgnitiaStore();
 
+  const [isEvidenceOpen, setIsEvidenceOpen] = useState(false);
+  const [isApprovalOpen, setIsApprovalOpen] = useState(false);
+  const [isAuthorizing, setIsAuthorizing] = useState(false);
+
   useEffect(() => {
     connectWebSocket();
   }, []);
 
+  const handleAuthorizePlaybook = () => {
+    setIsAuthorizing(true);
+    executeFullHealFlow();
+    setTimeout(() => {
+      setIsAuthorizing(false);
+      setIsApprovalOpen(false);
+    }, 1200);
+  };
+
   return (
     <div className="min-h-screen bg-[#f7f5f0] text-stone-900 flex flex-col p-3 md:p-4 gap-2.5 select-none font-sans">
       {/* Top Header */}
-      <header className="bg-white border border-stone-200 rounded-xl px-4 py-2.5 shadow-2xs flex items-center justify-between font-mono">
+      <header className="bg-white border border-stone-200 rounded-xl px-4 py-2.5 shadow-2xs flex flex-wrap items-center justify-between gap-2 font-mono">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded-lg bg-stone-900 text-white flex items-center justify-center shadow-xs">
             <Shield size={16} />
@@ -42,14 +59,26 @@ export default function App() {
                 INFRA RELIABILITY ORCHESTRATOR
               </span>
             </h1>
-            <p className="text-[10px] text-stone-500">
-              Topological Root Cause Analysis & Automated Safe Recovery
+            <p className="text-[10px] text-stone-500 font-sans">
+              Topological Root Cause Analysis & Autonomous Safe Recovery
             </p>
           </div>
         </div>
 
-        {/* Telemetry Status Badges */}
-        <div className="flex items-center gap-2 text-xs">
+        {/* Header Telemetry Badges with Stopwatch & Financial Impact */}
+        <div className="flex items-center gap-2 text-xs flex-wrap">
+          {/* MTTR Stopwatch */}
+          <Stopwatch
+            isActive={!!incident && incident.status !== 'resolved'}
+            resolvedAt={incident?.resolved_at}
+          />
+
+          {/* Downtime Cost Ticker */}
+          <CostTicker
+            isActive={!!incident && incident.status !== 'resolved'}
+            resolvedAt={incident?.resolved_at}
+          />
+
           <div className="bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className="text-stone-500 text-[10px]">CLUSTER:</span>
@@ -97,7 +126,12 @@ export default function App() {
         {/* Right: Alert Stream, Incident Dossier & Log */}
         <section className="lg:col-span-5 flex flex-col gap-2.5 overflow-y-auto max-h-[760px] custom-scrollbar pr-1">
           <AlertFunnel alerts={alerts} incident={incident} />
-          <IncidentCard incident={incident} stepStatus={stepStatus} />
+          <IncidentCard
+            incident={incident}
+            stepStatus={stepStatus}
+            onOpenEvidence={() => setIsEvidenceOpen(true)}
+            onOpenApproval={() => setIsApprovalOpen(true)}
+          />
           <ReasoningPanel steps={agentSteps} isSimulating={isSimulating} />
         </section>
       </main>
@@ -110,6 +144,22 @@ export default function App() {
           wsConnected={wsConnected}
         />
       </footer>
+
+      {/* Phase 2: Evidence Drawer Modal / Slide-over */}
+      <EvidenceDrawer
+        isOpen={isEvidenceOpen}
+        onClose={() => setIsEvidenceOpen(false)}
+        incident={incident}
+      />
+
+      {/* Phase 2: Human-in-the-Loop Approval Modal */}
+      <ApprovalModal
+        isOpen={isApprovalOpen}
+        onClose={() => setIsApprovalOpen(false)}
+        onAuthorize={handleAuthorizePlaybook}
+        incident={incident}
+        authorizing={isAuthorizing}
+      />
     </div>
   );
 }
