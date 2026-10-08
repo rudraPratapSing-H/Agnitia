@@ -1,6 +1,6 @@
-"""ClusterAdapter Protocol Interface for Agnitia"""
+"""ClusterAdapter Protocol Interface for Agnitia."""
 
-from typing import Protocol, List
+from typing import Protocol, List, Set
 from backend.models import (
     ServiceNode,
     LogLine,
@@ -9,6 +9,16 @@ from backend.models import (
     PlaybookStep,
     ActionResult,
 )
+
+ALLOWED_ACTIONS: Set[str] = {
+    "patch_memory_limit",
+    "patch_cpu_limit",
+    "rollout_restart",
+    "rollback_deployment",
+    "scale_replicas",
+    "wait_for_ready",
+    "verify_health",
+}
 
 
 class ClusterAdapter(Protocol):

@@ -1,44 +1,26 @@
-"""Kubernetes Cluster Adapter (Phase 3 Integration)"""
+"""Real Kubernetes Adapter for Agnitia (Phase 3 Stretch)"""
 
-from typing import List
-from backend.models import (
-    ServiceNode,
-    LogLine,
-    MetricPoint,
-    K8sEvent,
-    PlaybookStep,
-    ActionResult,
-)
+from typing import List, Dict, Any
 from backend.adapters.base import ClusterAdapter
+from backend.models import ServiceNode, LogLine, MetricPoint, K8sEvent, PlaybookStep, ActionResult
 
-
-class K8sAdapter(ClusterAdapter):
-    """Adapter for communicating with a live kind or k8s cluster via kubernetes python client."""
-
-    def __init__(self, kubeconfig_path: str = None):
-        self.kubeconfig_path = kubeconfig_path
-        self._client_initialized = False
+class K8sAdapter:
+    """Connects to a real kind cluster using kubernetes python client."""
 
     async def list_services(self) -> List[ServiceNode]:
-        # Stub for live cluster inspection
-        return []
+        raise NotImplementedError("K8s adapter not fully implemented yet")
 
     async def get_logs(self, service: str, lines: int = 50) -> List[LogLine]:
-        return []
+        raise NotImplementedError()
 
     async def get_metrics(self, service: str) -> List[MetricPoint]:
-        return []
+        raise NotImplementedError()
 
     async def get_events(self, service: str) -> List[K8sEvent]:
-        return []
+        raise NotImplementedError()
 
     async def apply_action(self, step: PlaybookStep) -> ActionResult:
-        return ActionResult(
-            success=True,
-            service=step.service,
-            action=step.action,
-            message=f"[K8s] Applied action {step.action} on {step.service}",
-        )
+        raise NotImplementedError()
 
     async def probe(self, service: str) -> bool:
-        return True
+        raise NotImplementedError()
