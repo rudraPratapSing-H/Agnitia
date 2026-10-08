@@ -1,0 +1,53 @@
+{
+  "rca": {
+    "root_cause": "Auth Service CPU saturation due to bcrypt password hashing thread contention",
+    "category": "CPUSaturation",
+    "confidence": 0.93,
+    "evidence": [
+      {
+        "type": "k8s_event",
+        "source": "auth-service-pod",
+        "line": null,
+        "text": "Warning: CPU Throttled for 85% of period",
+        "verified": true
+      },
+      {
+        "type": "metric",
+        "source": "auth-service-pod",
+        "line": null,
+        "text": "CPU utilization 98% > 85% threshold",
+        "verified": true
+      }
+    ],
+    "similar_incident": {
+      "id": "INC-065",
+      "similarity": 0.89
+    }
+  },
+  "playbook": {
+    "diff": "spec.replicas: 1 -> 3",
+    "steps": [
+      {
+        "order": 1,
+        "service": "auth-service",
+        "action": "scale_replicas",
+        "params": {
+          "from": 1,
+          "to": 3
+        },
+        "risk": "medium",
+        "requires_approval": false,
+        "verify": "replicas ready 3/3"
+      },
+      {
+        "order": 2,
+        "service": "api-gateway",
+        "action": "verify_health",
+        "params": {},
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "upstream response time < 100ms"
+      }
+    ]
+  }
+}

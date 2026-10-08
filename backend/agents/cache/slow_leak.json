@@ -1,0 +1,48 @@
+{
+  "rca": {
+    "root_cause": "PostgreSQL buffer pool memory leak leading toward OOM threshold",
+    "category": "ResourceLeak",
+    "confidence": 0.92,
+    "evidence": [
+      {
+        "type": "metric",
+        "source": "postgres-0",
+        "line": null,
+        "text": "Memory usage at 92% of limit (58.8Mi/64Mi)",
+        "verified": true
+      }
+    ],
+    "similar_incident": {
+      "id": "INC-054",
+      "similarity": 0.88
+    }
+  },
+  "playbook": {
+    "diff": "resources.limits.memory: 64Mi -> 256Mi",
+    "steps": [
+      {
+        "order": 1,
+        "service": "postgres",
+        "action": "patch_memory_limit",
+        "params": {
+          "from": "64Mi",
+          "to": "256Mi"
+        },
+        "risk": "high",
+        "requires_approval": true,
+        "verify": "port 5432 accepting connections"
+      },
+      {
+        "order": 2,
+        "service": "postgres",
+        "action": "wait_for_ready",
+        "params": {
+          "timeout_s": 20
+        },
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "health check ok"
+      }
+    ]
+  }
+}

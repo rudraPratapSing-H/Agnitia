@@ -1,0 +1,112 @@
+{
+  "id": "cpu_spike",
+  "title": "Auth Service CPU Saturation Spike",
+  "root_service": "auth-service",
+  "duration_s": 15,
+  "metrics": {
+    "auth-service": [
+      {
+        "t_s": 0.0,
+        "mem_mb": 55.0,
+        "cpu_pct": 20.0
+      },
+      {
+        "t_s": 0.5,
+        "mem_mb": 55.0,
+        "cpu_pct": 28.0
+      },
+      {
+        "t_s": 1.0,
+        "mem_mb": 55.0,
+        "cpu_pct": 36.0
+      },
+      {
+        "t_s": 1.5,
+        "mem_mb": 55.0,
+        "cpu_pct": 44.0
+      },
+      {
+        "t_s": 2.0,
+        "mem_mb": 55.0,
+        "cpu_pct": 52.0
+      },
+      {
+        "t_s": 2.5,
+        "mem_mb": 55.0,
+        "cpu_pct": 60.0
+      },
+      {
+        "t_s": 3.0,
+        "mem_mb": 55.0,
+        "cpu_pct": 68.0
+      },
+      {
+        "t_s": 3.5,
+        "mem_mb": 55.0,
+        "cpu_pct": 76.0
+      },
+      {
+        "t_s": 4.0,
+        "mem_mb": 55.0,
+        "cpu_pct": 84.0
+      },
+      {
+        "t_s": 4.5,
+        "mem_mb": 55.0,
+        "cpu_pct": 92.0
+      },
+      {
+        "t_s": 5.0,
+        "mem_mb": 55.0,
+        "cpu_pct": 98.5
+      },
+      {
+        "t_s": 5.5,
+        "mem_mb": 55.0,
+        "cpu_pct": 98.5
+      }
+    ]
+  },
+  "events": [
+    {
+      "t_s": 4.0,
+      "service": "auth-service",
+      "text": "Warning: CPU Throttled for 85% of period"
+    }
+  ],
+  "logs": {
+    "auth-service": [
+      {
+        "line": 1,
+        "t_s": 2.0,
+        "text": "Bcrypt worker threads saturated: 1000 tasks queued"
+      },
+      {
+        "line": 2,
+        "t_s": 4.0,
+        "text": "Request latency p99 exceeded 4500ms"
+      }
+    ]
+  },
+  "alerts": [
+    {
+      "id": "alt-cpu-01",
+      "t_s": 4.0,
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "CPU utilization 98% > 85% threshold"
+    },
+    {
+      "id": "alt-cpu-02",
+      "t_s": 4.5,
+      "service": "api-gateway",
+      "severity": "warning",
+      "message": "High latency upstream: auth-service p99 4.8s"
+    }
+  ],
+  "fix": {
+    "action": "scale_replicas",
+    "from": "1",
+    "to": "3"
+  }
+}

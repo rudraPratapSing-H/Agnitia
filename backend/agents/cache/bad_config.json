@@ -1,0 +1,64 @@
+{
+  "rca": {
+    "root_cause": "Payment Service failed startup due to missing STRIPE_SECRET_KEY_V2 environment variable",
+    "category": "ConfigError",
+    "confidence": 0.95,
+    "evidence": [
+      {
+        "type": "k8s_event",
+        "source": "payment-service-pod",
+        "line": null,
+        "text": "Back-off restarting failed container: CrashLoopBackOff",
+        "verified": true
+      },
+      {
+        "type": "log",
+        "source": "payment-service-pod",
+        "line": 2,
+        "text": "ConfigError: Missing required env var STRIPE_SECRET_KEY_V2",
+        "verified": true
+      }
+    ],
+    "similar_incident": {
+      "id": "INC-072",
+      "similarity": 0.91
+    }
+  },
+  "playbook": {
+    "diff": "image.tag: payment-service:v2.4.1 -> v2.4.0",
+    "steps": [
+      {
+        "order": 1,
+        "service": "payment-service",
+        "action": "rollback_deployment",
+        "params": {
+          "from": "v2.4.1",
+          "to": "v2.4.0"
+        },
+        "risk": "medium",
+        "requires_approval": false,
+        "verify": "pod running 1/1"
+      },
+      {
+        "order": 2,
+        "service": "payment-service",
+        "action": "wait_for_ready",
+        "params": {
+          "timeout_s": 15
+        },
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "readiness probe 200"
+      },
+      {
+        "order": 3,
+        "service": "api-gateway",
+        "action": "verify_health",
+        "params": {},
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "route latency normal"
+      }
+    ]
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "id": "bad_config",
+  "title": "Payment Service Bad Config CrashLoop",
+  "root_service": "payment-service",
+  "duration_s": 10,
+  "metrics": {
+    "payment-service": [
+      {
+        "t_s": 0.0,
+        "mem_mb": 72.0,
+        "cpu_pct": 5.0
+      },
+      {
+        "t_s": 0.5,
+        "mem_mb": 72.0,
+        "cpu_pct": 5.0
+      },
+      {
+        "t_s": 1.0,
+        "mem_mb": 72.0,
+        "cpu_pct": 5.0
+      },
+      {
+        "t_s": 1.5,
+        "mem_mb": 72.0,
+        "cpu_pct": 5.0
+      },
+      {
+        "t_s": 2.0,
+        "mem_mb": 72.0,
+        "cpu_pct": 5.0
+      },
+      {
+        "t_s": 2.5,
+        "mem_mb": 72.0,
+        "cpu_pct": 5.0
+      },
+      {
+        "t_s": 3.0,
+        "mem_mb": 72.0,
+        "cpu_pct": 5.0
+      },
+      {
+        "t_s": 3.5,
+        "mem_mb": 72.0,
+        "cpu_pct": 5.0
+      },
+      {
+        "t_s": 4.0,
+        "mem_mb": 72.0,
+        "cpu_pct": 5.0
+      },
+      {
+        "t_s": 4.5,
+        "mem_mb": 72.0,
+        "cpu_pct": 5.0
+      }
+    ]
+  },
+  "events": [
+    {
+      "t_s": 2.0,
+      "service": "payment-service",
+      "text": "Back-off restarting failed container: CrashLoopBackOff"
+    }
+  ],
+  "logs": {
+    "payment-service": [
+      {
+        "line": 1,
+        "t_s": 1.0,
+        "text": "Starting payment-service v2.4.1..."
+      },
+      {
+        "line": 2,
+        "t_s": 1.5,
+        "text": "ConfigError: Missing required env var STRIPE_SECRET_KEY_V2"
+      },
+      {
+        "line": 3,
+        "t_s": 1.8,
+        "text": "Process exited with code 1"
+      }
+    ]
+  },
+  "alerts": [
+    {
+      "id": "alt-cfg-01",
+      "t_s": 2.0,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "Pod CrashLoopBackOff: exit code 1"
+    },
+    {
+      "id": "alt-cfg-02",
+      "t_s": 2.5,
+      "service": "api-gateway",
+      "severity": "error",
+      "message": "503 Service Unavailable: payment-service"
+    },
+    {
+      "id": "alt-cfg-03",
+      "t_s": 3.0,
+      "service": "web-ui",
+      "severity": "warning",
+      "message": "Checkout route degraded"
+    }
+  ],
+  "fix": {
+    "action": "rollback_deployment",
+    "from": "v2.4.1",
+    "to": "v2.4.0"
+  }
+}

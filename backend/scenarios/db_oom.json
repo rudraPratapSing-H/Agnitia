@@ -1,0 +1,735 @@
+{
+  "id": "db_oom",
+  "title": "Database out of memory",
+  "root_service": "postgres",
+  "duration_s": 12,
+  "metrics": {
+    "postgres": [
+      {
+        "t_s": 0.0,
+        "mem_mb": 40.0,
+        "cpu_pct": 12.0
+      },
+      {
+        "t_s": 0.5,
+        "mem_mb": 42.0,
+        "cpu_pct": 14.5
+      },
+      {
+        "t_s": 1.0,
+        "mem_mb": 44.0,
+        "cpu_pct": 17.0
+      },
+      {
+        "t_s": 1.5,
+        "mem_mb": 46.0,
+        "cpu_pct": 19.5
+      },
+      {
+        "t_s": 2.0,
+        "mem_mb": 48.0,
+        "cpu_pct": 22.0
+      },
+      {
+        "t_s": 2.5,
+        "mem_mb": 50.0,
+        "cpu_pct": 24.5
+      },
+      {
+        "t_s": 3.0,
+        "mem_mb": 52.0,
+        "cpu_pct": 27.0
+      },
+      {
+        "t_s": 3.5,
+        "mem_mb": 54.0,
+        "cpu_pct": 29.5
+      },
+      {
+        "t_s": 4.0,
+        "mem_mb": 56.0,
+        "cpu_pct": 32.0
+      },
+      {
+        "t_s": 4.5,
+        "mem_mb": 58.0,
+        "cpu_pct": 34.5
+      },
+      {
+        "t_s": 5.0,
+        "mem_mb": 60.0,
+        "cpu_pct": 37.0
+      },
+      {
+        "t_s": 5.5,
+        "mem_mb": 62.0,
+        "cpu_pct": 39.5
+      },
+      {
+        "t_s": 6.0,
+        "mem_mb": 64.0,
+        "cpu_pct": 42.0
+      }
+    ]
+  },
+  "events": [
+    {
+      "t_s": 6.0,
+      "service": "postgres",
+      "text": "Reason: OOMKilled, Exit Code: 137"
+    }
+  ],
+  "logs": {
+    "postgres": [
+      {
+        "line": 1,
+        "t_s": 1.0,
+        "text": "2026-10-09 03:14:10 [LOG] worker thread 0 processing query batch"
+      },
+      {
+        "line": 2,
+        "t_s": 1.1,
+        "text": "2026-10-09 03:14:10 [LOG] worker thread 1 processing query batch"
+      },
+      {
+        "line": 3,
+        "t_s": 1.2,
+        "text": "2026-10-09 03:14:10 [LOG] worker thread 2 processing query batch"
+      },
+      {
+        "line": 4,
+        "t_s": 1.3,
+        "text": "2026-10-09 03:14:10 [LOG] worker thread 3 processing query batch"
+      },
+      {
+        "line": 5,
+        "t_s": 1.4,
+        "text": "2026-10-09 03:14:10 [LOG] worker thread 0 processing query batch"
+      },
+      {
+        "line": 6,
+        "t_s": 1.5,
+        "text": "2026-10-09 03:14:10 [LOG] worker thread 1 processing query batch"
+      },
+      {
+        "line": 7,
+        "t_s": 1.6,
+        "text": "2026-10-09 03:14:10 [LOG] worker thread 2 processing query batch"
+      },
+      {
+        "line": 8,
+        "t_s": 1.7,
+        "text": "2026-10-09 03:14:10 [LOG] worker thread 3 processing query batch"
+      },
+      {
+        "line": 9,
+        "t_s": 1.8,
+        "text": "2026-10-09 03:14:10 [LOG] worker thread 0 processing query batch"
+      },
+      {
+        "line": 10,
+        "t_s": 1.9,
+        "text": "2026-10-09 03:14:10 [LOG] worker thread 1 processing query batch"
+      },
+      {
+        "line": 11,
+        "t_s": 2.0,
+        "text": "2026-10-09 03:14:11 [LOG] worker thread 2 processing query batch"
+      },
+      {
+        "line": 12,
+        "t_s": 2.1,
+        "text": "2026-10-09 03:14:11 [LOG] worker thread 3 processing query batch"
+      },
+      {
+        "line": 13,
+        "t_s": 2.2,
+        "text": "2026-10-09 03:14:11 [LOG] worker thread 0 processing query batch"
+      },
+      {
+        "line": 14,
+        "t_s": 2.3,
+        "text": "2026-10-09 03:14:11 [LOG] worker thread 1 processing query batch"
+      },
+      {
+        "line": 15,
+        "t_s": 2.4,
+        "text": "2026-10-09 03:14:11 [LOG] worker thread 2 processing query batch"
+      },
+      {
+        "line": 16,
+        "t_s": 2.5,
+        "text": "2026-10-09 03:14:11 [LOG] worker thread 3 processing query batch"
+      },
+      {
+        "line": 17,
+        "t_s": 2.6,
+        "text": "2026-10-09 03:14:11 [LOG] worker thread 0 processing query batch"
+      },
+      {
+        "line": 18,
+        "t_s": 2.7,
+        "text": "2026-10-09 03:14:11 [LOG] worker thread 1 processing query batch"
+      },
+      {
+        "line": 19,
+        "t_s": 2.8,
+        "text": "2026-10-09 03:14:11 [LOG] worker thread 2 processing query batch"
+      },
+      {
+        "line": 20,
+        "t_s": 2.9,
+        "text": "2026-10-09 03:14:11 [LOG] worker thread 3 processing query batch"
+      },
+      {
+        "line": 21,
+        "t_s": 3.0,
+        "text": "2026-10-09 03:14:12 [LOG] worker thread 0 processing query batch"
+      },
+      {
+        "line": 22,
+        "t_s": 3.1,
+        "text": "2026-10-09 03:14:12 [LOG] worker thread 1 processing query batch"
+      },
+      {
+        "line": 23,
+        "t_s": 3.2,
+        "text": "2026-10-09 03:14:12 [LOG] worker thread 2 processing query batch"
+      },
+      {
+        "line": 24,
+        "t_s": 3.3,
+        "text": "2026-10-09 03:14:12 [LOG] worker thread 3 processing query batch"
+      },
+      {
+        "line": 25,
+        "t_s": 3.4,
+        "text": "2026-10-09 03:14:12 [LOG] worker thread 0 processing query batch"
+      },
+      {
+        "line": 26,
+        "t_s": 3.5,
+        "text": "2026-10-09 03:14:12 [LOG] worker thread 1 processing query batch"
+      },
+      {
+        "line": 27,
+        "t_s": 3.6,
+        "text": "2026-10-09 03:14:12 [LOG] worker thread 2 processing query batch"
+      },
+      {
+        "line": 28,
+        "t_s": 3.7,
+        "text": "2026-10-09 03:14:12 [LOG] worker thread 3 processing query batch"
+      },
+      {
+        "line": 29,
+        "t_s": 3.8,
+        "text": "2026-10-09 03:14:12 [LOG] worker thread 0 processing query batch"
+      },
+      {
+        "line": 30,
+        "t_s": 3.9,
+        "text": "2026-10-09 03:14:12 [LOG] worker thread 1 processing query batch"
+      },
+      {
+        "line": 31,
+        "t_s": 4.0,
+        "text": "2026-10-09 03:14:13 [LOG] worker thread 2 processing query batch"
+      },
+      {
+        "line": 32,
+        "t_s": 4.1,
+        "text": "2026-10-09 03:14:13 [LOG] worker thread 3 processing query batch"
+      },
+      {
+        "line": 33,
+        "t_s": 4.2,
+        "text": "2026-10-09 03:14:13 [LOG] worker thread 0 processing query batch"
+      },
+      {
+        "line": 34,
+        "t_s": 4.3,
+        "text": "2026-10-09 03:14:13 [LOG] worker thread 1 processing query batch"
+      },
+      {
+        "line": 35,
+        "t_s": 4.4,
+        "text": "2026-10-09 03:14:13 [LOG] worker thread 2 processing query batch"
+      },
+      {
+        "line": 36,
+        "t_s": 4.5,
+        "text": "2026-10-09 03:14:13 [LOG] worker thread 3 processing query batch"
+      },
+      {
+        "line": 37,
+        "t_s": 4.6,
+        "text": "2026-10-09 03:14:13 [LOG] worker thread 0 processing query batch"
+      },
+      {
+        "line": 38,
+        "t_s": 4.7,
+        "text": "2026-10-09 03:14:13 [LOG] worker thread 1 processing query batch"
+      },
+      {
+        "line": 39,
+        "t_s": 4.8,
+        "text": "2026-10-09 03:14:13 [LOG] worker thread 2 processing query batch"
+      },
+      {
+        "line": 40,
+        "t_s": 4.9,
+        "text": "2026-10-09 03:14:13 [LOG] worker thread 3 processing query batch"
+      },
+      {
+        "line": 41,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:14 [LOG] worker thread 0 processing query batch"
+      },
+      {
+        "line": 42,
+        "t_s": 6.0,
+        "text": "FATAL: out of memory (allocated 67108864 bytes, limit 67108864 bytes)"
+      },
+      {
+        "line": 43,
+        "t_s": 6.1,
+        "text": "2026-10-09 03:14:16 [ERROR] terminated unexpectedly with exit code 137"
+      },
+      {
+        "line": 44,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:16 [ERROR] terminated unexpectedly with exit code 137"
+      },
+      {
+        "line": 45,
+        "t_s": 6.3,
+        "text": "2026-10-09 03:14:16 [ERROR] terminated unexpectedly with exit code 137"
+      },
+      {
+        "line": 46,
+        "t_s": 6.4,
+        "text": "2026-10-09 03:14:16 [ERROR] terminated unexpectedly with exit code 137"
+      },
+      {
+        "line": 47,
+        "t_s": 6.5,
+        "text": "2026-10-09 03:14:16 [ERROR] terminated unexpectedly with exit code 137"
+      },
+      {
+        "line": 48,
+        "t_s": 6.6,
+        "text": "2026-10-09 03:14:16 [ERROR] terminated unexpectedly with exit code 137"
+      },
+      {
+        "line": 49,
+        "t_s": 6.7,
+        "text": "2026-10-09 03:14:16 [ERROR] terminated unexpectedly with exit code 137"
+      },
+      {
+        "line": 50,
+        "t_s": 6.8,
+        "text": "2026-10-09 03:14:16 [ERROR] terminated unexpectedly with exit code 137"
+      }
+    ]
+  },
+  "alerts": [
+    {
+      "id": "alt-pg-01",
+      "t_s": 6.0,
+      "service": "postgres",
+      "severity": "critical",
+      "message": "Pod postgres-0 terminated: OOMKilled (Exit Code 137)"
+    },
+    {
+      "id": "alt-auth-01",
+      "t_s": 6.1,
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 1)"
+    },
+    {
+      "id": "alt-auth-02",
+      "t_s": 6.2,
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 2)"
+    },
+    {
+      "id": "alt-auth-03",
+      "t_s": 6.3,
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 3)"
+    },
+    {
+      "id": "alt-auth-04",
+      "t_s": 6.4,
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 4)"
+    },
+    {
+      "id": "alt-auth-05",
+      "t_s": 6.5,
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 5)"
+    },
+    {
+      "id": "alt-auth-06",
+      "t_s": 6.6,
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 6)"
+    },
+    {
+      "id": "alt-auth-07",
+      "t_s": 6.7,
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 7)"
+    },
+    {
+      "id": "alt-auth-08",
+      "t_s": 6.8,
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 8)"
+    },
+    {
+      "id": "alt-auth-09",
+      "t_s": 6.9,
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 9)"
+    },
+    {
+      "id": "alt-auth-10",
+      "t_s": 7.0,
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 10)"
+    },
+    {
+      "id": "alt-pay-01",
+      "t_s": 6.2,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 1)"
+    },
+    {
+      "id": "alt-pay-02",
+      "t_s": 6.3,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 2)"
+    },
+    {
+      "id": "alt-pay-03",
+      "t_s": 6.4,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 3)"
+    },
+    {
+      "id": "alt-pay-04",
+      "t_s": 6.5,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 4)"
+    },
+    {
+      "id": "alt-pay-05",
+      "t_s": 6.6,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 5)"
+    },
+    {
+      "id": "alt-pay-06",
+      "t_s": 6.7,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 6)"
+    },
+    {
+      "id": "alt-pay-07",
+      "t_s": 6.8,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 7)"
+    },
+    {
+      "id": "alt-pay-08",
+      "t_s": 6.9,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 8)"
+    },
+    {
+      "id": "alt-pay-09",
+      "t_s": 7.0,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 9)"
+    },
+    {
+      "id": "alt-pay-10",
+      "t_s": 7.1,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 10)"
+    },
+    {
+      "id": "alt-pay-11",
+      "t_s": 7.2,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 11)"
+    },
+    {
+      "id": "alt-pay-12",
+      "t_s": 7.3,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 12)"
+    },
+    {
+      "id": "alt-pay-13",
+      "t_s": 7.4,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 13)"
+    },
+    {
+      "id": "alt-pay-14",
+      "t_s": 7.5,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 14)"
+    },
+    {
+      "id": "alt-pay-15",
+      "t_s": 7.6,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 15)"
+    },
+    {
+      "id": "alt-gw-01",
+      "t_s": 6.3,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1000)"
+    },
+    {
+      "id": "alt-gw-02",
+      "t_s": 6.38,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1001)"
+    },
+    {
+      "id": "alt-gw-03",
+      "t_s": 6.46,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1002)"
+    },
+    {
+      "id": "alt-gw-04",
+      "t_s": 6.54,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1003)"
+    },
+    {
+      "id": "alt-gw-05",
+      "t_s": 6.62,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1004)"
+    },
+    {
+      "id": "alt-gw-06",
+      "t_s": 6.7,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1005)"
+    },
+    {
+      "id": "alt-gw-07",
+      "t_s": 6.78,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1006)"
+    },
+    {
+      "id": "alt-gw-08",
+      "t_s": 6.86,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1007)"
+    },
+    {
+      "id": "alt-gw-09",
+      "t_s": 6.94,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1008)"
+    },
+    {
+      "id": "alt-gw-10",
+      "t_s": 7.02,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1009)"
+    },
+    {
+      "id": "alt-gw-11",
+      "t_s": 7.1,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1010)"
+    },
+    {
+      "id": "alt-gw-12",
+      "t_s": 7.18,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1011)"
+    },
+    {
+      "id": "alt-gw-13",
+      "t_s": 7.26,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1012)"
+    },
+    {
+      "id": "alt-gw-14",
+      "t_s": 7.34,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1013)"
+    },
+    {
+      "id": "alt-gw-15",
+      "t_s": 7.42,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1014)"
+    },
+    {
+      "id": "alt-gw-16",
+      "t_s": 7.5,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1015)"
+    },
+    {
+      "id": "alt-gw-17",
+      "t_s": 7.58,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1016)"
+    },
+    {
+      "id": "alt-gw-18",
+      "t_s": 7.66,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1017)"
+    },
+    {
+      "id": "alt-ui-01",
+      "t_s": 6.5,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #200"
+    },
+    {
+      "id": "alt-ui-02",
+      "t_s": 6.6,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #201"
+    },
+    {
+      "id": "alt-ui-03",
+      "t_s": 6.7,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #202"
+    },
+    {
+      "id": "alt-ui-04",
+      "t_s": 6.8,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #203"
+    },
+    {
+      "id": "alt-ui-05",
+      "t_s": 6.9,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #204"
+    },
+    {
+      "id": "alt-ui-06",
+      "t_s": 7.0,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #205"
+    },
+    {
+      "id": "alt-ui-07",
+      "t_s": 7.1,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #206"
+    },
+    {
+      "id": "alt-ui-08",
+      "t_s": 7.2,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #207"
+    },
+    {
+      "id": "alt-ui-09",
+      "t_s": 7.3,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #208"
+    },
+    {
+      "id": "alt-ui-10",
+      "t_s": 7.4,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #209"
+    },
+    {
+      "id": "alt-ui-11",
+      "t_s": 7.5,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #210"
+    },
+    {
+      "id": "alt-ui-12",
+      "t_s": 7.6,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #211"
+    }
+  ],
+  "fix": {
+    "action": "patch_memory_limit",
+    "from": "64Mi",
+    "to": "256Mi"
+  }
+}

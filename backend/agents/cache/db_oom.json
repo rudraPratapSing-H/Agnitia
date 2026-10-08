@@ -1,0 +1,89 @@
+{
+  "rca": {
+    "root_cause": "PostgreSQL was killed for exceeding its 64Mi memory limit",
+    "category": "OOMKilled",
+    "confidence": 0.97,
+    "evidence": [
+      {
+        "type": "k8s_event",
+        "source": "postgres-0",
+        "line": null,
+        "text": "Reason: OOMKilled, Exit Code: 137",
+        "verified": true
+      },
+      {
+        "type": "log",
+        "source": "postgres-0",
+        "line": 42,
+        "text": "FATAL: out of memory (allocated 67108864 bytes, limit 67108864 bytes)",
+        "verified": true
+      },
+      {
+        "type": "metric",
+        "source": "postgres-0",
+        "line": null,
+        "text": "memory 64.0Mi of 64Mi limit",
+        "verified": true
+      }
+    ],
+    "similar_incident": {
+      "id": "INC-087",
+      "similarity": 0.94
+    }
+  },
+  "playbook": {
+    "diff": "resources.limits.memory: 64Mi -> 256Mi",
+    "steps": [
+      {
+        "order": 1,
+        "service": "postgres",
+        "action": "patch_memory_limit",
+        "params": {
+          "from": "64Mi",
+          "to": "256Mi"
+        },
+        "risk": "high",
+        "requires_approval": true,
+        "verify": "port 5432 accepting connections"
+      },
+      {
+        "order": 2,
+        "service": "postgres",
+        "action": "wait_for_ready",
+        "params": {
+          "timeout_s": 30
+        },
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "readiness probe passes"
+      },
+      {
+        "order": 3,
+        "service": "auth-service",
+        "action": "rollout_restart",
+        "params": {},
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "health endpoint 200"
+      },
+      {
+        "order": 4,
+        "service": "payment-service",
+        "action": "rollout_restart",
+        "params": {},
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "health endpoint 200"
+      },
+      {
+        "order": 5,
+        "service": "api-gateway",
+        "action": "verify_health",
+        "params": {},
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "error rate below 1%"
+      }
+    ]
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "id": "slow_leak",
+  "title": "PostgreSQL Gradual Memory Leak",
+  "root_service": "postgres",
+  "duration_s": 60,
+  "metrics": {
+    "postgres": [
+      {
+        "t_s": 0.0,
+        "mem_mb": 40.0,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 2.0,
+        "mem_mb": 40.8,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 4.0,
+        "mem_mb": 41.6,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 6.0,
+        "mem_mb": 42.4,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 8.0,
+        "mem_mb": 43.2,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 10.0,
+        "mem_mb": 44.0,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 12.0,
+        "mem_mb": 44.8,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 14.0,
+        "mem_mb": 45.6,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 16.0,
+        "mem_mb": 46.4,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 18.0,
+        "mem_mb": 47.2,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 20.0,
+        "mem_mb": 48.0,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 22.0,
+        "mem_mb": 48.8,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 24.0,
+        "mem_mb": 49.6,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 26.0,
+        "mem_mb": 50.4,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 28.0,
+        "mem_mb": 51.2,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 30.0,
+        "mem_mb": 52.0,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 32.0,
+        "mem_mb": 52.8,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 34.0,
+        "mem_mb": 53.6,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 36.0,
+        "mem_mb": 54.4,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 38.0,
+        "mem_mb": 55.2,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 40.0,
+        "mem_mb": 56.0,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 42.0,
+        "mem_mb": 56.8,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 44.0,
+        "mem_mb": 57.6,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 46.0,
+        "mem_mb": 58.4,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 48.0,
+        "mem_mb": 59.2,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 50.0,
+        "mem_mb": 60.0,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 52.0,
+        "mem_mb": 60.8,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 54.0,
+        "mem_mb": 61.6,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 56.0,
+        "mem_mb": 62.4,
+        "cpu_pct": 15.0
+      },
+      {
+        "t_s": 58.0,
+        "mem_mb": 63.2,
+        "cpu_pct": 15.0
+      }
+    ]
+  },
+  "events": [
+    {
+      "t_s": 30.0,
+      "service": "postgres",
+      "text": "Warning: Memory approaching hard limit 64Mi"
+    }
+  ],
+  "logs": {
+    "postgres": [
+      {
+        "line": 1,
+        "t_s": 10.0,
+        "text": "Active backend connections: 128"
+      },
+      {
+        "line": 2,
+        "t_s": 30.0,
+        "text": "Buffer pool usage at 91%"
+      }
+    ]
+  },
+  "alerts": [
+    {
+      "id": "alt-leak-01",
+      "t_s": 35.0,
+      "service": "postgres",
+      "severity": "warning",
+      "message": "Memory usage at 92% of limit (58.8Mi/64Mi)"
+    }
+  ],
+  "fix": {
+    "action": "patch_memory_limit",
+    "from": "64Mi",
+    "to": "256Mi"
+  }
+}
