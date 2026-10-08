@@ -16,7 +16,6 @@ load_dotenv()
 from backend.bus import bus, emit
 import backend.executor as executor
 import backend.graph as graph
-from backend.executor import execute as execute_playbook, get_audit_log
 from backend.models import Incident, ServiceNode, TimelineItem
 
 logger = logging.getLogger(__name__)
