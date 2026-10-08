@@ -23,8 +23,16 @@ from backend.models import Alert
 
 
 @pytest.fixture(autouse=True)
-def ensure_sim_speed():
+def ensure_sim_speed(monkeypatch):
     adapter.speed = 200.0
+    orig_sleep = asyncio.sleep
+    async def fast_sleep(s, *args, **kwargs):
+        return await orig_sleep(s / 200.0, *args, **kwargs)
+    try:
+        import backend.agents.pipeline as pipeline_mod
+        monkeypatch.setattr(pipeline_mod.asyncio, "sleep", fast_sleep)
+    except Exception:
+        pass
     yield
     adapter.speed = 200.0
 
@@ -137,12 +145,7 @@ async def test_placeholder_endpoints_return_501():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         endpoints = [
-            ("POST", "/api/incidents/INC-104/approve"),
-            ("POST", "/api/incidents/INC-104/reject"),
             ("GET", "/api/incidents/INC-104/postmortem"),
-            ("GET", "/api/blast-radius/postgres"),
-            ("GET", "/api/incidents/INC-104/audit"),
-            ("GET", "/api/audit"),
             ("POST", "/api/autonomy"),
         ]
         for method, path in endpoints:
@@ -152,6 +155,141 @@ async def test_placeholder_endpoints_return_501():
                 resp = await client.get(path)
             assert resp.status_code == 501, f"{method} {path} should return 501"
             assert resp.json() == {"detail": "not implemented yet"}
+
+
+@pytest.mark.asyncio
+async def test_approval_execution_and_audit_flow():
+    """
+    TASK 2.6 Full flow:
+    Inject -> wait for awaiting_approval -> approve -> poll until resolved -> audit non-empty.
+    Second approve -> 409.
+    """
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/api/reset")
+
+        # 1. Inject
+        resp = await client.post("/api/chaos/db_oom")
+        assert resp.status_code == 200
+
+        # 2. Wait for awaiting_approval
+        incident_id = None
+        for _ in range(100):
+            r = await client.get("/api/incidents/latest")
+            data = r.json()
+            if data and data.get("status") == "awaiting_approval":
+                incident_id = data["id"]
+                break
+            await asyncio.sleep(0.05)
+
+        assert incident_id is not None, "Timed out waiting for awaiting_approval"
+
+        # 3. Approve
+        approve_resp = await client.post(
+            f"/api/incidents/{incident_id}/approve",
+            json={"approved_by": "telegram:alice"},
+        )
+        assert approve_resp.status_code == 202
+        assert approve_resp.json() == {"ok": True, "status": "healing"}
+
+        # 4. Immediate second approve -> 409
+        second_approve = await client.post(
+            f"/api/incidents/{incident_id}/approve",
+            json={"approved_by": "telegram:alice"},
+        )
+        assert second_approve.status_code == 409
+        assert "awaiting_approval" in second_approve.json()["detail"].lower()
+
+        # 5. Poll until resolved
+        resolved_inc = None
+        for _ in range(120):
+            r = await client.get("/api/incidents/latest")
+            data = r.json()
+            if data and data.get("status") == "resolved":
+                resolved_inc = data
+                break
+            await asyncio.sleep(0.05)
+
+        assert resolved_inc is not None, "Timed out waiting for incident resolved"
+        assert resolved_inc["resolved_at"] is not None
+        assert any("Approved by telegram:alice" in t["event"] for t in resolved_inc["timeline"])
+        assert any("Resolved" in t["event"] for t in resolved_inc["timeline"])
+
+        # 6. Audit non-empty
+        audit_resp = await client.get(f"/api/incidents/{incident_id}/audit")
+        assert audit_resp.status_code == 200
+        audit_data = audit_resp.json()
+        assert isinstance(audit_data, list)
+        assert len(audit_data) > 0
+        assert audit_data[0]["kind"] == "approval"
+        assert audit_data[0]["actor"] == "telegram:alice"
+        assert audit_data[-1]["kind"] == "resolved"
+
+        # Clean up
+        await client.post("/api/reset")
+
+
+@pytest.mark.asyncio
+async def test_unknown_id_approve_reject_audit_returns_404():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp1 = await client.post("/api/incidents/INC-UNKNOWN/approve")
+        assert resp1.status_code == 404
+
+        resp2 = await client.post("/api/incidents/INC-UNKNOWN/reject")
+        assert resp2.status_code == 404
+
+        resp3 = await client.get("/api/incidents/INC-UNKNOWN/audit")
+        assert resp3.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_reject_path():
+    """
+    Reject flow:
+    Inject -> wait for awaiting_approval -> reject -> status becomes 'detected', playbook None.
+    Second reject -> 409.
+    """
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/api/reset")
+
+        await client.post("/api/chaos/db_oom")
+
+        incident_id = None
+        for _ in range(100):
+            r = await client.get("/api/incidents/latest")
+            data = r.json()
+            if data and data.get("status") == "awaiting_approval":
+                incident_id = data["id"]
+                break
+            await asyncio.sleep(0.05)
+
+        assert incident_id is not None
+
+        # Reject
+        reject_resp = await client.post(
+            f"/api/incidents/{incident_id}/reject",
+            json={"rejected_by": "lead-sre"},
+        )
+        assert reject_resp.status_code == 200
+        assert reject_resp.json() == {"ok": True}
+
+        # Check latest
+        latest_resp = await client.get("/api/incidents/latest")
+        data = latest_resp.json()
+        assert data["status"] == "detected"
+        assert data["playbook"] is None
+        assert any("Playbook rejected by lead-sre" in t["event"] for t in data["timeline"])
+
+        # Second reject -> 409
+        second_reject = await client.post(
+            f"/api/incidents/{incident_id}/reject",
+            json={"rejected_by": "lead-sre"},
+        )
+        assert second_reject.status_code == 409
+
+        await client.post("/api/reset")
 
 
 @pytest.mark.asyncio
@@ -229,3 +367,49 @@ def test_websocket_connect_and_state_recovery():
         assert len(received_services) == 6
         assert "postgres" in received_services
         assert "web-ui" in received_services
+
+
+@pytest.mark.asyncio
+async def test_blast_radius_endpoint():
+    """TASK 2.7: GET /api/blast-radius/{service} tests:
+    - redis -> affected_services == ['auth-service', 'api-gateway', 'web-ui']
+    - web-ui -> []
+    - unknown -> 404
+    """
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # 1. redis
+        resp_redis = await client.get("/api/blast-radius/redis")
+        assert resp_redis.status_code == 200
+        data_redis = resp_redis.json()
+        assert data_redis["service"] == "redis"
+        assert data_redis["affected_services"] == ["auth-service", "api-gateway", "web-ui"]
+        assert data_redis["users_affected_pct"] == 70
+        assert data_redis["note"] == "illustrative simulator figure"
+
+        # 2. web-ui
+        resp_web = await client.get("/api/blast-radius/web-ui")
+        assert resp_web.status_code == 200
+        data_web = resp_web.json()
+        assert data_web["service"] == "web-ui"
+        assert data_web["affected_services"] == []
+        assert data_web["users_affected_pct"] == 100
+        assert data_web["note"] == "illustrative simulator figure"
+
+        # 3. postgres
+        resp_pg = await client.get("/api/blast-radius/postgres")
+        assert resp_pg.status_code == 200
+        data_pg = resp_pg.json()
+        assert data_pg["service"] == "postgres"
+        assert data_pg["affected_services"] == [
+            "auth-service",
+            "payment-service",
+            "api-gateway",
+            "web-ui",
+        ]
+        assert data_pg["users_affected_pct"] == 100
+
+        # 4. unknown -> 404
+        resp_unknown = await client.get("/api/blast-radius/unknown-service")
+        assert resp_unknown.status_code == 404
+
