@@ -6,8 +6,11 @@ import logging
 import os
 from typing import Any, Dict, Optional, Set
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+
+load_dotenv()
 
 from backend.bus import bus, emit
 import backend.graph as graph
@@ -28,7 +31,11 @@ app = FastAPI(title="Agnitia API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "*",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
