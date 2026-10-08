@@ -1,0 +1,1815 @@
+[
+  {
+    "type": "reset",
+    "ts": "2026-10-09T03:14:00.000Z",
+    "payload": {}
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:00.020Z",
+    "payload": {
+      "id": "postgres",
+      "label": "PostgreSQL",
+      "tier": "data",
+      "depends_on": [],
+      "status": "healthy",
+      "metrics": {
+        "mem_mb": 40.0,
+        "mem_limit_mb": 64.0,
+        "cpu_pct": 12.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:00.040Z",
+    "payload": {
+      "id": "redis",
+      "label": "Redis Cache",
+      "tier": "data",
+      "depends_on": [],
+      "status": "healthy",
+      "metrics": {
+        "mem_mb": 24.0,
+        "mem_limit_mb": 64.0,
+        "cpu_pct": 3.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:00.060Z",
+    "payload": {
+      "id": "auth-service",
+      "label": "Auth Service",
+      "tier": "backend",
+      "depends_on": [
+        "postgres",
+        "redis"
+      ],
+      "status": "healthy",
+      "metrics": {
+        "mem_mb": 50.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 8.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:00.080Z",
+    "payload": {
+      "id": "payment-service",
+      "label": "Payment Service",
+      "tier": "backend",
+      "depends_on": [
+        "postgres"
+      ],
+      "status": "healthy",
+      "metrics": {
+        "mem_mb": 72.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 11.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:00.100Z",
+    "payload": {
+      "id": "api-gateway",
+      "label": "API Gateway",
+      "tier": "edge",
+      "depends_on": [
+        "auth-service",
+        "payment-service"
+      ],
+      "status": "healthy",
+      "metrics": {
+        "mem_mb": 65.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 14.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:00.120Z",
+    "payload": {
+      "id": "web-ui",
+      "label": "Web UI",
+      "tier": "frontend",
+      "depends_on": [
+        "api-gateway"
+      ],
+      "status": "healthy",
+      "metrics": {
+        "mem_mb": 42.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 5.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:00.500Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 0.5,
+      "mem_mb": 42.0,
+      "cpu_pct": 14.5
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:01.000Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 1.0,
+      "mem_mb": 44.0,
+      "cpu_pct": 17.0
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:01.500Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 1.5,
+      "mem_mb": 46.0,
+      "cpu_pct": 19.5
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:02.000Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 2.0,
+      "mem_mb": 48.0,
+      "cpu_pct": 22.0
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:02.500Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 2.5,
+      "mem_mb": 50.0,
+      "cpu_pct": 24.5
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:03.000Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 3.0,
+      "mem_mb": 52.0,
+      "cpu_pct": 27.0
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:03.500Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 3.5,
+      "mem_mb": 54.0,
+      "cpu_pct": 29.5
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:04.000Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 4.0,
+      "mem_mb": 56.0,
+      "cpu_pct": 32.0
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:04.500Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 4.5,
+      "mem_mb": 58.0,
+      "cpu_pct": 34.5
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:05.000Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 5.0,
+      "mem_mb": 60.0,
+      "cpu_pct": 37.0
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:05.500Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 5.5,
+      "mem_mb": 62.0,
+      "cpu_pct": 39.5
+    }
+  },
+  {
+    "type": "metric_point",
+    "ts": "2026-10-09T03:14:06.000Z",
+    "payload": {
+      "service": "postgres",
+      "t_s": 6.0,
+      "mem_mb": 64.0,
+      "cpu_pct": 42.0
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:06.010Z",
+    "payload": {
+      "id": "postgres",
+      "label": "PostgreSQL",
+      "tier": "data",
+      "depends_on": [],
+      "status": "root_cause",
+      "metrics": {
+        "mem_mb": 64.0,
+        "mem_limit_mb": 256.0,
+        "cpu_pct": 42.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:06.015Z",
+    "payload": {
+      "id": "alt-pg-01",
+      "ts": "2026-10-09T03:14:06.015Z",
+      "service": "postgres",
+      "severity": "critical",
+      "message": "Pod postgres-0 terminated: OOMKilled (Exit Code 137)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:06.095Z",
+    "payload": {
+      "id": "auth-service",
+      "label": "Auth Service",
+      "tier": "backend",
+      "depends_on": [
+        "postgres",
+        "redis"
+      ],
+      "status": "impacted",
+      "metrics": {
+        "mem_mb": 50.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 8.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:06.100Z",
+    "payload": {
+      "id": "alt-auth-01",
+      "ts": "2026-10-09T03:14:06.100Z",
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 1)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:06.200Z",
+    "payload": {
+      "id": "alt-auth-02",
+      "ts": "2026-10-09T03:14:06.200Z",
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 2)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:06.300Z",
+    "payload": {
+      "id": "alt-auth-03",
+      "ts": "2026-10-09T03:14:06.300Z",
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 3)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:06.400Z",
+    "payload": {
+      "id": "alt-auth-04",
+      "ts": "2026-10-09T03:14:06.400Z",
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 4)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:06.500Z",
+    "payload": {
+      "id": "alt-auth-05",
+      "ts": "2026-10-09T03:14:06.500Z",
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 5)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:06.600Z",
+    "payload": {
+      "id": "alt-auth-06",
+      "ts": "2026-10-09T03:14:06.600Z",
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 6)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:06.700Z",
+    "payload": {
+      "id": "alt-auth-07",
+      "ts": "2026-10-09T03:14:06.700Z",
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 7)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:06.800Z",
+    "payload": {
+      "id": "alt-auth-08",
+      "ts": "2026-10-09T03:14:06.800Z",
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 8)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:06.900Z",
+    "payload": {
+      "id": "alt-auth-09",
+      "ts": "2026-10-09T03:14:06.900Z",
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 9)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.000Z",
+    "payload": {
+      "id": "alt-auth-10",
+      "ts": "2026-10-09T03:14:07.000Z",
+      "service": "auth-service",
+      "severity": "critical",
+      "message": "connection pool exhausted: dial tcp postgres:5432 connect: connection refused (attempt 10)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:07.005Z",
+    "payload": {
+      "id": "payment-service",
+      "label": "Payment Service",
+      "tier": "backend",
+      "depends_on": [
+        "postgres"
+      ],
+      "status": "impacted",
+      "metrics": {
+        "mem_mb": 72.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 11.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.010Z",
+    "payload": {
+      "id": "alt-pay-01",
+      "ts": "2026-10-09T03:14:07.010Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 1)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.015Z",
+    "payload": {
+      "id": "alt-pay-02",
+      "ts": "2026-10-09T03:14:07.015Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 2)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.020Z",
+    "payload": {
+      "id": "alt-pay-03",
+      "ts": "2026-10-09T03:14:07.020Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 3)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.025Z",
+    "payload": {
+      "id": "alt-pay-04",
+      "ts": "2026-10-09T03:14:07.025Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 4)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.030Z",
+    "payload": {
+      "id": "alt-pay-05",
+      "ts": "2026-10-09T03:14:07.030Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 5)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.035Z",
+    "payload": {
+      "id": "alt-pay-06",
+      "ts": "2026-10-09T03:14:07.035Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 6)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.040Z",
+    "payload": {
+      "id": "alt-pay-07",
+      "ts": "2026-10-09T03:14:07.040Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 7)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.045Z",
+    "payload": {
+      "id": "alt-pay-08",
+      "ts": "2026-10-09T03:14:07.045Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 8)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.050Z",
+    "payload": {
+      "id": "alt-pay-09",
+      "ts": "2026-10-09T03:14:07.050Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 9)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.100Z",
+    "payload": {
+      "id": "alt-pay-10",
+      "ts": "2026-10-09T03:14:07.100Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 10)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.200Z",
+    "payload": {
+      "id": "alt-pay-11",
+      "ts": "2026-10-09T03:14:07.200Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 11)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.300Z",
+    "payload": {
+      "id": "alt-pay-12",
+      "ts": "2026-10-09T03:14:07.300Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 12)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.400Z",
+    "payload": {
+      "id": "alt-pay-13",
+      "ts": "2026-10-09T03:14:07.400Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 13)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.500Z",
+    "payload": {
+      "id": "alt-pay-14",
+      "ts": "2026-10-09T03:14:07.500Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 14)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.600Z",
+    "payload": {
+      "id": "alt-pay-15",
+      "ts": "2026-10-09T03:14:07.600Z",
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "failed to query transaction ledger: database server postgres:5432 is down (retry 15)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:07.605Z",
+    "payload": {
+      "id": "api-gateway",
+      "label": "API Gateway",
+      "tier": "edge",
+      "depends_on": [
+        "auth-service",
+        "payment-service"
+      ],
+      "status": "impacted",
+      "metrics": {
+        "mem_mb": 65.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 14.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.610Z",
+    "payload": {
+      "id": "alt-gw-01",
+      "ts": "2026-10-09T03:14:07.610Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1000)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.615Z",
+    "payload": {
+      "id": "alt-gw-02",
+      "ts": "2026-10-09T03:14:07.615Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1001)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.620Z",
+    "payload": {
+      "id": "alt-gw-03",
+      "ts": "2026-10-09T03:14:07.620Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1002)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.625Z",
+    "payload": {
+      "id": "alt-gw-04",
+      "ts": "2026-10-09T03:14:07.625Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1003)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.630Z",
+    "payload": {
+      "id": "alt-gw-05",
+      "ts": "2026-10-09T03:14:07.630Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1004)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.635Z",
+    "payload": {
+      "id": "alt-gw-06",
+      "ts": "2026-10-09T03:14:07.635Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1005)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.640Z",
+    "payload": {
+      "id": "alt-gw-07",
+      "ts": "2026-10-09T03:14:07.640Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1006)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.645Z",
+    "payload": {
+      "id": "alt-gw-08",
+      "ts": "2026-10-09T03:14:07.645Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1007)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.650Z",
+    "payload": {
+      "id": "alt-gw-09",
+      "ts": "2026-10-09T03:14:07.650Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1008)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.655Z",
+    "payload": {
+      "id": "alt-gw-10",
+      "ts": "2026-10-09T03:14:07.655Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1009)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.660Z",
+    "payload": {
+      "id": "alt-gw-11",
+      "ts": "2026-10-09T03:14:07.660Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1010)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.665Z",
+    "payload": {
+      "id": "alt-gw-12",
+      "ts": "2026-10-09T03:14:07.665Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1011)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.670Z",
+    "payload": {
+      "id": "alt-gw-13",
+      "ts": "2026-10-09T03:14:07.670Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1012)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.675Z",
+    "payload": {
+      "id": "alt-gw-14",
+      "ts": "2026-10-09T03:14:07.675Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1013)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.680Z",
+    "payload": {
+      "id": "alt-gw-15",
+      "ts": "2026-10-09T03:14:07.680Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1014)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.685Z",
+    "payload": {
+      "id": "alt-gw-16",
+      "ts": "2026-10-09T03:14:07.685Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1015)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.690Z",
+    "payload": {
+      "id": "alt-gw-17",
+      "ts": "2026-10-09T03:14:07.690Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1016)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.695Z",
+    "payload": {
+      "id": "alt-gw-18",
+      "ts": "2026-10-09T03:14:07.695Z",
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "HTTP 502 Bad Gateway: upstream auth/payment route timed out (request_id #1017)",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:07.700Z",
+    "payload": {
+      "id": "web-ui",
+      "label": "Web UI",
+      "tier": "frontend",
+      "depends_on": [
+        "api-gateway"
+      ],
+      "status": "impacted",
+      "metrics": {
+        "mem_mb": 42.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 5.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.705Z",
+    "payload": {
+      "id": "alt-ui-01",
+      "ts": "2026-10-09T03:14:07.705Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #200",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.710Z",
+    "payload": {
+      "id": "alt-ui-02",
+      "ts": "2026-10-09T03:14:07.710Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #201",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.715Z",
+    "payload": {
+      "id": "alt-ui-03",
+      "ts": "2026-10-09T03:14:07.715Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #202",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.720Z",
+    "payload": {
+      "id": "alt-ui-04",
+      "ts": "2026-10-09T03:14:07.720Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #203",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.725Z",
+    "payload": {
+      "id": "alt-ui-05",
+      "ts": "2026-10-09T03:14:07.725Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #204",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.730Z",
+    "payload": {
+      "id": "alt-ui-06",
+      "ts": "2026-10-09T03:14:07.730Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #205",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.735Z",
+    "payload": {
+      "id": "alt-ui-07",
+      "ts": "2026-10-09T03:14:07.735Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #206",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.740Z",
+    "payload": {
+      "id": "alt-ui-08",
+      "ts": "2026-10-09T03:14:07.740Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #207",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.745Z",
+    "payload": {
+      "id": "alt-ui-09",
+      "ts": "2026-10-09T03:14:07.745Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #208",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.750Z",
+    "payload": {
+      "id": "alt-ui-10",
+      "ts": "2026-10-09T03:14:07.750Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #209",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.755Z",
+    "payload": {
+      "id": "alt-ui-11",
+      "ts": "2026-10-09T03:14:07.755Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #210",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "alert",
+    "ts": "2026-10-09T03:14:07.760Z",
+    "payload": {
+      "id": "alt-ui-12",
+      "ts": "2026-10-09T03:14:07.760Z",
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Client RPC failed: 502 returned from api-gateway for user session #211",
+      "incident_id": "INC-104"
+    }
+  },
+  {
+    "type": "incident_update",
+    "ts": "2026-10-09T03:14:07.860Z",
+    "payload": {
+      "id": "INC-104",
+      "status": "detected",
+      "scenario": "db_oom",
+      "root_service": "postgres",
+      "impacted_services": [
+        "auth-service",
+        "payment-service",
+        "api-gateway",
+        "web-ui"
+      ],
+      "raw_alert_count": 56,
+      "started_at": "2026-10-09T03:14:06.015Z",
+      "resolved_at": null,
+      "rca": null,
+      "playbook": null,
+      "timeline": [
+        {
+          "t_s": 0.0,
+          "event": "First alert received: 56 alerts collapsed into INC-104"
+        }
+      ]
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:08.500Z",
+    "payload": {
+      "agent": "triage",
+      "text": "Grouping 56 alerts by dependency graph; identifying root candidate...",
+      "status": "running"
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:08.900Z",
+    "payload": {
+      "agent": "triage",
+      "text": "Grouping 56 alerts by dependency graph; identifying root candidate",
+      "status": "done"
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:09.500Z",
+    "payload": {
+      "agent": "diagnose",
+      "text": "Reading last 50 log lines from postgres-0 container telemetry...",
+      "status": "running"
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:09.900Z",
+    "payload": {
+      "agent": "diagnose",
+      "text": "Reading last 50 log lines from postgres-0 container telemetry",
+      "status": "done"
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:10.500Z",
+    "payload": {
+      "agent": "diagnose",
+      "text": "Found container lifecycle termination: Reason: OOMKilled, Exit Code: 137...",
+      "status": "running"
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:10.900Z",
+    "payload": {
+      "agent": "diagnose",
+      "text": "Found container lifecycle termination: Reason: OOMKilled, Exit Code: 137",
+      "status": "done"
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:11.500Z",
+    "payload": {
+      "agent": "diagnose",
+      "text": "Memory curve analysis confirmed: memory peaked at 63.8Mi of 64Mi limit...",
+      "status": "running"
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:11.900Z",
+    "payload": {
+      "agent": "diagnose",
+      "text": "Memory curve analysis confirmed: memory peaked at 63.8Mi of 64Mi limit",
+      "status": "done"
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:12.500Z",
+    "payload": {
+      "agent": "plan",
+      "text": "Synthesizing ordered recovery sequence: database before dependants...",
+      "status": "running"
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:12.900Z",
+    "payload": {
+      "agent": "plan",
+      "text": "Synthesizing ordered recovery sequence: database before dependants",
+      "status": "done"
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:13.500Z",
+    "payload": {
+      "agent": "verify",
+      "text": "Cross-referencing evidence citations: all citations match raw logs...",
+      "status": "running"
+    }
+  },
+  {
+    "type": "agent_step",
+    "ts": "2026-10-09T03:14:13.900Z",
+    "payload": {
+      "agent": "verify",
+      "text": "Cross-referencing evidence citations: all citations match raw logs",
+      "status": "done"
+    }
+  },
+  {
+    "type": "incident_update",
+    "ts": "2026-10-09T03:14:15.000Z",
+    "payload": {
+      "id": "INC-104",
+      "status": "awaiting_approval",
+      "scenario": "db_oom",
+      "root_service": "postgres",
+      "impacted_services": [
+        "auth-service",
+        "payment-service",
+        "api-gateway",
+        "web-ui"
+      ],
+      "raw_alert_count": 56,
+      "started_at": "2026-10-09T03:14:06.015Z",
+      "resolved_at": null,
+      "rca": {
+        "root_cause": "PostgreSQL was killed for exceeding its 64Mi memory limit",
+        "category": "OOMKilled",
+        "confidence": 0.97,
+        "evidence": [
+          {
+            "type": "k8s_event",
+            "source": "postgres-0",
+            "line": null,
+            "text": "Reason: OOMKilled, Exit Code: 137",
+            "verified": true
+          },
+          {
+            "type": "log",
+            "source": "postgres-0",
+            "line": 42,
+            "text": "FATAL: out of memory",
+            "verified": true
+          },
+          {
+            "type": "metric",
+            "source": "postgres-0",
+            "line": null,
+            "text": "memory 63.8Mi of 64Mi limit at 03:14:05",
+            "verified": true
+          }
+        ],
+        "similar_incident": {
+          "id": "INC-087",
+          "similarity": 0.94
+        }
+      },
+      "playbook": {
+        "diff": "resources.limits.memory: 64Mi -> 256Mi",
+        "steps": [
+          {
+            "order": 1,
+            "service": "postgres",
+            "action": "patch_memory_limit",
+            "params": {
+              "from": "64Mi",
+              "to": "256Mi"
+            },
+            "risk": "high",
+            "requires_approval": true,
+            "verify": "port 5432 accepting connections"
+          },
+          {
+            "order": 2,
+            "service": "postgres",
+            "action": "wait_for_ready",
+            "params": {
+              "timeout_s": 30
+            },
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "readiness probe passes"
+          },
+          {
+            "order": 3,
+            "service": "auth-service",
+            "action": "rollout_restart",
+            "params": {},
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "health endpoint 200"
+          },
+          {
+            "order": 4,
+            "service": "payment-service",
+            "action": "rollout_restart",
+            "params": {},
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "health endpoint 200"
+          },
+          {
+            "order": 5,
+            "service": "api-gateway",
+            "action": "verify_health",
+            "params": {},
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "error rate below 1%"
+          }
+        ]
+      },
+      "timeline": [
+        {
+          "t_s": 0.0,
+          "event": "First alert received: alert storm detected"
+        },
+        {
+          "t_s": 2.5,
+          "event": "Root cause isolated to postgres via dependency graph"
+        },
+        {
+          "t_s": 6.5,
+          "event": "Root cause verified with citations; playbook synthesized"
+        },
+        {
+          "t_s": 8.5,
+          "event": "Awaiting human authorization for high-risk memory patch"
+        },
+        {
+          "t_s": 38.0,
+          "event": "Automated playbook execution complete: all 6 microservices healthy (MTTR: 38s)"
+        }
+      ]
+    }
+  },
+  {
+    "type": "incident_update",
+    "ts": "2026-10-09T03:14:20.000Z",
+    "payload": {
+      "id": "INC-104",
+      "status": "healing",
+      "scenario": "db_oom",
+      "root_service": "postgres",
+      "impacted_services": [
+        "auth-service",
+        "payment-service",
+        "api-gateway",
+        "web-ui"
+      ],
+      "raw_alert_count": 56,
+      "started_at": "2026-10-09T03:14:06.015Z",
+      "resolved_at": null,
+      "rca": {
+        "root_cause": "PostgreSQL was killed for exceeding its 64Mi memory limit",
+        "category": "OOMKilled",
+        "confidence": 0.97,
+        "evidence": [
+          {
+            "type": "k8s_event",
+            "source": "postgres-0",
+            "line": null,
+            "text": "Reason: OOMKilled, Exit Code: 137",
+            "verified": true
+          },
+          {
+            "type": "log",
+            "source": "postgres-0",
+            "line": 42,
+            "text": "FATAL: out of memory",
+            "verified": true
+          },
+          {
+            "type": "metric",
+            "source": "postgres-0",
+            "line": null,
+            "text": "memory 63.8Mi of 64Mi limit at 03:14:05",
+            "verified": true
+          }
+        ],
+        "similar_incident": {
+          "id": "INC-087",
+          "similarity": 0.94
+        }
+      },
+      "playbook": {
+        "diff": "resources.limits.memory: 64Mi -> 256Mi",
+        "steps": [
+          {
+            "order": 1,
+            "service": "postgres",
+            "action": "patch_memory_limit",
+            "params": {
+              "from": "64Mi",
+              "to": "256Mi"
+            },
+            "risk": "high",
+            "requires_approval": true,
+            "verify": "port 5432 accepting connections"
+          },
+          {
+            "order": 2,
+            "service": "postgres",
+            "action": "wait_for_ready",
+            "params": {
+              "timeout_s": 30
+            },
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "readiness probe passes"
+          },
+          {
+            "order": 3,
+            "service": "auth-service",
+            "action": "rollout_restart",
+            "params": {},
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "health endpoint 200"
+          },
+          {
+            "order": 4,
+            "service": "payment-service",
+            "action": "rollout_restart",
+            "params": {},
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "health endpoint 200"
+          },
+          {
+            "order": 5,
+            "service": "api-gateway",
+            "action": "verify_health",
+            "params": {},
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "error rate below 1%"
+          }
+        ]
+      },
+      "timeline": [
+        {
+          "t_s": 0.0,
+          "event": "First alert received: alert storm detected"
+        },
+        {
+          "t_s": 2.5,
+          "event": "Root cause isolated to postgres via dependency graph"
+        },
+        {
+          "t_s": 6.5,
+          "event": "Root cause verified with citations; playbook synthesized"
+        },
+        {
+          "t_s": 8.5,
+          "event": "Awaiting human authorization for high-risk memory patch"
+        },
+        {
+          "t_s": 38.0,
+          "event": "Automated playbook execution complete: all 6 microservices healthy (MTTR: 38s)"
+        }
+      ]
+    }
+  },
+  {
+    "type": "playbook_step",
+    "ts": "2026-10-09T03:14:20.500Z",
+    "payload": {
+      "order": 1,
+      "service": "postgres",
+      "status": "running",
+      "action": "patch_memory_limit"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:21.500Z",
+    "payload": {
+      "id": "postgres",
+      "label": "PostgreSQL",
+      "tier": "data",
+      "depends_on": [],
+      "status": "recovering",
+      "metrics": {
+        "mem_mb": 64.0,
+        "mem_limit_mb": 256.0,
+        "cpu_pct": 42.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "playbook_step",
+    "ts": "2026-10-09T03:14:22.000Z",
+    "payload": {
+      "order": 1,
+      "service": "postgres",
+      "status": "done",
+      "action": "patch_memory_limit"
+    }
+  },
+  {
+    "type": "playbook_step",
+    "ts": "2026-10-09T03:14:23.000Z",
+    "payload": {
+      "order": 2,
+      "service": "postgres",
+      "status": "running",
+      "action": "wait_for_ready"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:24.000Z",
+    "payload": {
+      "id": "postgres",
+      "label": "PostgreSQL",
+      "tier": "data",
+      "depends_on": [],
+      "status": "healthy",
+      "metrics": {
+        "mem_mb": 64.0,
+        "mem_limit_mb": 256.0,
+        "cpu_pct": 42.0,
+        "restarts": 0
+      }
+    }
+  },
+  {
+    "type": "playbook_step",
+    "ts": "2026-10-09T03:14:24.500Z",
+    "payload": {
+      "order": 2,
+      "service": "postgres",
+      "status": "done",
+      "action": "wait_for_ready"
+    }
+  },
+  {
+    "type": "playbook_step",
+    "ts": "2026-10-09T03:14:25.500Z",
+    "payload": {
+      "order": 3,
+      "service": "auth-service",
+      "status": "running",
+      "action": "rollout_restart"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:26.500Z",
+    "payload": {
+      "label": "Auth Service",
+      "tier": "backend",
+      "depends_on": [
+        "postgres",
+        "redis"
+      ],
+      "metrics": {
+        "mem_mb": 50.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 8.0,
+        "restarts": 0
+      },
+      "id": "auth-service",
+      "status": "healthy"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:27.500Z",
+    "payload": {
+      "label": "Auth Service",
+      "tier": "backend",
+      "depends_on": [
+        "postgres",
+        "redis"
+      ],
+      "metrics": {
+        "mem_mb": 50.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 8.0,
+        "restarts": 0
+      },
+      "id": "auth-service",
+      "status": "healthy"
+    }
+  },
+  {
+    "type": "playbook_step",
+    "ts": "2026-10-09T03:14:28.000Z",
+    "payload": {
+      "order": 3,
+      "service": "auth-service",
+      "status": "done",
+      "action": "rollout_restart"
+    }
+  },
+  {
+    "type": "playbook_step",
+    "ts": "2026-10-09T03:14:29.000Z",
+    "payload": {
+      "order": 4,
+      "service": "payment-service",
+      "status": "running",
+      "action": "rollout_restart"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:30.000Z",
+    "payload": {
+      "label": "Payment Service",
+      "tier": "backend",
+      "depends_on": [
+        "postgres"
+      ],
+      "metrics": {
+        "mem_mb": 72.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 11.0,
+        "restarts": 0
+      },
+      "id": "payment-service",
+      "status": "healthy"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:31.000Z",
+    "payload": {
+      "label": "Payment Service",
+      "tier": "backend",
+      "depends_on": [
+        "postgres"
+      ],
+      "metrics": {
+        "mem_mb": 72.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 11.0,
+        "restarts": 0
+      },
+      "id": "payment-service",
+      "status": "healthy"
+    }
+  },
+  {
+    "type": "playbook_step",
+    "ts": "2026-10-09T03:14:31.500Z",
+    "payload": {
+      "order": 4,
+      "service": "payment-service",
+      "status": "done",
+      "action": "rollout_restart"
+    }
+  },
+  {
+    "type": "playbook_step",
+    "ts": "2026-10-09T03:14:32.500Z",
+    "payload": {
+      "order": 5,
+      "service": "api-gateway",
+      "status": "running",
+      "action": "verify_health"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:33.500Z",
+    "payload": {
+      "label": "API Gateway",
+      "tier": "edge",
+      "depends_on": [
+        "auth-service",
+        "payment-service"
+      ],
+      "metrics": {
+        "mem_mb": 65.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 14.0,
+        "restarts": 0
+      },
+      "id": "api-gateway",
+      "status": "healthy"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:34.500Z",
+    "payload": {
+      "label": "API Gateway",
+      "tier": "edge",
+      "depends_on": [
+        "auth-service",
+        "payment-service"
+      ],
+      "metrics": {
+        "mem_mb": 65.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 14.0,
+        "restarts": 0
+      },
+      "id": "api-gateway",
+      "status": "healthy"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:35.000Z",
+    "payload": {
+      "label": "Web UI",
+      "tier": "frontend",
+      "depends_on": [
+        "api-gateway"
+      ],
+      "metrics": {
+        "mem_mb": 42.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 5.0,
+        "restarts": 0
+      },
+      "id": "web-ui",
+      "status": "healthy"
+    }
+  },
+  {
+    "type": "service_update",
+    "ts": "2026-10-09T03:14:36.000Z",
+    "payload": {
+      "label": "Web UI",
+      "tier": "frontend",
+      "depends_on": [
+        "api-gateway"
+      ],
+      "metrics": {
+        "mem_mb": 42.0,
+        "mem_limit_mb": 128.0,
+        "cpu_pct": 5.0,
+        "restarts": 0
+      },
+      "id": "web-ui",
+      "status": "healthy"
+    }
+  },
+  {
+    "type": "playbook_step",
+    "ts": "2026-10-09T03:14:36.500Z",
+    "payload": {
+      "order": 5,
+      "service": "api-gateway",
+      "status": "done",
+      "action": "verify_health"
+    }
+  },
+  {
+    "type": "incident_update",
+    "ts": "2026-10-09T03:14:44.000Z",
+    "payload": {
+      "id": "INC-104",
+      "status": "resolved",
+      "scenario": "db_oom",
+      "root_service": "postgres",
+      "impacted_services": [
+        "auth-service",
+        "payment-service",
+        "api-gateway",
+        "web-ui"
+      ],
+      "raw_alert_count": 56,
+      "started_at": "2026-10-09T03:14:06.015Z",
+      "resolved_at": "2026-10-09T03:14:44.000Z",
+      "rca": {
+        "root_cause": "PostgreSQL was killed for exceeding its 64Mi memory limit",
+        "category": "OOMKilled",
+        "confidence": 0.97,
+        "evidence": [
+          {
+            "type": "k8s_event",
+            "source": "postgres-0",
+            "line": null,
+            "text": "Reason: OOMKilled, Exit Code: 137",
+            "verified": true
+          },
+          {
+            "type": "log",
+            "source": "postgres-0",
+            "line": 42,
+            "text": "FATAL: out of memory",
+            "verified": true
+          },
+          {
+            "type": "metric",
+            "source": "postgres-0",
+            "line": null,
+            "text": "memory 63.8Mi of 64Mi limit at 03:14:05",
+            "verified": true
+          }
+        ],
+        "similar_incident": {
+          "id": "INC-087",
+          "similarity": 0.94
+        }
+      },
+      "playbook": {
+        "diff": "resources.limits.memory: 64Mi -> 256Mi",
+        "steps": [
+          {
+            "order": 1,
+            "service": "postgres",
+            "action": "patch_memory_limit",
+            "params": {
+              "from": "64Mi",
+              "to": "256Mi"
+            },
+            "risk": "high",
+            "requires_approval": true,
+            "verify": "port 5432 accepting connections"
+          },
+          {
+            "order": 2,
+            "service": "postgres",
+            "action": "wait_for_ready",
+            "params": {
+              "timeout_s": 30
+            },
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "readiness probe passes"
+          },
+          {
+            "order": 3,
+            "service": "auth-service",
+            "action": "rollout_restart",
+            "params": {},
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "health endpoint 200"
+          },
+          {
+            "order": 4,
+            "service": "payment-service",
+            "action": "rollout_restart",
+            "params": {},
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "health endpoint 200"
+          },
+          {
+            "order": 5,
+            "service": "api-gateway",
+            "action": "verify_health",
+            "params": {},
+            "risk": "low",
+            "requires_approval": false,
+            "verify": "error rate below 1%"
+          }
+        ]
+      },
+      "timeline": [
+        {
+          "t_s": 0.0,
+          "event": "First alert received: alert storm detected"
+        },
+        {
+          "t_s": 2.5,
+          "event": "Root cause isolated to postgres via dependency graph"
+        },
+        {
+          "t_s": 6.5,
+          "event": "Root cause verified with citations; playbook synthesized"
+        },
+        {
+          "t_s": 8.5,
+          "event": "Awaiting human authorization for high-risk memory patch"
+        },
+        {
+          "t_s": 38.0,
+          "event": "Automated playbook execution complete: all 6 microservices healthy (MTTR: 38s)"
+        }
+      ]
+    }
+  }
+]
