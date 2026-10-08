@@ -127,7 +127,16 @@ class K8sEvent(BaseModel):
 
 
 class ActionResult(BaseModel):
-    success: bool
-    service: str
-    action: str
-    message: str
+    ok: bool = True
+    message: str = ""
+    step_order: Optional[int] = None
+    service: Optional[str] = None
+    action: Optional[str] = None
+    success: Optional[bool] = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.success is None:
+            self.success = self.ok
+        elif self.ok and not self.success:
+            self.ok = self.success
+

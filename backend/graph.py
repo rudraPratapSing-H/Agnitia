@@ -1,9 +1,12 @@
-"""Graph algorithms for service topology and incident correlation"""
+"""Service topology graph algorithms for Agnitia.
 
-from typing import Set, List, Dict
+Pure, synchronous, side-effect-free graph operations for correlation,
+topological ordering, impacted services computation, and blast radius analysis.
+"""
 
-# Service dependencies: service -> list of services it directly depends on
-DEPENDENCIES: Dict[str, List[str]] = {
+from typing import Dict, List, Set
+
+DEPENDS_ON: Dict[str, List[str]] = {
     "web-ui": ["api-gateway"],
     "api-gateway": ["auth-service", "payment-service"],
     "auth-service": ["postgres", "redis"],
@@ -12,90 +15,129 @@ DEPENDENCIES: Dict[str, List[str]] = {
     "redis": [],
 }
 
-# Reverse dependencies: service -> list of services that depend directly on it
-DEPENDENTS: Dict[str, List[str]] = {
-    "postgres": ["auth-service", "payment-service"],
-    "redis": ["auth-service"],
-    "auth-service": ["api-gateway"],
-    "payment-service": ["api-gateway"],
-    "api-gateway": ["web-ui"],
-    "web-ui": [],
+TIERS: Dict[str, str] = {
+    "postgres": "data",
+    "redis": "data",
+    "auth-service": "backend",
+    "payment-service": "backend",
+    "api-gateway": "edge",
+    "web-ui": "frontend",
 }
 
-
-def find_root(alerting: Set[str]) -> str:
-    """
-    Finds root cause service among alerting services.
-    Rule: An alerting service is the root if none of its dependencies are alerting.
-    """
-    if not alerting:
-        return ""
-
-    candidates = []
-    for svc in alerting:
-        deps = DEPENDENCIES.get(svc, [])
-        # If none of its dependencies are in the alerting set, it's a root candidate
-        if not any(dep in alerting for dep in deps):
-            candidates.append(svc)
-
-    if not candidates:
-        # Fallback to first if cycle or anomalous state
-        return next(iter(alerting))
-
-    # If multiple candidates, pick the deepest in dependency tree (e.g. data tier first)
-    tier_priority = {"postgres": 0, "redis": 1, "auth-service": 2, "payment-service": 3, "api-gateway": 4, "web-ui": 5}
-    candidates.sort(key=lambda s: tier_priority.get(s, 99))
-    return candidates[0]
-
-
-def impacted(root: str, alerting: Set[str]) -> List[str]:
-    """
-    Returns all alerting services that are downstream of the root cause service.
-    Excludes the root service itself.
-    """
-    if not root:
-        return []
-
-    downstream = set(blast_radius(root))
-    # Intersect with alerting services and sort topologically
-    affected = [svc for svc in alerting if svc in downstream and svc != root]
-    return topo_order(affected)
+SERVICE_LABELS: Dict[str, str] = {
+    "postgres": "PostgreSQL",
+    "redis": "Redis",
+    "auth-service": "Auth Service",
+    "payment-service": "Payment Service",
+    "api-gateway": "API Gateway",
+    "web-ui": "Web UI",
+}
 
 
 def topo_order(services: List[str]) -> List[str]:
     """
-    Orders services such that dependencies come first (safe recovery order).
+    Returns topological order of the given services using Kahn's algorithm
+    (dependencies first, ties broken alphabetically). Only includes the services passed in.
     """
+    for s in services:
+        if s not in DEPENDS_ON:
+            raise ValueError(f"Unknown service: {s}")
+
     svc_set = set(services)
-    ordered: List[str] = []
-    visited: Set[str] = set()
+    if not svc_set:
+        return []
 
-    def visit(node: str):
-        if node in visited:
-            return
-        visited.add(node)
-        for dep in DEPENDENCIES.get(node, []):
+    # In-degree: count of dependencies for node s that are also in svc_set
+    in_degree = {
+        s: sum(1 for dep in DEPENDS_ON[s] if dep in svc_set)
+        for s in svc_set
+    }
+
+    # Map each service to dependents that are in svc_set
+    dependents_map = {s: [] for s in svc_set}
+    for s in svc_set:
+        for dep in DEPENDS_ON[s]:
             if dep in svc_set:
-                visit(dep)
-        ordered.append(node)
+                dependents_map[dep].append(s)
 
-    for svc in services:
-        visit(svc)
+    result: List[str] = []
+    current_level = sorted([s for s in svc_set if in_degree[s] == 0])
 
-    return ordered
+    while current_level:
+        next_level = []
+        for u in current_level:
+            result.append(u)
+            for v in dependents_map[u]:
+                in_degree[v] -= 1
+                if in_degree[v] == 0:
+                    next_level.append(v)
+        current_level = sorted(next_level)
+
+    if len(result) < len(svc_set):
+        raise ValueError("Cycle detected in services dependency graph")
+
+    return result
 
 
 def blast_radius(service: str) -> List[str]:
     """
-    Returns all services transitively downstream of the given service (all dependents).
+    Returns every service that transitively depends on `service`, in topological order,
+    excluding `service` itself.
     """
+    if service not in DEPENDS_ON:
+        raise ValueError(f"Unknown service: {service}")
+
     downstream: Set[str] = set()
-    queue = list(DEPENDENTS.get(service, []))
+    queue = [s for s, deps in DEPENDS_ON.items() if service in deps]
 
     while queue:
         curr = queue.pop(0)
         if curr not in downstream:
             downstream.add(curr)
-            queue.extend(DEPENDENTS.get(curr, []))
+            for s, deps in DEPENDS_ON.items():
+                if curr in deps and s not in downstream:
+                    queue.append(s)
 
     return topo_order(list(downstream))
+
+
+def find_root(alerting: Set[str]) -> str:
+    """
+    Identifies root cause service among alerting services according to the contract:
+    an alerting service is the root if none of its direct dependencies are alerting.
+    If several qualify, returns the first in topological order.
+    Raises ValueError on an empty set or unknown service.
+    """
+    if not alerting:
+        raise ValueError("alerting set cannot be empty")
+
+    for s in alerting:
+        if s not in DEPENDS_ON:
+            raise ValueError(f"Unknown service: {s}")
+
+    candidates = [
+        s for s in alerting
+        if not any(dep in alerting for dep in DEPENDS_ON[s])
+    ]
+
+    if not candidates:
+        return topo_order(list(alerting))[0]
+
+    return topo_order(candidates)[0]
+
+
+def impacted(root: str, alerting: Set[str]) -> List[str]:
+    """
+    Returns alerting services transitively downstream of root, excluding root,
+    in topological order. Never includes any service that is not in `alerting`.
+    """
+    if root not in DEPENDS_ON:
+        raise ValueError(f"Unknown service: {root}")
+
+    for s in alerting:
+        if s not in DEPENDS_ON:
+            raise ValueError(f"Unknown service: {s}")
+
+    downstream = set(blast_radius(root))
+    affected = downstream.intersection(alerting)
+    return topo_order(list(affected))
