@@ -246,7 +246,7 @@ Phase 0 is one hour of setup that makes parallel work possible; phase 1 ends wit
 | 1.1 | Graph functions plus tests (`graph.py`) | Member 2 | Test: db\_oom gives root postgres, 4 impacted, redis excluded | 1 h | Not started |
 | 1.2 | Simulator plays scenario files on a timeline (`adapters/simulator.py`) | Member 2 | Inject db\_oom emits memory ramp, 56 alerts, incident in \~12 s, identical every run | 1.5 h | Not started |
 | 1.3 | REST routes, `/ws` event bus, reset (`main.py`, `bus.py`) | Member 2 | A socket client sees events; reset returns all services healthy | 1 h | Not started |
-| 1.4 | Mock event stream (`mock/events_db_oom.json`) | Member 4 | Member 1's UI plays a full run with the backend off | 45 min | Not started |
+| 1.4 | Mock event stream (`mock/events_db_oom.json`) | Member 4 | Member 1's UI plays a full run with the backend off | 45 min | Done |
 | 1.5 | Store, reducer, socket with mock replay (`store.ts`, `ws.ts`) | Member 1 | UI state changes as the mock file replays | 45 min | Not started |
 | 1.6 | Dependency map, service node with 4 states, animated edges | Member 1 | Root pulses red, victims amber, redis stays green | 1.5 h | Not started |
 | 1.7 | Chaos panel, alert funnel, incident card, Reset button | Member 1 | 56 alert cards collapse into INC-104; Reset clears it | 1.5 h | Not started |
