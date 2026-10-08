@@ -135,6 +135,7 @@ class LogLine(BaseModel):
     line: int
     t_s: float
     text: str
+    service: Optional[str] = None
 
 
 class MetricPoint(BaseModel):
@@ -142,6 +143,7 @@ class MetricPoint(BaseModel):
     t_s: float
     mem_mb: float
     cpu_pct: float
+    service: Optional[str] = None
 
 
 class K8sEvent(BaseModel):
@@ -153,8 +155,18 @@ class K8sEvent(BaseModel):
 
 class ActionResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    ok: bool
-    message: str
+    ok: bool = True
+    message: str = ""
+    step_order: Optional[int] = None
+    service: Optional[str] = None
+    action: Optional[str] = None
+    success: Optional[bool] = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.success is None:
+            self.success = self.ok
+        elif self.ok and not self.success:
+            self.ok = self.success
 
 
 # Scenario file format models
@@ -185,3 +197,4 @@ class Scenario(BaseModel):
     logs: dict[str, list[LogLine]]
     alerts: list[ScenarioAlert]
     fix: ScenarioFix
+

@@ -1,32 +1,30 @@
-.PHONY: help setup dev test reset demo run-backend run-frontend
-
-help:
-	@echo "Agnitia Dev Commands:"
-	@echo "  make setup   - Install backend and frontend dependencies"
-	@echo "  make dev     - Run backend (:8000) and frontend (:5173) concurrently"
-	@echo "  make test    - Run backend unit tests with pytest"
-	@echo "  make reset   - Trigger /api/reset to restore all services to healthy"
-	@echo "  make demo    - Start in cached demo mode (guaranteed offline stability)"
+.PHONY: setup dev test reset demo
 
 setup:
-	python -m pip install -r backend/requirements.txt
-	cd frontend && npm install
-
-run-backend:
-	python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
-
-run-frontend:
-	cd frontend && npm run dev
+	pip install -r backend/requirements.txt
+	@if [ -f frontend/package.json ]; then \
+		npm install --prefix frontend; \
+	else \
+		echo "Warning: frontend/package.json missing, skipping npm install"; \
+	fi
 
 dev:
-	@echo "Starting backend and frontend..."
-	python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload & cd frontend && npm run dev
+	@if [ -f frontend/package.json ]; then \
+		(uvicorn backend.main:app --reload --port 8000 & UV_PID=$$!; \
+		 npm run dev --prefix frontend & NPM_PID=$$!; \
+		 trap "kill $$UV_PID $$NPM_PID 2>/dev/null" SIGINT SIGTERM; \
+		 wait); \
+	else \
+		echo "Warning: frontend/package.json missing, running backend only"; \
+		uvicorn backend.main:app --reload --port 8000; \
+	fi
 
 test:
-	python -m pytest backend/tests -v
+	pytest backend/tests
 
 reset:
 	curl -s -X POST http://localhost:8000/api/reset
 
+# run only from a frozen git tag
 demo:
-	DEMO_MODE=cache python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+	DEMO_MODE=cache $(MAKE) dev

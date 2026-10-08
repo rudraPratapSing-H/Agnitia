@@ -1,0 +1,127 @@
+{
+  "scenario": "db_oom",
+  "title": "Database Out Of Memory (ExitCode 137)",
+  "root_service": "postgres",
+  "events": [
+    { "delay": 200, "type": "agent_step", "payload": { "agent": "triage", "text": "Telemetry alert stream triggered. Ingesting cluster events...", "status": "running" } },
+    { "delay": 400, "type": "metric_point", "payload": { "service": "postgres", "mem_mb": 48, "mem_limit_mb": 64, "cpu_pct": 14 } },
+    { "delay": 600, "type": "metric_point", "payload": { "service": "postgres", "mem_mb": 56, "mem_limit_mb": 64, "cpu_pct": 22 } },
+    { "delay": 900, "type": "metric_point", "payload": { "service": "postgres", "mem_mb": 63.8, "mem_limit_mb": 64, "cpu_pct": 38 } },
+    { "delay": 1100, "type": "service_update", "payload": { "id": "postgres", "status": "root_cause", "metrics": { "mem_mb": 64, "mem_limit_mb": 64, "cpu_pct": 45, "restarts": 1 } } },
+    { "delay": 1200, "type": "alert", "payload": { "id": "a-001", "service": "postgres", "severity": "critical", "message": "Pod postgres-0 OOMKilled: container exceeded 64Mi limit (ExitCode 137)", "ts": "03:14:07.102" } },
+    
+    { "delay": 1300, "type": "service_update", "payload": { "id": "auth-service", "status": "impacted", "metrics": { "mem_mb": 42, "mem_limit_mb": 128, "cpu_pct": 8, "restarts": 0 } } },
+    { "delay": 1350, "type": "alert", "payload": { "id": "a-002", "service": "auth-service", "severity": "critical", "message": "PG_CONN_TIMEOUT: dial tcp 10.96.0.4:5432 i/o timeout", "ts": "03:14:07.210" } },
+    { "delay": 1400, "type": "alert", "payload": { "id": "a-003", "service": "auth-service", "severity": "critical", "message": "JWT validation service degraded: connection pool exhausted", "ts": "03:14:07.240" } },
+    { "delay": 1450, "type": "alert", "payload": { "id": "a-004", "service": "auth-service", "severity": "critical", "message": "Failed query: SELECT * FROM sessions WHERE token = $1", "ts": "03:14:07.280" } },
+    { "delay": 1500, "type": "alert", "payload": { "id": "a-005", "service": "auth-service", "severity": "critical", "message": "Circuit breaker OPEN for upstream postgres:5432", "ts": "03:14:07.310" } },
+    { "delay": 1550, "type": "alert", "payload": { "id": "a-006", "service": "auth-service", "severity": "critical", "message": "Auth handshake failure: EOF received from socket", "ts": "03:14:07.350" } },
+    { "delay": 1600, "type": "alert", "payload": { "id": "a-007", "service": "auth-service", "severity": "critical", "message": "Health probe /healthz returned 503 Service Unavailable", "ts": "03:14:07.390" } },
+    { "delay": 1650, "type": "alert", "payload": { "id": "a-008", "service": "auth-service", "severity": "critical", "message": "Thread pool starved waiting on database locks", "ts": "03:14:07.420" } },
+    { "delay": 1700, "type": "alert", "payload": { "id": "a-009", "service": "auth-service", "severity": "critical", "message": "Postgres connection pool max capacity reached (0/50 ready)", "ts": "03:14:07.460" } },
+    { "delay": 1750, "type": "alert", "payload": { "id": "a-010", "service": "auth-service", "severity": "critical", "message": "Active session tokens cannot be verified; returning HTTP 500", "ts": "03:14:07.490" } },
+    { "delay": 1800, "type": "alert", "payload": { "id": "a-011", "service": "auth-service", "severity": "critical", "message": "Readiness probe failed: TCP socket 5432 connection refused", "ts": "03:14:07.520" } },
+
+    { "delay": 1850, "type": "service_update", "payload": { "id": "payment-service", "status": "impacted", "metrics": { "mem_mb": 78, "mem_limit_mb": 256, "cpu_pct": 12, "restarts": 0 } } },
+    { "delay": 1900, "type": "alert", "payload": { "id": "a-012", "service": "payment-service", "severity": "critical", "message": "Transaction ledger write failed: driver connection closed", "ts": "03:14:07.560" } },
+    { "delay": 1930, "type": "alert", "payload": { "id": "a-013", "service": "payment-service", "severity": "critical", "message": "Failed to persist order #84920 to payment_records", "ts": "03:14:07.590" } },
+    { "delay": 1960, "type": "alert", "payload": { "id": "a-014", "service": "payment-service", "severity": "critical", "message": "Checkout queue backpressure exceeded limit (250 msgs)", "ts": "03:14:07.620" } },
+    { "delay": 1990, "type": "alert", "payload": { "id": "a-015", "service": "payment-service", "severity": "critical", "message": "Postgres driver: no viable connection available in pool", "ts": "03:14:07.650" } },
+    { "delay": 2020, "type": "alert", "payload": { "id": "a-016", "service": "payment-service", "severity": "critical", "message": "HTTP 500: Internal Server Error on /v1/charge", "ts": "03:14:07.680" } },
+    { "delay": 2050, "type": "alert", "payload": { "id": "a-017", "service": "payment-service", "severity": "critical", "message": "Payment audit webhook dead letter queue threshold exceeded", "ts": "03:14:07.710" } },
+    { "delay": 2080, "type": "alert", "payload": { "id": "a-018", "service": "payment-service", "severity": "critical", "message": "Stripe token settlement failed due to DB transaction abort", "ts": "03:14:07.740" } },
+    { "delay": 2110, "type": "alert", "payload": { "id": "a-019", "service": "payment-service", "severity": "critical", "message": "DB retry policy exhausted: 3 attempts failed", "ts": "03:14:07.770" } },
+    { "delay": 2140, "type": "alert", "payload": { "id": "a-020", "service": "payment-service", "severity": "critical", "message": "Uncommitted state in ledger buffer; rollback forced", "ts": "03:14:07.800" } },
+    { "delay": 2170, "type": "alert", "payload": { "id": "a-021", "service": "payment-service", "severity": "critical", "message": "Readiness probe HTTP /ready returned 503", "ts": "03:14:07.830" } },
+    { "delay": 2200, "type": "alert", "payload": { "id": "a-022", "service": "payment-service", "severity": "critical", "message": "Payment gateway latency p99 spiked above 8500ms", "ts": "03:14:07.860" } },
+    { "delay": 2230, "type": "alert", "payload": { "id": "a-023", "service": "payment-service", "severity": "critical", "message": "Invoice generation stalled: unable to fetch customer ledger", "ts": "03:14:07.890" } },
+    { "delay": 2260, "type": "alert", "payload": { "id": "a-024", "service": "payment-service", "severity": "critical", "message": "Cart settlement worker exited with unhandled database exception", "ts": "03:14:07.920" } },
+    { "delay": 2290, "type": "alert", "payload": { "id": "a-025", "service": "payment-service", "severity": "critical", "message": "High error rate alarm: 94% failure on /v1/orders", "ts": "03:14:07.950" } },
+    { "delay": 2320, "type": "alert", "payload": { "id": "a-026", "service": "payment-service", "severity": "critical", "message": "Payment service degraded: entering fail-safe drop mode", "ts": "03:14:07.980" } },
+
+    { "delay": 2350, "type": "service_update", "payload": { "id": "api-gateway", "status": "impacted", "metrics": { "mem_mb": 110, "mem_limit_mb": 256, "cpu_pct": 34, "restarts": 0 } } },
+    { "delay": 2380, "type": "alert", "payload": { "id": "a-027", "service": "api-gateway", "severity": "critical", "message": "502 Bad Gateway: upstream auth-service returned 503", "ts": "03:14:08.010" } },
+    { "delay": 2400, "type": "alert", "payload": { "id": "a-028", "service": "api-gateway", "severity": "critical", "message": "504 Gateway Timeout: payment-service took > 5000ms", "ts": "03:14:08.030" } },
+    { "delay": 2420, "type": "alert", "payload": { "id": "a-029", "service": "api-gateway", "severity": "critical", "message": "Route /api/v1/auth/login failing (100% 502s)", "ts": "03:14:08.050" } },
+    { "delay": 2440, "type": "alert", "payload": { "id": "a-030", "service": "api-gateway", "severity": "critical", "message": "Route /api/v1/checkout failing (98% 504s)", "ts": "03:14:08.070" } },
+    { "delay": 2460, "type": "alert", "payload": { "id": "a-031", "service": "api-gateway", "severity": "critical", "message": "Rate limit bypassed: critical upstream dependency outage", "ts": "03:14:08.090" } },
+    { "delay": 2480, "type": "alert", "payload": { "id": "a-032", "service": "api-gateway", "severity": "critical", "message": "Envoy upstream reset: connection termination by peer", "ts": "03:14:08.110" } },
+    { "delay": 2500, "type": "alert", "payload": { "id": "a-033", "service": "api-gateway", "severity": "critical", "message": "Ingress HTTP 5xx error rate exceeded 5% threshold (currently 82%)", "ts": "03:14:08.130" } },
+    { "delay": 2520, "type": "alert", "payload": { "id": "a-034", "service": "api-gateway", "severity": "critical", "message": "Client session token validation dropouts detected", "ts": "03:14:08.150" } },
+    { "delay": 2540, "type": "alert", "payload": { "id": "a-035", "service": "api-gateway", "severity": "critical", "message": "Kong/Envoy cluster auth-service marked UNHEALTHY", "ts": "03:14:08.170" } },
+    { "delay": 2560, "type": "alert", "payload": { "id": "a-036", "service": "api-gateway", "severity": "critical", "message": "Kong/Envoy cluster payment-service marked UNHEALTHY", "ts": "03:14:08.190" } },
+    { "delay": 2580, "type": "alert", "payload": { "id": "a-037", "service": "api-gateway", "severity": "critical", "message": "Cascading retry flood from external client retries", "ts": "03:14:08.210" } },
+    { "delay": 2600, "type": "alert", "payload": { "id": "a-038", "service": "api-gateway", "severity": "critical", "message": "SSL connection pool saturation under burst retry traffic", "ts": "03:14:08.230" } },
+    { "delay": 2620, "type": "alert", "payload": { "id": "a-039", "service": "api-gateway", "severity": "critical", "message": "Ingress controller routing tables degraded", "ts": "03:14:08.250" } },
+    { "delay": 2640, "type": "alert", "payload": { "id": "a-040", "service": "api-gateway", "severity": "critical", "message": "Downstream HTTP 502 spike: 120 req/s failing", "ts": "03:14:08.270" } },
+    { "delay": 2660, "type": "alert", "payload": { "id": "a-041", "service": "api-gateway", "severity": "critical", "message": "Global edge response time SLA breached (P95 > 4200ms)", "ts": "03:14:08.290" } },
+    { "delay": 2680, "type": "alert", "payload": { "id": "a-042", "service": "api-gateway", "severity": "critical", "message": "Security filter bypass warned: missing upstream auth claims", "ts": "03:14:08.310" } },
+    { "delay": 2700, "type": "alert", "payload": { "id": "a-043", "service": "api-gateway", "severity": "critical", "message": "API gateway health check warning: backends uncontactable", "ts": "03:14:08.330" } },
+    { "delay": 2720, "type": "alert", "payload": { "id": "a-044", "service": "api-gateway", "severity": "critical", "message": "Emergency fallback responses active for /api/v1/health", "ts": "03:14:08.350" } },
+
+    { "delay": 2750, "type": "service_update", "payload": { "id": "web-ui", "status": "impacted", "metrics": { "mem_mb": 65, "mem_limit_mb": 128, "cpu_pct": 18, "restarts": 0 } } },
+    { "delay": 2780, "type": "alert", "payload": { "id": "a-045", "service": "web-ui", "severity": "critical", "message": "Frontend SSR render failed: Auth endpoint returned 502", "ts": "03:14:08.380" } },
+    { "delay": 2800, "type": "alert", "payload": { "id": "a-046", "service": "web-ui", "severity": "critical", "message": "Client telemetry: Checkout modal throwing Uncaught Error", "ts": "03:14:08.400" } },
+    { "delay": 2820, "type": "alert", "payload": { "id": "a-047", "service": "web-ui", "severity": "critical", "message": "Global user login wall: session creation failed", "ts": "03:14:08.420" } },
+    { "delay": 2840, "type": "alert", "payload": { "id": "a-048", "service": "web-ui", "severity": "critical", "message": "Next.js SSR Hydration error on /cart/checkout", "ts": "03:14:08.440" } },
+    { "delay": 2860, "type": "alert", "payload": { "id": "a-049", "service": "web-ui", "severity": "critical", "message": "Cart sync websocket disconnected unexpectedly", "ts": "03:14:08.460" } },
+    { "delay": 2880, "type": "alert", "payload": { "id": "a-050", "service": "web-ui", "severity": "critical", "message": "Customer bounce rate spiked to 91% on landing page", "ts": "03:14:08.480" } },
+    { "delay": 2900, "type": "alert", "payload": { "id": "a-051", "service": "web-ui", "severity": "critical", "message": "Synthetic uptime monitor failed in us-east, eu-west, ap-south", "ts": "03:14:08.500" } },
+    { "delay": 2920, "type": "alert", "payload": { "id": "a-052", "service": "web-ui", "severity": "critical", "message": "Static cache degradation: dynamic personalization disabled", "ts": "03:14:08.520" } },
+    { "delay": 2940, "type": "alert", "payload": { "id": "a-053", "service": "web-ui", "severity": "critical", "message": "Sentry error rate alert: 420 events/min (Unhandled Promise)", "ts": "03:14:08.540" } },
+    { "delay": 2960, "type": "alert", "payload": { "id": "a-054", "service": "web-ui", "severity": "critical", "message": "Product catalog prices failing to render: missing customer tier", "ts": "03:14:08.560" } },
+    { "delay": 2980, "type": "alert", "payload": { "id": "a-055", "service": "web-ui", "severity": "critical", "message": "Global user error toast triggered on 1,420 concurrent sessions", "ts": "03:14:08.580" } },
+    { "delay": 3000, "type": "alert", "payload": { "id": "a-056", "service": "web-ui", "severity": "critical", "message": "Storefront health check failed: Ingress HTTP 502 received", "ts": "03:14:08.600" } },
+
+    { "delay": 3200, "type": "agent_step", "payload": { "agent": "triage", "text": "Topological correlation applied: 56 alerts collapsed into 1 incident.", "status": "done" } },
+    { "delay": 3500, "type": "agent_step", "payload": { "agent": "diagnose", "text": "Inspecting upstream dependency root: postgres-0. Extracting pod logs...", "status": "running" } },
+    { "delay": 4000, "type": "agent_step", "payload": { "agent": "diagnose", "text": "Hard evidence identified: ExitCode 137, Memory 63.8MiB/64MiB, log line 42 'FATAL: out of memory'.", "status": "done" } },
+    { "delay": 4400, "type": "agent_step", "payload": { "agent": "plan", "text": "Generating topological sequential recovery playbook (Database -> Probes -> Dependents)...", "status": "running" } },
+    { "delay": 4800, "type": "agent_step", "payload": { "agent": "plan", "text": "Playbook generated. High-risk memory limit patch requires Human-in-the-Loop authorization.", "status": "done" } },
+
+    {
+      "delay": 5000,
+      "type": "incident_update",
+      "payload": {
+        "id": "INC-104",
+        "status": "awaiting_approval",
+        "scenario": "db_oom",
+        "root_service": "postgres",
+        "impacted_services": ["auth-service", "payment-service", "api-gateway", "web-ui"],
+        "raw_alert_count": 56,
+        "started_at": "2026-10-09T03:14:07Z",
+        "resolved_at": null,
+        "rca": {
+          "root_cause": "PostgreSQL terminated with exit code 137 (OOMKilled) after saturating its 64Mi container limit.",
+          "category": "OOMKilled",
+          "confidence": 0.97,
+          "evidence": [
+            { "type": "k8s_event", "source": "postgres-0", "text": "Reason: OOMKilled, Exit Code: 137", "verified": true },
+            { "type": "log", "source": "postgres-0", "line": 42, "text": "FATAL: out of memory allocating 4194304 bytes buffer", "verified": true },
+            { "type": "metric", "source": "postgres-0", "text": "memory peaked at 63.8Mi of 64Mi limit at 03:14:05 (99.7%)", "verified": true }
+          ],
+          "similar_incident": { "id": "INC-087", "similarity": 0.94 }
+        },
+        "playbook": {
+          "diff": "resources.limits.memory: 64Mi -> 256Mi\nresources.requests.memory: 32Mi -> 128Mi",
+          "steps": [
+            { "order": 1, "service": "postgres", "action": "patch_memory_limit", "params": { "from": "64Mi", "to": "256Mi" }, "risk": "high", "requires_approval": true, "verify": "port 5432 accepting connections" },
+            { "order": 2, "service": "postgres", "action": "wait_for_ready", "params": { "timeout_s": 30 }, "risk": "low", "requires_approval": false, "verify": "readiness probe passes" },
+            { "order": 3, "service": "auth-service", "action": "rollout_restart", "risk": "low", "requires_approval": false, "verify": "health endpoint 200" },
+            { "order": 4, "service": "payment-service", "action": "rollout_restart", "risk": "low", "requires_approval": false, "verify": "health endpoint 200" },
+            { "order": 5, "service": "api-gateway", "action": "verify_health", "risk": "low", "requires_approval": false, "verify": "error rate below 1%" },
+            { "order": 6, "service": "web-ui", "action": "verify_health", "risk": "low", "requires_approval": false, "verify": "storefront 200 OK" }
+          ]
+        },
+        "timeline": [
+          { "t_s": 0, "event": "Memory ramp detected on postgres-0 (48MiB -> 63.8MiB)" },
+          { "t_s": 1.2, "event": "ExitCode 137: postgres-0 OOMKilled" },
+          { "t_s": 1.8, "event": "Cascading alerts received across 4 downstream tiers (56 raw alerts)" },
+          { "t_s": 3.2, "event": "Topological correlation collapsed 56 alerts -> 1 root incident" },
+          { "t_s": 4.0, "event": "Multi-source evidence verified with zero hallucination (confidence 97%)" },
+          { "t_s": 5.0, "event": "Recovery playbook synthesized. Awaiting Human-in-the-Loop authorization" }
+        ]
+      }
+    }
+  ]
+}

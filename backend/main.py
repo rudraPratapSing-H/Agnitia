@@ -1,73 +1,228 @@
-"""FastAPI Main Application for Agnitia"""
+"""FastAPI Main Application for Agnitia."""
 
 import asyncio
 from datetime import datetime, timezone
-from typing import Optional
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+import logging
+import os
+from typing import Any, Dict, Optional, Set
 
-from backend.models import Incident, ServiceNode
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+
+load_dotenv()
+
 from backend.bus import bus, emit
-from backend.graph import find_root, impacted, blast_radius
-from backend.adapters.simulator import SimulatorAdapter
-from backend.agents.pipeline import run_pipeline
-from backend.agents.autonomy import set_autonomy_level, get_autonomy_level
-from backend.agents.postmortem import write_postmortem
-from backend.executor import execute, get_audit_log
-from backend.predictor import seconds_to_limit
+import backend.graph as graph
+from backend.models import Incident, ServiceNode, TimelineItem
+
+logger = logging.getLogger(__name__)
+
+# Try to import run_pipeline from Member 3's agents package
+try:
+    from backend.agents.pipeline import run_pipeline
+except ImportError:
+    run_pipeline = None
+
+# Valid chaos scenarios per PRD
+VALID_SCENARIOS: Set[str] = {"db_oom", "bad_config", "cpu_spike", "slow_leak"}
 
 app = FastAPI(title="Agnitia API", version="1.0.0")
 
-# Enable CORS for frontend Vite dev server
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "*",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Active state
-adapter = SimulatorAdapter()
-current_incident: Optional[Incident] = None
+# ── Module State ─────────────────────────────────────────────────────────────
+INCIDENTS: Dict[str, Incident] = {}
+LATEST_ID: Optional[str] = None
+BACKGROUND_TASKS: Set[asyncio.Task] = set()
 
 
-class AutonomyRequest(BaseModel):
-    level: int
+async def on_alerts_complete(scenario_or_alerts: Any, maybe_alerts: Optional[list] = None) -> None:
+    """Incident hook assigned to adapter.on_alerts_complete."""
+    global LATEST_ID
 
+    curr_task = asyncio.current_task()
+    if curr_task is not None:
+        BACKGROUND_TASKS.add(curr_task)
+        curr_task.add_done_callback(BACKGROUND_TASKS.discard)
 
-class ApprovalRequest(BaseModel):
-    approved_by: str = "web-ui"
-
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await bus.connect(websocket)
     try:
-        # On connection, send initial state of services and any active incident
-        services = await adapter.list_services()
-        for svc in services:
-            await websocket.send_json({
-                "type": "service_update",
-                "ts": datetime.now(timezone.utc).isoformat(),
-                "payload": svc.model_dump(),
-            })
+        if maybe_alerts is not None:
+            scenario = str(scenario_or_alerts)
+            alerts = maybe_alerts
+        elif isinstance(scenario_or_alerts, list):
+            alerts = scenario_or_alerts
+            scenario = (
+                getattr(adapter, "_scenario", {}).get("id", "db_oom")
+                if getattr(adapter, "_scenario", None)
+                else "db_oom"
+            )
+        else:
+            scenario = str(scenario_or_alerts)
+            alerts = []
 
-        if current_incident:
-            await websocket.send_json({
-                "type": "incident_update",
-                "ts": datetime.now(timezone.utc).isoformat(),
-                "payload": current_incident.model_dump(),
-            })
+        if not alerts:
+            logger.warning("on_alerts_complete called with empty alerts")
+            return
 
-        while True:
-            # Keep socket alive
-            data = await websocket.receive_text()
-    except WebSocketDisconnect:
-        bus.disconnect(websocket)
-    except Exception:
-        bus.disconnect(websocket)
+        alerting = {a.service for a in alerts}
+        root = graph.find_root(alerting)
+        imp = graph.impacted(root, alerting)
+
+        incident_id = alerts[0].incident_id or f"INC-{getattr(adapter, '_incident_counter', 104)}"
+        first_alert_ts = alerts[0].ts
+
+        try:
+            first_dt = datetime.fromisoformat(first_alert_ts.replace("Z", "+00:00"))
+            delta_s = (datetime.now(timezone.utc) - first_dt).total_seconds()
+        except Exception:
+            delta_s = 0.5
+        if delta_s < 0.0:
+            delta_s = 0.0
+
+        timeline = [
+            TimelineItem(t_s=0.0, event="First alert received"),
+            TimelineItem(
+                t_s=round(delta_s, 2),
+                event=f"Alerts correlated into {incident_id} (root: {root})",
+            ),
+        ]
+
+        incident = Incident(
+            id=incident_id,
+            status="analyzing",
+            scenario=scenario,
+            root_service=root,
+            impacted_services=imp,
+            raw_alert_count=len(alerts),
+            started_at=first_alert_ts,
+            resolved_at=None,
+            rca=None,
+            playbook=None,
+            timeline=timeline,
+        )
+
+        INCIDENTS[incident.id] = incident
+        LATEST_ID = incident.id
+        await emit("incident_update", incident)
+
+        if run_pipeline is not None:
+            try:
+                updated_incident = await run_pipeline(incident, adapter)
+                INCIDENTS[updated_incident.id] = updated_incident
+                LATEST_ID = updated_incident.id
+                await emit("incident_update", updated_incident)
+            except Exception as exc:
+                logger.exception("Pipeline execution failed: %s", exc)
+                incident.status = "analyzing"
+                INCIDENTS[incident.id] = incident
+                await emit("agent_step", {
+                    "agent": "pipeline",
+                    "text": f"Pipeline failed: {exc}",
+                    "status": "failed",
+                })
+                await emit("incident_update", incident)
+        else:
+            logger.warning("backend.agents.pipeline import failed (M3 not merged yet); using local stub")
+            incident.status = "awaiting_approval"
+            INCIDENTS[incident.id] = incident
+            LATEST_ID = incident.id
+            await emit("incident_update", incident)
+    finally:
+        if curr_task is not None:
+            BACKGROUND_TASKS.discard(curr_task)
+
+
+def init_adapter(adapter_type: Optional[str] = None) -> Any:
+    """Initializes adapter based on ADAPTER env var or argument."""
+    adp_name = adapter_type or os.getenv("ADAPTER", "simulator")
+    if adp_name == "simulator":
+        from backend.adapters.simulator import SimulatorAdapter
+        adp = SimulatorAdapter()
+    elif adp_name == "k8s":
+        try:
+            from backend.adapters.k8s import K8sAdapter
+            adp = K8sAdapter()
+        except (ImportError, AttributeError) as exc:
+            raise RuntimeError(
+                f"k8s adapter cannot be loaded: backend.adapters.k8s does not exist or is not implemented yet ({exc})"
+            ) from exc
+    else:
+        raise ValueError(f"Unknown ADAPTER: {adp_name}")
+
+    adp.on_alerts_complete = on_alerts_complete
+    return adp
+
+
+adapter = init_adapter()
+
+
+# ── REST Endpoints ───────────────────────────────────────────────────────────
+
+@app.post("/api/chaos/{scenario}")
+async def inject_chaos(scenario: str):
+    if scenario not in VALID_SCENARIOS:
+        raise HTTPException(status_code=404, detail=f"Unknown scenario '{scenario}'")
+
+    if getattr(adapter, "_scenario", None) is not None:
+        raise HTTPException(status_code=409, detail="A scenario is already playing")
+
+    try:
+        incident_id = await adapter.inject(scenario)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    if hasattr(adapter, "_running_tasks"):
+        for t in adapter._running_tasks:
+            BACKGROUND_TASKS.add(t)
+
+    return {"ok": True, "scenario": scenario}
+
+
+@app.post("/api/reset")
+async def reset():
+    global LATEST_ID
+
+    current = asyncio.current_task()
+    for task in list(BACKGROUND_TASKS):
+        if task is not current and not task.done():
+            task.cancel()
+    BACKGROUND_TASKS.clear()
+
+    await adapter.reset()
+    INCIDENTS.clear()
+    LATEST_ID = None
+
+    await emit("reset", {})
+    services = await adapter.list_services()
+    for svc in services:
+        await emit("service_update", svc)
+
+    return {"ok": True}
+
+
+@app.get("/api/incidents/latest")
+async def get_latest_incident():
+    if LATEST_ID and LATEST_ID in INCIDENTS:
+        return INCIDENTS[LATEST_ID]
+    return None
+
+
+@app.get("/api/health")
+async def health():
+    return {"status": "ok", "ok": True}
 
 
 @app.get("/api/services")
@@ -75,162 +230,70 @@ async def list_services():
     return await adapter.list_services()
 
 
-@app.get("/api/incidents/latest")
-async def get_latest_incident():
-    return current_incident
+# ── Placeholders returning 501 ───────────────────────────────────────────────
+
+@app.post("/api/incidents/{id}/approve")
+async def approve_incident(id: str):
+    raise HTTPException(status_code=501, detail="not implemented yet")
+
+
+@app.post("/api/incidents/{id}/reject")
+async def reject_incident(id: str):
+    raise HTTPException(status_code=501, detail="not implemented yet")
+
+
+@app.get("/api/incidents/{id}/postmortem")
+async def get_postmortem(id: str):
+    raise HTTPException(status_code=501, detail="not implemented yet")
 
 
 @app.get("/api/blast-radius/{service}")
-async def get_service_blast_radius(service: str):
-    affected = blast_radius(service)
-    return {
-        "service": service,
-        "impacted_services": affected,
-        "estimated_users_impacted": len(affected) * 1250,
-    }
+async def get_blast_radius(service: str):
+    raise HTTPException(status_code=501, detail="not implemented yet")
 
 
-@app.post("/api/autonomy")
-async def update_autonomy(req: AutonomyRequest):
-    if req.level not in (1, 2, 3):
-        raise HTTPException(status_code=400, detail="Autonomy level must be 1, 2, or 3")
-    set_autonomy_level(req.level)
-    return {"status": "ok", "level": get_autonomy_level()}
-
-
-@app.post("/api/reset")
-async def reset_topology():
-    global current_incident
-    adapter.reset()
-    current_incident = None
-
-    await emit("reset", {})
-
-    services = await adapter.list_services()
-    for svc in services:
-        await emit("service_update", svc.model_dump())
-
-    return {"status": "ok", "message": "All services restored to healthy"}
-
-
-@app.post("/api/chaos/{scenario}")
-async def inject_chaos(scenario: str):
-    global current_incident
-
-    scenario_data = adapter.load_scenario(scenario)
-    if not scenario_data:
-        raise HTTPException(status_code=404, detail=f"Scenario '{scenario}' not found")
-
-    # Reset any existing incident
-    adapter.reset()
-    await emit("reset", {})
-
-    # Start incident
-    incident_id = f"INC-{scenario.upper()[:3]}-104"
-    alerts = scenario_data.get("alerts", [])
-    alerting_services = {a["service"] for a in alerts}
-
-    root_svc = scenario_data.get("root_service") or find_root(alerting_services)
-    impacted_svcs = impacted(root_svc, alerting_services)
-
-    current_incident = Incident(
-        id=incident_id,
-        status="detected",
-        scenario=scenario,
-        root_service=root_svc,
-        impacted_services=impacted_svcs,
-        raw_alert_count=len(alerts),
-        started_at=datetime.now(timezone.utc).isoformat(),
-    )
-
-    # Launch background simulation task
-    asyncio.create_task(_run_chaos_simulation(scenario_data, current_incident))
-
-    return {
-        "status": "injected",
-        "scenario": scenario,
-        "incident_id": incident_id,
-        "alert_count": len(alerts),
-    }
-
-
-async def _run_chaos_simulation(scenario_data: dict, incident: Incident):
-    """Plays out metric curves, alerts, and triggers agent pipeline."""
-    metrics_data = scenario_data.get("metrics", {})
-    alerts = scenario_data.get("alerts", [])
-    root_svc = incident.root_service
-
-    # Stream metrics
-    for svc_id, points in metrics_data.items():
-        for pt in points:
-            await emit("metric_point", {
-                "service": svc_id,
-                "t_s": pt.get("t_s", 0.0),
-                "mem_mb": pt.get("mem_mb", 0.0),
-                "cpu_pct": pt.get("cpu_pct", 0.0),
-            })
-            await asyncio.sleep(0.04)
-
-    # Check for crash prediction on slow_leak
-    if incident.scenario == "slow_leak":
-        await emit("prediction", {
-            "service": "postgres",
-            "seconds": 184.0,
-            "message": "PostgreSQL memory trending to limit: estimated OOM crash in 3m 04s",
-        })
-
-    # Update node statuses
-    svc_node = adapter.services.get(root_svc)
-    if svc_node:
-        svc_node.status = "root_cause"
-        await emit("service_update", svc_node.model_dump())
-
-    for imp in incident.impacted_services:
-        imp_node = adapter.services.get(imp)
-        if imp_node:
-            imp_node.status = "impacted"
-            await emit("service_update", imp_node.model_dump())
-
-    # Stream alerts
-    for a in alerts:
-        a["incident_id"] = incident.id
-        await emit("alert", a)
-        await asyncio.sleep(0.02)
-
-    # Trigger agent investigation pipeline
-    await run_pipeline(incident, adapter)
-
-
-@app.post("/api/incidents/{incident_id}/approve")
-async def approve_incident(incident_id: str, req: ApprovalRequest = ApprovalRequest()):
-    global current_incident
-    if not current_incident or current_incident.id != incident_id:
-        raise HTTPException(status_code=404, detail="Incident not found")
-
-    asyncio.create_task(execute(current_incident, adapter, req.approved_by))
-    return {"status": "execution_started", "incident_id": incident_id, "approved_by": req.approved_by}
-
-
-@app.post("/api/incidents/{incident_id}/reject")
-async def reject_incident(incident_id: str):
-    global current_incident
-    if not current_incident or current_incident.id != incident_id:
-        raise HTTPException(status_code=404, detail="Incident not found")
-
-    current_incident.status = "detected"
-    await emit("incident_update", current_incident.model_dump())
-    return {"status": "rejected", "incident_id": incident_id}
-
-
-@app.get("/api/incidents/{incident_id}/postmortem")
-async def get_incident_postmortem(incident_id: str):
-    if not current_incident or current_incident.id != incident_id:
-        raise HTTPException(status_code=404, detail="Incident not found")
-
-    markdown = await write_postmortem(current_incident)
-    return {"incident_id": incident_id, "postmortem": markdown}
+@app.get("/api/incidents/{id}/audit")
+async def get_incident_audit(id: str):
+    raise HTTPException(status_code=501, detail="not implemented yet")
 
 
 @app.get("/api/audit")
 async def get_audit():
-    return get_audit_log()
+    raise HTTPException(status_code=501, detail="not implemented yet")
+
+
+@app.post("/api/autonomy")
+async def update_autonomy():
+    raise HTTPException(status_code=501, detail="not implemented yet")
+
+
+# ── WebSocket Stream ─────────────────────────────────────────────────────────
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await bus.connect(websocket)
+    try:
+        services = await adapter.list_services()
+        for svc in services:
+            now_z = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            await websocket.send_json({
+                "type": "service_update",
+                "ts": now_z,
+                "payload": svc.model_dump(mode="json"),
+            })
+
+        if LATEST_ID and LATEST_ID in INCIDENTS:
+            latest_inc = INCIDENTS[LATEST_ID]
+            now_z = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            await websocket.send_json({
+                "type": "incident_update",
+                "ts": now_z,
+                "payload": latest_inc.model_dump(mode="json"),
+            })
+
+        while True:
+            await websocket.receive_text()
+    except (WebSocketDisconnect, Exception) as exc:
+        logger.debug("WebSocket client disconnected: %s", exc)
+    finally:
+        bus.disconnect(websocket)
