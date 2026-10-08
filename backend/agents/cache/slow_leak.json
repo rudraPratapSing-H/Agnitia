@@ -1,21 +1,36 @@
 {
   "rca": {
-    "root_cause": "PostgreSQL buffer pool memory leak leading toward OOM threshold",
-    "category": "ResourceLeak",
-    "confidence": 0.92,
+    "root_cause": "The postgres pod is running out of memory, approaching its hard limit of 64Mi.",
+    "category": "OOMKilled",
+    "confidence": 0.95,
     "evidence": [
+      {
+        "type": "log",
+        "source": "postgres-0",
+        "text": "Buffer pool usage at 91%",
+        "line": 2,
+        "verified": true
+      },
+      {
+        "type": "k8s_event",
+        "source": "postgres-0",
+        "text": "Warning: Memory approaching hard limit 64Mi",
+        "line": null,
+        "verified": true
+      },
       {
         "type": "metric",
         "source": "postgres-0",
+        "text": "mem_mb: 63.2",
         "line": null,
-        "text": "Memory usage at 92% of limit (58.8Mi/64Mi)",
         "verified": true
       }
     ],
     "similar_incident": {
-      "id": "INC-054",
-      "similarity": 0.88
-    }
+      "id": "INC-087",
+      "similarity": 0.94
+    },
+    "warning": null
   },
   "playbook": {
     "diff": "resources.limits.memory: 64Mi -> 256Mi",
@@ -30,18 +45,63 @@
         },
         "risk": "high",
         "requires_approval": true,
-        "verify": "port 5432 accepting connections"
+        "verify": "kubectl get deployment postgres -o jsonpath='{.spec.template.spec.containers[0].resources.limits.memory}' | grep -q 256Mi"
       },
       {
         "order": 2,
         "service": "postgres",
         "action": "wait_for_ready",
         "params": {
-          "timeout_s": 20
+          "timeout_s": 60
         },
         "risk": "low",
         "requires_approval": false,
-        "verify": "health check ok"
+        "verify": "pg_isready"
+      },
+      {
+        "order": 3,
+        "service": "postgres",
+        "action": "verify_health",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "Check postgres metrics for normal memory consumption and active connections"
+      },
+      {
+        "order": 4,
+        "service": "auth-service",
+        "action": "rollout_restart",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "kubectl rollout status deployment/auth-service"
+      },
+      {
+        "order": 5,
+        "service": "payment-service",
+        "action": "rollout_restart",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "kubectl rollout status deployment/payment-service"
+      },
+      {
+        "order": 6,
+        "service": "api-gateway",
+        "action": "rollout_restart",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "kubectl rollout status deployment/api-gateway"
+      },
+      {
+        "order": 7,
+        "service": "web-ui",
+        "action": "rollout_restart",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "kubectl rollout status deployment/web-ui"
       }
     ]
   }
