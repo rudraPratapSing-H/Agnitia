@@ -1,7 +1,24 @@
 """Citation Verifier: Verifies that LLM claims directly match raw logs, events, and metrics"""
 
+import re
 from typing import List
 from backend.models import RCA, LogLine, K8sEvent, MetricPoint
+
+
+def _normalise(text: str) -> str:
+    """Removes all whitespace characters from text (case-sensitive)."""
+    return re.sub(r"\s+", "", text)
+
+
+def _extract_first_number(text: str) -> float | None:
+    """Finds and parses the first float/integer in the text."""
+    match = re.search(r"[-+]?(?:\d+\.?\d*|\.\d+)", text)
+    if match:
+        try:
+            return float(match.group(0))
+        except ValueError:
+            return None
+    return None
 
 
 def verify_citations(
@@ -11,45 +28,64 @@ def verify_citations(
     metrics: List[MetricPoint],
 ) -> RCA:
     """
-    Verifies every evidence citation against raw cluster telemetry.
-    If an evidence item cannot be verified in the raw data, marks verified=False
-    and reduces diagnosis confidence by 0.2 per invalid citation.
+    Verifies cited evidence items against raw cluster telemetry.
+    Returns a deep copy of the RCA, never mutating the input.
     """
-    if not rca or not rca.evidence:
-        return rca
+    rca_copy = rca.model_copy(deep=True)
 
-    unverified_count = 0
+    if not rca_copy.evidence:
+        rca_copy.warning = "No evidence cited"
+        return rca_copy
 
-    for item in rca.evidence:
+    failing_texts: List[str] = []
+
+    for ev in rca_copy.evidence:
+        norm_text = _normalise(ev.text)
+
+        # Evidence text shorter than 5 characters after normalising counts as NOT verified
+        if len(norm_text) < 5:
+            ev.verified = False
+            failing_texts.append(ev.text)
+            continue
+
         verified = False
 
-        if item.type == "log":
-            # Check against log lines (by line number or substring match)
-            for log in logs:
-                if item.line is not None and log.line == item.line:
-                    if item.text.lower() in log.text.lower() or log.text.lower() in item.text.lower():
-                        verified = True
-                        break
-                elif item.text.lower() in log.text.lower():
-                    verified = True
-                    break
+        if ev.type == "log":
+            # type "log": verified only if normalised text appears in a log line's text
+            # and if evidence has a line number, it must match that exact line
+            if ev.line is not None:
+                matching_logs = [l for l in logs if l.line == ev.line]
+                verified = any(norm_text in _normalise(l.text) for l in matching_logs)
+            else:
+                verified = any(norm_text in _normalise(l.text) for l in logs)
 
-        elif item.type == "k8s_event":
-            # Check against cluster events
-            for ev in events:
-                if item.text.lower() in ev.text.lower() or ev.text.lower() in item.text.lower():
-                    verified = True
-                    break
+        elif ev.type == "k8s_event":
+            # type "k8s_event": verified only if text appears inside some event's text
+            verified = any(norm_text in _normalise(e.text) for e in events)
 
-        elif item.type == "metric":
-            # Check against metric data
-            verified = len(metrics) > 0
+        elif ev.type == "metric":
+            # type "metric": take first number in text; must match mem_mb or cpu_pct within +-0.1
+            first_num = _extract_first_number(ev.text)
+            if first_num is not None:
+                verified = any(
+                    abs(pt.mem_mb - first_num) <= 0.1 or abs(pt.cpu_pct - first_num) <= 0.1
+                    for pt in metrics
+                )
+            else:
+                verified = False
 
-        item.verified = verified
+        ev.verified = verified
         if not verified:
-            unverified_count += 1
+            failing_texts.append(ev.text)
 
-    if unverified_count > 0:
-        rca.confidence = max(0.1, round(rca.confidence - (0.2 * unverified_count), 2))
+    if failing_texts:
+        # Apply penalty ONCE, not per item
+        rca_copy.confidence = round(max(0.0, rca_copy.confidence - 0.2), 2)
+        rca_copy.warning = (
+            f"{len(failing_texts)} citation(s) could not be verified against the raw data: "
+            + ", ".join(failing_texts)
+        )
+    else:
+        rca_copy.warning = None
 
-    return rca
+    return rca_copy
