@@ -254,7 +254,7 @@ Phase 0 is one hour of setup that makes parallel work possible; phase 1 ends wit
 | 1.9 | Scripted agent\_step emitter for Checkpoint 1 | Member 3 | Reasoning panel shows 6 investigation steps per run | 45 min | Not started |
 | 1.10 | Pipeline stub wired in: incident opens → `run_pipeline` returns cached root cause | Member 3 | incident\_update carries the root cause | 30 min | Not started |
 | 1.11 | ReasoningPanel component: terminal style, typing effect, auto-scroll | Member 4 | Renders steps from the mock file and scrolls by itself | 45 min | Done |
-| 1.12 | `scenarios/bad_config.json` (payment-service crash loop) | Member 4 | Validates; simulator plays it end to end | 45 min | Not started |
+| 1.12 | `scenarios/bad_config.json` (payment-service crash loop) | Member 4 | Validates; simulator plays it end to end | 45 min | Done |
 | 1.13 | Checkpoint 1 deck (4 slides) and progress board | Member 4 | Battle plan slides 1–4 plus a Done / Building / Next board | 45 min | Not started |
 | 1.14 | Integration: live backend to frontend, tag `cp1` | Member 2 with Member 1 | Inject → Reset → Inject works 3 times in a row on the demo laptop | 30 min | Not started |
 
