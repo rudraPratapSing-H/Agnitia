@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pg-memory-hog
+spec:
+  template:
+    spec:
+      containers:
+      - name: hog
+        image: postgres:15
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Starting memory hog..."
+          export PGPASSWORD=secret
+          # Create a huge table in memory using generate_series and cross joins
+          psql -h postgres -U postgres -c "
+            CREATE TEMP TABLE hog AS
+            SELECT x.id, repeat('A', 1000) as padding
+            FROM generate_series(1, 1000000) as x(id);
+          "
+      restartPolicy: Never
