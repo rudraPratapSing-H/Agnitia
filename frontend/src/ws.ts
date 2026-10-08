@@ -1,12 +1,24 @@
-// frontend/src/ws.js - WebSocket Manager & Standalone Mock Event Replayer
+// frontend/src/ws.ts - WebSocket Manager & Standalone Mock Event Replayer
 import { applyWsEvent, setWsConnected, setSimulating, resetStore } from './store';
 import dbOomMockData from './mock/events_db_oom.json';
 
-let socket = null;
-let reconnectTimer = null;
-let activeTimeouts = [];
+let socket: WebSocket | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let activeTimeouts: ReturnType<typeof setTimeout>[] = [];
 
-const WS_URL = (import.meta as any).env?.VITE_WS_URL || 'ws://localhost:8000/ws';
+const WS_URL: string = (import.meta as any).env?.VITE_WS_URL || 'ws://localhost:8000/ws';
+
+// Derive HTTP base URL from the WebSocket URL (ws: -> http:, wss: -> https:)
+function getApiBase(): string {
+  try {
+    const u = new URL(WS_URL);
+    u.protocol = u.protocol === 'wss:' ? 'https:' : 'http:';
+    // Strip the /ws path — the REST API lives at the root
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return 'http://localhost:8000';
+  }
+}
 
 export function connectWebSocket() {
   if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
@@ -37,14 +49,16 @@ export function connectWebSocket() {
     socket.onclose = () => {
       setWsConnected(false);
       socket = null;
-      // Attempt silent auto-reconnect every 4s
+      // Attempt silent auto-reconnect every 4 s
       if (!reconnectTimer) {
         reconnectTimer = setTimeout(() => {
+          reconnectTimer = null;
           connectWebSocket();
         }, 4000);
       }
     };
 
+    // onerror always fires before onclose; let onclose handle the reconnect.
     socket.onerror = () => {
       setWsConnected(false);
     };
@@ -67,16 +81,58 @@ export function clearActiveSimulation() {
   setSimulating(false, null);
 }
 
-// Deterministic Mock Event Replayer for Zero-Backend Standalone Demo
-export function playScenario(scenarioId) {
+// ── Live-backend helpers ─────────────────────────────────────────────────────
+
+/**
+ * POST /api/reset  — clears adapter state + emits reset + service_update events.
+ * Always resets the local store first so the UI is clean even if the call fails.
+ */
+export async function resetBackend(): Promise<void> {
+  resetStore();
+  clearActiveSimulation();
+  const isLiveConnected = socket && socket.readyState === WebSocket.OPEN;
+  if (!isLiveConnected) return;
+  try {
+    const res = await fetch(`${getApiBase()}/api/reset`, { method: 'POST' });
+    if (!res.ok) console.warn('[Agnitia] /api/reset returned', res.status);
+  } catch (err) {
+    console.warn('[Agnitia] /api/reset fetch failed (backend may be down):', err);
+  }
+}
+
+/**
+ * POST /api/chaos/{scenario}  — tells the backend adapter to start a scenario.
+ * The backend will push events over the WebSocket; no local mock replay needed.
+ */
+async function injectLive(scenarioId: string): Promise<void> {
+  try {
+    const res = await fetch(`${getApiBase()}/api/chaos/${scenarioId}`, { method: 'POST' });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      console.warn('[Agnitia] inject failed:', res.status, body);
+    }
+  } catch (err) {
+    console.warn('[Agnitia] inject fetch failed (backend may be down):', err);
+  }
+}
+
+// ── Deterministic Mock Event Replayer for Zero-Backend Standalone Demo ────────
+
+export function playScenario(scenarioId: string): void {
   clearActiveSimulation();
   resetStore();
 
   const isLiveConnected = socket && socket.readyState === WebSocket.OPEN;
 
-  // If live backend is connected, notify backend
+  // If live backend is connected, use REST inject — backend pushes WS events.
   if (isLiveConnected) {
-    sendWsMessage('chaos_inject', { scenario: scenarioId });
+    setSimulating(true, scenarioId);
+    injectLive(scenarioId).then(() => {
+      // Backend drives the simulation; clear the flag when we get a reset or
+      // incident_update(resolved) — or after a conservative timeout.
+      const guard = setTimeout(() => setSimulating(false, null), 30_000);
+      activeTimeouts.push(guard);
+    });
     return;
   }
 

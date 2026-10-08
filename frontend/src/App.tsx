@@ -9,8 +9,22 @@ import AgentStrip from './components/AgentStrip';
 import ChaosPanel from './components/ChaosPanel';
 import ReasoningPanel from './components/extras/ReasoningPanel';
 import { Shield, AlertTriangle } from 'lucide-react';
+import TimerDemo from './components/extras/dev/TimerDemo';
+import ReasoningDemo from './components/extras/dev/ReasoningDemo';
 
 export default function App() {
+  const demoParam =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('demo')
+      : null;
+
+  if (demoParam === 'timer') {
+    return <TimerDemo />;
+  }
+  if (demoParam === 'reasoning') {
+    return <ReasoningDemo />;
+  }
+
   const {
     services,
     alerts,

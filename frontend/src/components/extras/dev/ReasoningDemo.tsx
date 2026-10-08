@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ReasoningPanel, AgentStep } from '../ReasoningPanel';
-import mockData from '../../mock/events_db_oom.json';
+import ReasoningPanel from '../ReasoningPanel';
+import { AgentStep } from '../../../types';
+import mockData from '../../../mock/events_db_oom.json';
 
 // Filter out all agent_step events from the mock timeline
 interface MockEnvelope {
@@ -14,7 +15,7 @@ interface MockEnvelope {
   };
 }
 
-const rawMockEvents = (mockData as MockEnvelope[]).filter((e) => e.type === 'agent_step');
+const rawMockEvents = (((mockData as any).events || []) as MockEnvelope[]).filter((e) => e.type === 'agent_step');
 
 // Fallback steps if mock data is not yet generated
 const DEFAULT_REASONING_STEPS: AgentStep[] = [
@@ -66,11 +67,11 @@ export const ReasoningDemo: React.FC = () => {
   const [steps, setSteps] = useState<AgentStep[]>([]);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   const clearTimer = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
       timerRef.current = null;
     }
   };
@@ -161,7 +162,7 @@ export const ReasoningDemo: React.FC = () => {
 
       {/* Main Terminal Panel (Fixed 640px x 360px) */}
       <div className="w-full max-w-[640px] h-[360px] my-2">
-        <ReasoningPanel steps={steps} />
+        <ReasoningPanel steps={steps} isSimulating={isPlaying} />
       </div>
 
       {/* Controller Toolbar */}
@@ -233,7 +234,7 @@ export const ReasoningDemo: React.FC = () => {
         </div>
         <div className="flex items-center gap-2 text-zinc-300">
           <span className="text-emerald-400 font-bold">✓</span>
-          <span>Strict typography: all text >= 16px; panel fits 600px × 360px viewport</span>
+          <span>Strict typography: all text &gt;= 16px; panel fits 600px × 360px viewport</span>
         </div>
       </div>
     </div>

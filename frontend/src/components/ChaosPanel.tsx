@@ -1,8 +1,7 @@
-// D:\CoffeeOverflow\Agnitia\frontend\src\components\ChaosPanel.tsx
+// frontend/src/components/ChaosPanel.tsx
 import React from 'react';
 import { RotateCcw, Flame, AlertOctagon, Cpu, TrendingUp, Activity } from 'lucide-react';
-import { playScenario } from '../ws';
-import { resetStore } from '../store';
+import { playScenario, resetBackend } from '../ws';
 
 const SCENARIOS = [
   {
@@ -51,7 +50,9 @@ export default function ChaosPanel({ activeScenario, isSimulating, wsConnected }
   };
 
   const handleReset = () => {
-    resetStore();
+    // resetBackend() calls POST /api/reset when live, then resets local store.
+    // This clears the adapter's _scenario guard so Inject works again.
+    void resetBackend();
   };
 
   return (
