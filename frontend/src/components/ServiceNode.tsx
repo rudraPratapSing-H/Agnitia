@@ -1,4 +1,4 @@
-// D:\CoffeeOverflow\Agnitia\frontend\src\components\ServiceNode.tsx - Clean, Spacious Architecture Node
+// D:\CoffeeOverflow\Agnitia\frontend\src\components\ServiceNode.tsx - Production K8s Pod Service Node
 import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Database, Shield, Server, Globe, Cpu, AlertTriangle, CheckCircle2, RotateCw, Flame } from 'lucide-react';
@@ -34,15 +34,15 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
     healthy: {
       border: 'border-stone-200/90 hover:border-stone-400',
       badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-      badgeText: 'HEALTHY',
+      badgeText: 'NOMINAL',
       barColor: 'bg-emerald-600',
       iconBg: 'bg-stone-100 text-stone-600',
       accent: 'bg-white'
     },
     root_cause: {
-      border: 'border-rose-500 ring-2 ring-rose-200 animate-pulse-root',
+      border: 'border-rose-500 ring-2 ring-rose-200',
       badgeBg: 'bg-rose-50 text-rose-800 border-rose-300 font-bold',
-      badgeText: 'ROOT CAUSE',
+      badgeText: 'ROOT FAILURE',
       barColor: 'bg-rose-600',
       iconBg: 'bg-rose-100 text-rose-700',
       accent: 'bg-rose-50/50'
@@ -50,7 +50,7 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
     impacted: {
       border: 'border-amber-400 ring-1 ring-amber-200',
       badgeBg: 'bg-amber-50 text-amber-800 border-amber-300',
-      badgeText: 'IMPACTED',
+      badgeText: 'DEGRADED',
       barColor: 'bg-amber-500',
       iconBg: 'bg-amber-100 text-amber-700',
       accent: 'bg-amber-50/30'
@@ -72,7 +72,7 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
     accent: 'bg-white'
   };
 
-  // What-If dynamic highlights
+  // What-If highlights
   let whatIfRing = '';
   if (_whatIfOrigin) {
     whatIfRing = 'ring-3 ring-sky-500 border-sky-500 shadow-md';
@@ -82,55 +82,60 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
 
   return (
     <div
-      className={`relative w-[230px] rounded-xl border ${statusStyles.border} ${statusStyles.accent} ${whatIfRing} shadow-sm hover:shadow-md p-3.5 transition-all duration-200 cursor-pointer ${
+      className={`relative w-[230px] rounded-xl border ${statusStyles.border} ${statusStyles.accent} ${whatIfRing} shadow-2xs hover:shadow-sm p-3 transition-all duration-150 cursor-pointer ${
         selected ? 'ring-2 ring-stone-900 scale-[1.01]' : ''
       }`}
     >
-      {/* Top Handle (Incoming dependencies) - dead center */}
+      {/* Top Handle (Incoming dependencies) */}
       <Handle
         type="target"
         position={Position.Top}
         className="!w-3 !h-3 !-top-1.5 !bg-stone-400 !border-2 !border-white hover:!bg-stone-900 transition-colors"
       />
-      {/* Bottom Handle (Outgoing dependencies) - dead center */}
+      {/* Bottom Handle (Outgoing dependencies) */}
       <Handle
         type="source"
         position={Position.Bottom}
         className="!w-3 !h-3 !-bottom-1.5 !bg-stone-400 !border-2 !border-white hover:!bg-stone-900 transition-colors"
       />
 
-      {/* Header: Tier + Status */}
-      <div className="flex items-center justify-between gap-1.5 mb-2">
+      {/* Header: Tier + K8s Tag */}
+      <div className="flex items-center justify-between gap-1.5 mb-1.5">
         <div className="flex items-center gap-1.5">
           <div className={`p-1 rounded-md ${statusStyles.iconBg}`}>
-            <Icon size={14} />
+            <Icon size={13} />
           </div>
-          <span className="text-[10px] font-mono font-medium uppercase tracking-wider text-stone-500">
+          <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-stone-500">
             {tier}
           </span>
         </div>
 
         <span
-          className={`text-[9px] font-semibold tracking-wider px-1.5 py-0.5 rounded border ${statusStyles.badgeBg} flex items-center gap-1 font-mono`}
+          className={`text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded border ${statusStyles.badgeBg} flex items-center gap-1 font-mono`}
         >
-          {status === 'root_cause' && <Flame size={10} className="text-rose-600" />}
-          {status === 'impacted' && <AlertTriangle size={10} className="text-amber-600" />}
-          {status === 'recovering' && <RotateCw size={10} className="text-sky-600 animate-spin" />}
-          {status === 'healthy' && <CheckCircle2 size={10} className="text-emerald-600" />}
-          {_whatIfOrigin ? 'SIMULATED ROOT' : _whatIfImpacted ? 'VICTIM' : statusStyles.badgeText}
+          {status === 'root_cause' && <Flame size={9} className="text-rose-600" />}
+          {status === 'impacted' && <AlertTriangle size={9} className="text-amber-600" />}
+          {status === 'recovering' && <RotateCw size={9} className="text-sky-600 animate-spin" />}
+          {status === 'healthy' && <CheckCircle2 size={9} className="text-emerald-600" />}
+          {_whatIfOrigin ? 'SIMULATED ROOT' : _whatIfImpacted ? 'DOWNSTREAM VICTIM' : statusStyles.badgeText}
         </span>
       </div>
 
-      {/* Service Name */}
-      <div className="font-mono font-bold text-xs text-stone-900 truncate mb-2.5">
-        {label || id}
+      {/* Service Name & Pod Identifier */}
+      <div className="mb-2">
+        <div className="font-mono font-black text-xs text-stone-900 truncate">
+          {label || id}
+        </div>
+        <div className="text-[9px] text-stone-400 font-mono truncate">
+          pod/{id}-0 • ns:prod
+        </div>
       </div>
 
-      {/* Real-time Telemetry: Memory bar + CPU & Restarts */}
-      <div className="space-y-1.5 font-mono text-[10px]">
+      {/* Telemetry Metric Bars */}
+      <div className="space-y-1.5 font-mono text-[9px]">
         {/* Memory Bar */}
         <div>
-          <div className="flex justify-between text-stone-500 mb-0.5 text-[9px]">
+          <div className="flex justify-between text-stone-500 mb-0.5 text-[8.5px]">
             <span>MEM: {memMb}MiB / {memLimit}MiB</span>
             <span className={memPercent > 90 ? 'text-rose-600 font-bold' : ''}>
               {memPercent}%
@@ -144,15 +149,25 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
           </div>
         </div>
 
-        {/* CPU & Restarts */}
-        <div className="flex items-center justify-between text-[9px] text-stone-400 pt-0.5 border-t border-stone-100">
+        {/* CPU & K8s State Indicator */}
+        <div className="flex items-center justify-between text-[8.5px] text-stone-500 pt-1 border-t border-stone-100">
           <span className="flex items-center gap-1">
-            <Cpu size={10} />
+            <Cpu size={10} className="text-stone-400" />
             <span>CPU: {cpuPct}%</span>
           </span>
-          <span className={restarts > 0 ? 'text-rose-600 font-bold' : ''}>
-            restarts: {restarts}
-          </span>
+          {status === 'root_cause' ? (
+            <span className="text-rose-700 font-bold bg-rose-50 px-1 rounded border border-rose-200">
+              exitCode: 137
+            </span>
+          ) : restarts > 0 ? (
+            <span className="text-rose-600 font-bold">
+              restarts: {restarts}
+            </span>
+          ) : (
+            <span className="text-stone-400">
+              ready: 1/1
+            </span>
+          )}
         </div>
       </div>
     </div>

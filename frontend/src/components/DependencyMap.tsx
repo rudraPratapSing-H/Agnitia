@@ -171,7 +171,7 @@ export default function DependencyMap({
   }, [services, whatIfNode, whatIfDownstream]);
 
   return (
-    <div className="w-full h-full relative rounded-xl overflow-hidden border border-stone-200/90 bg-[#faf8f5] shadow-sm flex flex-col">
+    <div className="w-full h-full relative rounded-xl overflow-hidden border border-stone-200/90 bg-[#faf8f5] shadow-sm min-h-[720px]">
       {/* Top Header Overlay */}
       <div className="absolute top-3.5 left-4 z-10 pointer-events-none flex items-center gap-2.5 flex-wrap">
         <div className="bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-lg border border-stone-200 shadow-xs flex items-center gap-2">

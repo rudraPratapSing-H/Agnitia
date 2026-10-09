@@ -1,4 +1,4 @@
-﻿// D:\CoffeeOverflow\Agnitia\frontend\src\types.ts - Type Definitions mirroring CONTRACT.md
+// D:\CoffeeOverflow\Agnitia\frontend\src\types.ts - Type Definitions mirroring CONTRACT.md
 
 export type ServiceTier = 'data' | 'backend' | 'edge' | 'frontend';
 export type ServiceStatus = 'healthy' | 'root_cause' | 'impacted' | 'recovering';
