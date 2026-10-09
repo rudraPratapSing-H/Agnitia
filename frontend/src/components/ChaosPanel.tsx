@@ -1,7 +1,7 @@
 // D:\CoffeeOverflow\Agnitia\frontend\src\components\ChaosPanel.tsx - SRE Chaos Engine + Hotkey Badges
 import React from 'react';
 import { RotateCcw, Flame, AlertOctagon, Cpu, TrendingUp, Sliders } from 'lucide-react';
-import { playScenario, resetAll } from '../ws';
+import { playScenario, resetAll, setAutonomyBackend } from '../ws';
 import { resetStore, setAutonomyLevel } from '../store';
 import { playClickTone } from '../lib/sounds';
 
@@ -70,6 +70,7 @@ export default function ChaosPanel({
   const handleAutonomyChange = (lvl: number) => {
     playClickTone();
     setAutonomyLevel(lvl);
+    setAutonomyBackend(lvl);
   };
 
   return (

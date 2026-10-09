@@ -82,7 +82,7 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
 
   return (
     <div
-      className={`relative w-[230px] rounded-xl border ${statusStyles.border} ${statusStyles.accent} ${whatIfRing} shadow-2xs hover:shadow-sm p-3 transition-all duration-150 cursor-pointer ${
+      className={`relative w-[260px] rounded-xl border ${statusStyles.border} ${statusStyles.accent} ${whatIfRing} shadow-2xs hover:shadow-sm p-3 transition-all duration-150 cursor-pointer ${
         selected ? 'ring-2 ring-stone-900 scale-[1.01]' : ''
       }`}
     >
@@ -105,13 +105,13 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
           <div className={`p-1 rounded-md ${statusStyles.iconBg}`}>
             <Icon size={13} />
           </div>
-          <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-stone-500">
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-stone-500">
             {tier}
           </span>
         </div>
 
         <span
-          className={`text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded border ${statusStyles.badgeBg} flex items-center gap-1 font-mono`}
+          className={`text-[11px] font-bold tracking-wider px-1.5 py-0.5 rounded border ${statusStyles.badgeBg} flex items-center gap-1 font-mono`}
         >
           {status === 'root_cause' && <Flame size={9} className="text-rose-600" />}
           {status === 'impacted' && <AlertTriangle size={9} className="text-amber-600" />}
@@ -123,19 +123,19 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
 
       {/* Service Name & Pod Identifier */}
       <div className="mb-2">
-        <div className="font-mono font-black text-xs text-stone-900 truncate">
+        <div className="font-mono font-black text-sm text-stone-900 truncate">
           {label || id}
         </div>
-        <div className="text-[9px] text-stone-400 font-mono truncate">
+        <div className="text-[11px] text-stone-400 font-mono truncate">
           pod/{id}-0 • ns:prod
         </div>
       </div>
 
       {/* Telemetry Metric Bars */}
-      <div className="space-y-1.5 font-mono text-[9px]">
+      <div className="space-y-1.5 font-mono text-[11px]">
         {/* Memory Bar */}
         <div>
-          <div className="flex justify-between text-stone-500 mb-0.5 text-[8.5px]">
+          <div className="flex justify-between text-stone-500 mb-0.5 text-[11px]">
             <span>MEM: {memMb}MiB / {memLimit}MiB</span>
             <span className={memPercent > 90 ? 'text-rose-600 font-bold' : ''}>
               {memPercent}%
@@ -150,7 +150,7 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
         </div>
 
         {/* CPU & K8s State Indicator */}
-        <div className="flex items-center justify-between text-[8.5px] text-stone-500 pt-1 border-t border-stone-100">
+        <div className="flex items-center justify-between text-[11px] text-stone-500 pt-1 border-t border-stone-100">
           <span className="flex items-center gap-1">
             <Cpu size={10} className="text-stone-400" />
             <span>CPU: {cpuPct}%</span>

@@ -90,6 +90,15 @@ export function resetAll() {
   fetch('http://localhost:8000/api/reset', { method: 'POST' }).catch(() => {});
 }
 
+// POST /api/autonomy {level} -- tells the backend's approval gate which level is active.
+export function setAutonomyBackend(level: number) {
+  fetch('http://localhost:8000/api/autonomy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ level }),
+  }).catch(() => {});
+}
+
 function runLocalSimulation(scenarioId: string) {
   console.log(`Running standalone deterministic simulation for: ${scenarioId}`);
   setSimulating(true, scenarioId);

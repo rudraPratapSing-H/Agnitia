@@ -1,5 +1,8 @@
 """Autonomy Engine: Evaluates policy levels (1 to 3) to determine human approval gates"""
 
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
 from backend.models import PlaybookStep
 
 CURRENT_AUTONOMY_LEVEL = 2
@@ -37,3 +40,20 @@ def needs_approval(step: PlaybookStep, level: int = 2) -> bool:
         return False
 
     return True
+
+
+# ── REST endpoint: POST /api/autonomy (CONTRACT.md) ─────────────────────────
+
+router = APIRouter()
+
+
+class AutonomyUpdate(BaseModel):
+    level: int
+
+
+@router.post("/api/autonomy")
+async def update_autonomy(body: AutonomyUpdate) -> dict:
+    if body.level not in (1, 2, 3):
+        raise HTTPException(status_code=422, detail="level must be 1, 2 or 3")
+    set_autonomy_level(body.level)
+    return {"level": get_autonomy_level()}

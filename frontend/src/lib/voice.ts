@@ -1,5 +1,5 @@
 // D:\CoffeeOverflow\Agnitia\frontend\src\lib\voice.ts - Speech Synthesis Briefing
-let isVoiceMuted = true; // Off by default to avoid unexpected noise on stage
+let isVoiceMuted = false; // Matches sounds.ts's default (store.ts: soundMuted: false) -- one mute button controls both
 
 export function setVoiceMuted(muted: boolean) {
   isVoiceMuted = muted;

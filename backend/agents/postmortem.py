@@ -19,6 +19,9 @@ from pathlib import Path
 import re
 from typing import Any
 
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import PlainTextResponse
+
 from backend.agents import llm
 from backend.agents.llm import LLMError, LLMTimeout
 from backend.models import Incident
@@ -216,3 +219,21 @@ async def write_postmortem(incident: Incident) -> str:
     except (LLMTimeout, LLMError, Exception) as exc:
         logger.warning("Postmortem LLM generation failed (%s); using fallback template", exc)
         return _fallback_postmortem(incident, facts)
+
+
+# ── REST endpoint: GET /api/incidents/{id}/postmortem (CONTRACT.md) ─────────
+
+router = APIRouter()
+
+
+@router.get("/api/incidents/{id}/postmortem", response_class=PlainTextResponse)
+async def get_postmortem(id: str) -> str:
+    # Deferred import: backend.main imports this module's `router` at startup,
+    # so importing it back at module load time would be circular.
+    from backend.main import INCIDENTS
+
+    incident = INCIDENTS.get(id)
+    if incident is None:
+        raise HTTPException(status_code=404, detail=f"Incident '{id}' not found")
+
+    return await write_postmortem(incident)

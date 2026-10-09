@@ -142,20 +142,27 @@ async def test_health_endpoint():
 
 
 @pytest.mark.asyncio
-async def test_placeholder_endpoints_return_501():
+async def test_postmortem_endpoint_404_for_unknown_incident():
+    """GET /api/incidents/{id}/postmortem is wired (task 3.4); unknown ids 404."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        endpoints = [
-            ("GET", "/api/incidents/INC-104/postmortem"),
-            ("POST", "/api/autonomy"),
-        ]
-        for method, path in endpoints:
-            if method == "POST":
-                resp = await client.post(path)
-            else:
-                resp = await client.get(path)
-            assert resp.status_code == 501, f"{method} {path} should return 501"
-            assert resp.json() == {"detail": "not implemented yet"}
+        resp = await client.get("/api/incidents/INC-UNKNOWN-404/postmortem")
+        assert resp.status_code == 404
+
+
+async def test_autonomy_endpoint_sets_and_returns_level():
+    """POST /api/autonomy {level} is wired (task 3.3); CONTRACT.md: returns {"level": n}."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.post("/api/autonomy", json={"level": 3})
+        assert resp.status_code == 200
+        assert resp.json() == {"level": 3}
+
+        bad = await client.post("/api/autonomy", json={"level": 9})
+        assert bad.status_code == 422
+
+        # restore the default so this test doesn't leak state into others
+        await client.post("/api/autonomy", json={"level": 2})
 
 
 @pytest.mark.asyncio
