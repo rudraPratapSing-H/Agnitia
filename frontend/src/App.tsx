@@ -92,7 +92,9 @@ export default function App() {
     connectWebSocket();
   }, []);
 
-  // Audio cues on state changes
+  // Audio cues on state changes -- keyed on incident id + status only, NOT autonomyLevel,
+  // so moving the autonomy slider while an incident is awaiting approval doesn't replay the
+  // siren/voice briefing (that was overlapping an in-flight TTS call with a new one).
   useEffect(() => {
     if (incident && incident.status === 'awaiting_approval') {
       playAlertSiren();
@@ -102,18 +104,21 @@ export default function App() {
         `Incident ${incident.id}. Root cause: ${rootCause}. ` +
         `${incident.impacted_services.length} services impacted. Awaiting your approval.`
       );
-
-      // If Autonomy Level 3 is active, auto-heal after 1.5s countdown
-      if (autonomyLevel === 3) {
-        const timer = setTimeout(() => {
-          executeFullHealFlow();
-        }, 1500);
-        return () => clearTimeout(timer);
-      }
     } else if (incident && incident.status === 'resolved') {
       playSuccessChime();
     }
-  }, [incident?.status, autonomyLevel]);
+  }, [incident?.id, incident?.status]);
+
+  // Autonomy Level 3 auto-heal countdown -- separate effect so it can react to the
+  // slider changing mid-incident without re-triggering the announcement above.
+  useEffect(() => {
+    if (incident && incident.status === 'awaiting_approval' && autonomyLevel === 3) {
+      const timer = setTimeout(() => {
+        executeFullHealFlow();
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [incident?.id, incident?.status, autonomyLevel]);
 
   // Global Keyboard Shortcuts
   useEffect(() => {

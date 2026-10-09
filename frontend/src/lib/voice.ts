@@ -2,14 +2,23 @@
 let isVoiceMuted = false; // Matches sounds.ts's default (store.ts: soundMuted: false) -- one mute button controls both
 
 let currentAudio: HTMLAudioElement | null = null;
+let activeController: AbortController | null = null;
+let requestSeq = 0; // monotonic id -- lets a stale in-flight request recognize it's been superseded
 
 export function setVoiceMuted(muted: boolean) {
   isVoiceMuted = muted;
-  if (muted) {
-    currentAudio?.pause();
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+  if (muted) stopCurrent();
+}
+
+/** Cancels any in-flight TTS fetch and stops whatever's currently audible. */
+function stopCurrent() {
+  requestSeq++; // invalidate any in-flight request's eventual .then()/.catch()
+  activeController?.abort();
+  activeController = null;
+  currentAudio?.pause();
+  currentAudio = null;
+  if (typeof window !== 'undefined' && window.speechSynthesis) {
+    window.speechSynthesis.cancel();
   }
 }
 
@@ -35,16 +44,20 @@ function speakWithBrowserFallback(text: string) {
 }
 
 /**
- * Reads `text` aloud using Gemini's text-to-speech (POST /api/tts). Falls back
- * to the browser's built-in speechSynthesis if that call fails or is slow --
- * the briefing should never just go silent on stage. Silent when muted.
+ * Reads `text` aloud using Google TTS (POST /api/tts). Falls back to the browser's
+ * built-in speechSynthesis if that call fails or is slow -- the briefing should never
+ * just go silent on stage. Silent when muted.
+ *
+ * Single-flight: calling this again cancels any still-in-flight request and stops
+ * whatever's currently playing first, so two briefings can never overlap.
  */
 export function speakBriefing(text: string): void {
   if (isVoiceMuted) return;
 
-  currentAudio?.pause();
-
+  stopCurrent();
+  const mySeq = requestSeq; // stopCurrent() already bumped it; capture this call's id
   const controller = new AbortController();
+  activeController = controller;
   const timeout = setTimeout(() => controller.abort(), 16000);
 
   fetch(`${getApiBase()}/api/tts`, {
@@ -56,15 +69,18 @@ export function speakBriefing(text: string): void {
     .then(async (res) => {
       if (!res.ok) throw new Error(`TTS request failed: ${res.status}`);
       const blob = await res.blob();
-      if (isVoiceMuted) return; // muted while the request was in flight
+      if (mySeq !== requestSeq || isVoiceMuted) return; // superseded or muted while in flight
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       currentAudio = audio;
       audio.addEventListener('ended', () => URL.revokeObjectURL(url));
-      audio.play().catch(() => speakWithBrowserFallback(text));
+      audio.play().catch(() => {
+        if (mySeq === requestSeq) speakWithBrowserFallback(text);
+      });
     })
-    .catch(() => {
-      if (!isVoiceMuted) speakWithBrowserFallback(text);
+    .catch((err: any) => {
+      if (err?.name === 'AbortError') return; // intentionally cancelled by a newer call
+      if (mySeq === requestSeq && !isVoiceMuted) speakWithBrowserFallback(text);
     })
     .finally(() => clearTimeout(timeout));
 }
