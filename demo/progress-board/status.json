@@ -13,7 +13,7 @@
     "owner": "Member 1",
     "tier": "Tier 1",
     "state": "done",
-    "detail": "One-click fault triggers for db_oom, bad_config, cpu_spike"
+    "detail": "One-click fault triggers for db_oom, bad_config, cpu_spike, slow_leak"
   },
   {
     "id": 3,
@@ -24,6 +24,38 @@
     "detail": "56 alerts collapse into 1 incident card (98% noise removed)"
   },
   {
+    "id": 4,
+    "name": "Evidence drawer with verified badges",
+    "owner": "Member 1",
+    "tier": "Tier 1",
+    "state": "done",
+    "detail": "Highlighted log citations, memory ramp chart, exit code 137 verified"
+  },
+  {
+    "id": 5,
+    "name": "Ordered playbook",
+    "owner": "Member 2",
+    "tier": "Tier 1",
+    "state": "done",
+    "detail": "Topological order: dependencies restart first, preventing repeat crash"
+  },
+  {
+    "id": 6,
+    "name": "Approval card with config diff",
+    "owner": "Member 1",
+    "tier": "Tier 1",
+    "state": "done",
+    "detail": "Clear config diff (64Mi -> 256Mi) and manual Authorize action"
+  },
+  {
+    "id": 7,
+    "name": "Healing animation",
+    "owner": "Member 1",
+    "tier": "Tier 1",
+    "state": "done",
+    "detail": "Nodes recover and turn green in sequence as health checks pass"
+  },
+  {
     "id": 8,
     "name": "Live AI reasoning panel",
     "owner": "Member 4",
@@ -32,12 +64,20 @@
     "detail": "Terminal aesthetic, typed investigation steps, auto-scroll"
   },
   {
+    "id": 9,
+    "name": "Agent pipeline strip",
+    "owner": "Member 3",
+    "tier": "Tier 2",
+    "state": "done",
+    "detail": "Triage -> Diagnose -> Plan -> Verify -> Execute active agent chips"
+  },
+  {
     "id": 10,
     "name": "Phone approval (Telegram)",
     "owner": "Member 4",
     "tier": "Tier 2",
     "state": "done",
-    "detail": "BotEngine ping/pong, incident cards, one-tap approval"
+    "detail": "Long-polling bot, mobile incident card, one-tap approval heals on screen"
   },
   {
     "id": 12,
@@ -45,7 +85,15 @@
     "owner": "Member 4",
     "tier": "Tier 2",
     "state": "done",
-    "detail": "Live downtime timer and avoided downtime cost counter"
+    "detail": "Counts downtime every 100ms, freezes on recovery, calculates INR savings"
+  },
+  {
+    "id": 13,
+    "name": "Citation verifier guard",
+    "owner": "Member 3",
+    "tier": "Tier 2",
+    "state": "done",
+    "detail": "Machine-checks quotes against raw logs; hallucinations drop confidence"
   },
   {
     "id": 19,
@@ -53,103 +101,55 @@
     "owner": "Member 2",
     "tier": "Tier 3",
     "state": "done",
-    "detail": "Fast deterministic simulator + real Kind cluster interface"
-  },
-  {
-    "id": 4,
-    "name": "Evidence drawer with verified badges",
-    "owner": "Member 1",
-    "tier": "Tier 1",
-    "state": "building",
-    "detail": "Highlighted log line 42, memory chart, exit code 137"
-  },
-  {
-    "id": 5,
-    "name": "Ordered playbook",
-    "owner": "Member 2",
-    "tier": "Tier 1",
-    "state": "building",
-    "detail": "Dependencies first recovery sequence using topological order"
-  },
-  {
-    "id": 6,
-    "name": "Approval card with config diff",
-    "owner": "Member 1",
-    "tier": "Tier 1",
-    "state": "building",
-    "detail": "64Mi -> 256Mi diff display and human Authorize button"
-  },
-  {
-    "id": 9,
-    "name": "Agent pipeline strip",
-    "owner": "Member 3",
-    "tier": "Tier 2",
-    "state": "building",
-    "detail": "Triage -> Diagnose -> Plan -> Execute -> Verify active chips"
-  },
-  {
-    "id": 13,
-    "name": "Citation verifier guard",
-    "owner": "Member 3",
-    "tier": "Tier 2",
-    "state": "building",
-    "detail": "Automatic cross-check of LLM claims against raw cluster logs"
-  },
-  {
-    "id": 7,
-    "name": "Healing animation",
-    "owner": "Member 1",
-    "tier": "Tier 1",
-    "state": "next",
-    "detail": "Nodes turn green in order as health checks pass"
-  },
-  {
-    "id": 11,
-    "name": "Voice briefing",
-    "owner": "Member 4",
-    "tier": "Tier 2",
-    "state": "next",
-    "detail": "Audio summary read aloud for hands-free 3 AM on-call triage"
-  },
-  {
-    "id": 14,
-    "name": "One-click postmortem",
-    "owner": "Member 4",
-    "tier": "Tier 2",
-    "state": "next",
-    "detail": "Full downloadable incident report generated in 10 seconds"
-  },
-  {
-    "id": 15,
-    "name": "What-if blast radius",
-    "owner": "Member 1",
-    "tier": "Tier 2",
-    "state": "next",
-    "detail": "Interactive simulation of downstream outage impact"
+    "detail": "Deterministic simulator with timeline replay + real Kind cluster harness"
   },
   {
     "id": 16,
-    "name": "Crash prediction",
+    "name": "Crash prediction (Slow Leak)",
     "owner": "Member 2",
     "tier": "Tier 3",
-    "state": "next",
-    "detail": "Linear regression warning minutes before memory exhaustion"
-  },
-  {
-    "id": 17,
-    "name": "Incident memory",
-    "owner": "Member 3",
-    "tier": "Tier 3",
-    "state": "next",
-    "detail": "Similarity search against historical runbooks and fixes"
+    "state": "building",
+    "detail": "Linear regression over 20-point memory window; alerts at t=180s"
   },
   {
     "id": 18,
-    "name": "Policy autonomy levels",
+    "name": "Policy autonomy levels (L1-3)",
     "owner": "Member 3",
     "tier": "Tier 3",
+    "state": "building",
+    "detail": "Autonomy slider: L1 asks all, L2 auto-runs low risk, L3 autonomous"
+  },
+  {
+    "id": 14,
+    "name": "One-click postmortem writer",
+    "owner": "Member 3 & 4",
+    "tier": "Tier 2",
+    "state": "building",
+    "detail": "Blameless incident markdown with timeline, root cause, and 3 action items"
+  },
+  {
+    "id": 17,
+    "name": "Incident memory matcher",
+    "owner": "Member 3 & 4",
+    "tier": "Tier 3",
+    "state": "building",
+    "detail": "Embeddings/text similarity matching current incident against INC-087"
+  },
+  {
+    "id": 11,
+    "name": "Voice briefing & audio cues",
+    "owner": "Member 4",
+    "tier": "Tier 2",
     "state": "next",
-    "detail": "Level 1-3 policy slider for automatic vs gated execution"
+    "detail": "Hands-free audio summary read aloud on incident detection with mute toggle"
+  },
+  {
+    "id": 15,
+    "name": "What-if blast radius simulator",
+    "owner": "Member 1",
+    "tier": "Tier 2",
+    "state": "next",
+    "detail": "Interactive click mode highlighting downstream impact across graph"
   },
   {
     "id": 20,
@@ -157,14 +157,14 @@
     "owner": "Member 3",
     "tier": "Tier 3",
     "state": "next",
-    "detail": "Model Context Protocol for Claude Desktop external operations"
+    "detail": "Model Context Protocol endpoint for external AI assistant queries"
   },
   {
     "id": 21,
-    "name": "Ask Agnitia chat",
-    "owner": "Member 3",
-    "tier": "Tier 3",
+    "name": "Stage rehearsals & safety nets",
+    "owner": "Member 4 & all",
+    "tier": "Tier 1",
     "state": "next",
-    "detail": "Interactive Q&A over telemetry and root cause data"
+    "detail": "10 timed end-to-end rehearsals, offline cache fallback, venue audio/video test"
   }
 ]
