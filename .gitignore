@@ -24,6 +24,9 @@ dist/
 *.log
 logs/
 
+# ML Data
+backend/ml/data*.csv
+
 # OS & IDE
 .DS_Store
 Thumbs.db
