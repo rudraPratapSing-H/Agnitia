@@ -124,6 +124,139 @@ def validate_scenario(scenario_path: Path, verbose: bool = False) -> tuple[bool,
             )
         assert counts.get("redis", 0) == 0
 
+    elif scenario_id == "cpu_spike":
+        assert data["root_service"] == "auth-service", (
+            f"Expected root_service 'auth-service', got '{data['root_service']}'"
+        )
+        assert data["duration_s"] == 12, f"Expected duration_s 12, got {data['duration_s']}"
+        assert total_alerts == 24, f"Expected exactly 24 alerts for cpu_spike, got {total_alerts}"
+
+        # Per-service breakdown: auth-service:6, api-gateway:11, web-ui:7
+        expected_breakdown = {
+            "auth-service": 6,
+            "api-gateway":  11,
+            "web-ui":       7,
+        }
+        for svc, expected_count in expected_breakdown.items():
+            actual = counts.get(svc, 0)
+            assert actual == expected_count, (
+                f"Alert count mismatch for {svc}: expected {expected_count}, got {actual}"
+            )
+        # Healthy services must have 0 alerts
+        for healthy in ["postgres", "redis", "payment-service"]:
+            assert counts.get(healthy, 0) == 0, (
+                f"Healthy service {healthy} must have 0 alerts, got {counts.get(healthy, 0)}"
+            )
+
+        # Alert timestamps in [5.5, 8.5]
+        for a in alerts:
+            t = a["t_s"]
+            assert 5.5 <= t <= 8.5, f"Alert timestamp {t} out of range [5.5, 8.5]"
+
+        # Fix action
+        fix = data.get("fix", {})
+        assert fix.get("action") == "patch_cpu_limit", (
+            f"Expected fix action 'patch_cpu_limit', got {fix.get('action')}"
+        )
+        assert fix.get("from") == "250m", f"Expected fix.from '250m', got {fix.get('from')}"
+        assert fix.get("to") == "1000m", f"Expected fix.to '1000m', got {fix.get('to')}"
+
+        # Citable log line: 'CPU throttling detected' in auth-service logs
+        auth_logs = data.get("logs", {}).get("auth-service", [])
+        citable = next(
+            (l for l in auth_logs if "CPU throttling detected" in l.get("text", "")), None
+        )
+        assert citable is not None, (
+            "Missing citable 'CPU throttling detected' line in auth-service logs"
+        )
+
+        # Metrics: cpu_pct ramps from ~20 to ~98
+        auth_metrics = data.get("metrics", {}).get("auth-service", [])
+        assert len(auth_metrics) >= 10, "Expected >=10 metric points for auth-service"
+        cpus = [p["cpu_pct"] for p in auth_metrics]
+        assert cpus[0] < 30, f"First cpu_pct should be ~20, got {cpus[0]}"
+        assert cpus[-1] > 90, f"Last cpu_pct should be ~98, got {cpus[-1]}"
+
+    elif scenario_id == "slow_leak":
+        assert data["root_service"] == "postgres", (
+            f"Expected root_service 'postgres', got '{data['root_service']}'"
+        )
+        assert data["duration_s"] >= 240, f"Expected duration_s >= 240, got {data['duration_s']}"
+        assert total_alerts == 56, f"Expected 56 alerts for slow_leak, got {total_alerts}"
+
+        # Same per-service breakdown as db_oom
+        expected_breakdown = {
+            "postgres":        1,
+            "auth-service":   10,
+            "payment-service": 15,
+            "api-gateway":    18,
+            "web-ui":         12,
+        }
+        for svc, expected_count in expected_breakdown.items():
+            actual = counts.get(svc, 0)
+            assert actual == expected_count, (
+                f"Alert count mismatch for {svc}: expected {expected_count}, got {actual}"
+            )
+        assert counts.get("redis", 0) == 0
+
+        # No alerts before t_s 240.0
+        pre_crash = [a for a in alerts if a["t_s"] < 240.0]
+        assert len(pre_crash) == 0, (
+            f"Expected 0 alerts before t_s=240.0, got {len(pre_crash)}: {pre_crash[:3]}"
+        )
+
+        # All post-crash alerts at t_s >= 240.2
+        for a in alerts:
+            assert a["t_s"] >= 240.2, f"Alert at t_s={a['t_s']} is before 240.2"
+
+        # Metric points: ~481 (0.5s steps from 0 to 240)
+        pg_metrics = data.get("metrics", {}).get("postgres", [])
+        assert len(pg_metrics) >= 400, (
+            f"Expected ~481 metric points for postgres, got {len(pg_metrics)}"
+        )
+
+        # Memory ramps from ~40 to ~64
+        mems = [p["mem_mb"] for p in pg_metrics]
+        assert mems[0] < 43, f"First mem_mb should be ~40, got {mems[0]}"
+        assert mems[-1] > 60, f"Last mem_mb should be ~64, got {mems[-1]}"
+
+        # Monotone trend: every 20-point window must have positive slope
+        N = len(mems)
+        for start in range(N - 20):
+            window = mems[start:start+20]
+            xs = list(range(20))
+            xm = sum(xs) / 20
+            ym = sum(window) / 20
+            num = sum((xs[i]-xm)*(window[i]-ym) for i in range(20))
+            den = sum((xs[i]-xm)**2 for i in range(20))
+            slope_w = num / den if den else 0
+            assert slope_w > 0, (
+                f"Non-positive trend at window starting index {start} (t_s~{pg_metrics[start]['t_s']}s): "
+                f"slope={slope_w:.6f}"
+            )
+
+        # preventive_fix_at_s hint present
+        assert "preventive_fix_at_s" in data, (
+            "slow_leak must have a top-level 'preventive_fix_at_s' field"
+        )
+        pfas = data["preventive_fix_at_s"]
+        assert 60 <= pfas <= 220, f"preventive_fix_at_s {pfas} out of expected range [60, 220]"
+
+        # Citable FATAL line in postgres logs
+        pg_logs = data.get("logs", {}).get("postgres", [])
+        fatal_line = next(
+            (l for l in pg_logs if "FATAL: out of memory" in l.get("text", "")), None
+        )
+        assert fatal_line is not None, "Missing 'FATAL: out of memory' in postgres logs"
+
+        # Fix action matches db_oom
+        fix = data.get("fix", {})
+        assert fix.get("action") == "patch_memory_limit", (
+            f"Expected fix action 'patch_memory_limit', got {fix.get('action')}"
+        )
+        assert fix.get("from") == "64Mi"
+        assert fix.get("to") == "256Mi"
+
     return True, counts, data
 
 
@@ -169,7 +302,34 @@ def main():
         print(f"payment-service: {ps}, api-gateway: {gw}, web-ui: {ui} ({ps}/{gw}/{ui})")
     elif scenario_id == "db_oom":
         print("PASS")
-        print(f"Total alerts: {sum(counts.values())} (postgres: {counts['postgres']}, auth: {counts['auth-service']}, payment: {counts['payment-service']}, gateway: {counts['api-gateway']}, ui: {counts['web-ui']})")
+        print(
+            f"Total alerts: {sum(counts.values())} "
+            f"(postgres: {counts['postgres']}, auth: {counts['auth-service']}, "
+            f"payment: {counts['payment-service']}, gateway: {counts['api-gateway']}, ui: {counts['web-ui']})"
+        )
+    elif scenario_id == "cpu_spike":
+        a = counts.get("auth-service", 0)
+        gw = counts.get("api-gateway", 0)
+        ui = counts.get("web-ui", 0)
+        auth_metrics = data.get("metrics", {}).get("auth-service", [])
+        cpu_peak = max((p["cpu_pct"] for p in auth_metrics), default=0)
+        print("PASS")
+        print(
+            f"auth-service: {a}, api-gateway: {gw}, web-ui: {ui} ({a}/{gw}/{ui}) "
+            f"| cpu_peak: {cpu_peak}%"
+        )
+    elif scenario_id == "slow_leak":
+        pg_metrics = data.get("metrics", {}).get("postgres", [])
+        mem_start = pg_metrics[0]["mem_mb"] if pg_metrics else "?"
+        mem_end = pg_metrics[-1]["mem_mb"] if pg_metrics else "?"
+        pfas = data.get("preventive_fix_at_s", "?")
+        print("PASS")
+        print(
+            f"Total alerts: {sum(counts.values())} (all post-crash t_s>=240.2) "
+            f"| metrics: {len(pg_metrics)} pts, mem {mem_start}->{mem_end} MB "
+            f"| preventive_fix_at_s: {pfas} "
+            f"| trend: monotone in every 20-point window"
+        )
     else:
         print("PASS")
         print(f"Total alerts: {sum(counts.values())}")
