@@ -185,7 +185,7 @@ export function applyWsEvent(event: any) {
     case 'prediction': {
       globalState = {
         ...globalState,
-        prediction: payload
+        prediction: payload && payload.seconds != null ? payload : null
       };
       break;
     }
