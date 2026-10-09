@@ -271,7 +271,7 @@ export default function App() {
         </section>
 
         {/* Right: Alert Stream, Incident Dossier & Log */}
-        <section className="lg:col-span-5 flex flex-col gap-2.5 overflow-y-auto max-h-[760px] custom-scrollbar pr-1">
+        <section className="lg:col-span-5 h-[740px] max-h-[740px] flex flex-col gap-2.5 overflow-y-auto custom-scrollbar pr-1.5">
           <AlertFunnel alerts={alerts} incident={incident} />
           <IncidentCard
             incident={incident}
@@ -285,7 +285,7 @@ export default function App() {
       </main>
 
       {/* Bottom Chaos Action Bar + Autonomy Control */}
-      <footer className="mt-auto">
+      <footer className="mt-auto shrink-0">
         <ChaosPanel
           activeScenario={activeScenario}
           isSimulating={isSimulating}

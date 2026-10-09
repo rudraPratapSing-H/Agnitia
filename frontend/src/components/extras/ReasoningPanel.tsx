@@ -89,7 +89,7 @@ export default function ReasoningPanel({ steps, isSimulating }: ReasoningPanelPr
   };
 
   return (
-    <div className="rounded-xl overflow-hidden border border-stone-800 shadow-md font-mono bg-[#0a0a0a] flex flex-col h-[235px]">
+    <div className="rounded-xl overflow-hidden border border-stone-800 shadow-md font-mono bg-[#0a0a0a] flex flex-col h-[240px] min-h-[220px] shrink-0">
       {/* Simple CMD Header Bar */}
       <div className="bg-[#141414] px-3 py-1.5 border-b border-[#252525] flex items-center justify-between select-none">
         <div className="flex items-center gap-2">

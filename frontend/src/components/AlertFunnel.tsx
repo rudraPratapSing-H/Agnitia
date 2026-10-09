@@ -18,7 +18,7 @@ export default function AlertFunnel({ alerts, incident }: AlertFunnelProps) {
     : 0;
 
   return (
-    <div className="bg-white rounded-xl border border-stone-200 p-3.5 shadow-sm transition-all">
+    <div className="bg-white rounded-xl border border-stone-200 p-3.5 shadow-sm transition-all shrink-0 min-h-[90px]">
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
