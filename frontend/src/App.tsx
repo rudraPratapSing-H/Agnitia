@@ -1,7 +1,7 @@
-// D:\CoffeeOverflow\Agnitia\frontend\src\App.tsx - Clean SRE Mission Control with Phase 3
+// D:\CoffeeOverflow\Agnitia\frontend\src\App.tsx - SRE Mission Control with Global Hotkeys
 import React, { useEffect, useState } from 'react';
-import { useAgnitiaStore, setWhatIfNode, setSoundMuted, setAutonomyLevel } from './store';
-import { connectWebSocket, executeFullHealFlow } from './ws';
+import { useAgnitiaStore, setWhatIfNode, setSoundMuted, setAutonomyLevel, resetStore } from './store';
+import { connectWebSocket, executeFullHealFlow, playScenario } from './ws';
 import DependencyMap from './components/DependencyMap';
 import AlertFunnel from './components/AlertFunnel';
 import IncidentCard from './components/IncidentCard';
@@ -14,8 +14,8 @@ import PostmortemView from './components/extras/PostmortemView';
 import ReasoningPanel from './components/extras/ReasoningPanel';
 import Stopwatch from './components/extras/Stopwatch';
 import CostTicker from './components/extras/CostTicker';
-import { Shield, Volume2, VolumeX } from 'lucide-react';
-import { setMuted as setAudioMuted, playAlertSiren, playSuccessChime } from './lib/sounds';
+import { Shield, Volume2, VolumeX, Keyboard } from 'lucide-react';
+import { setMuted as setAudioMuted, playAlertSiren, playSuccessChime, playClickTone } from './lib/sounds';
 
 export default function App() {
   const {
@@ -47,7 +47,7 @@ export default function App() {
     if (incident && incident.status === 'awaiting_approval') {
       playAlertSiren();
 
-      // If Autonomy Level 3 is active, auto-heal after 1.5s countdown!
+      // If Autonomy Level 3 is active, auto-heal after 1.5s countdown
       if (autonomyLevel === 3) {
         const timer = setTimeout(() => {
           executeFullHealFlow();
@@ -58,6 +58,57 @@ export default function App() {
       playSuccessChime();
     }
   }, [incident?.status, autonomyLevel]);
+
+  // Global Keyboard Shortcuts (Hotkeys for stage demo)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Do not capture if active in input or textarea
+      const targetTag = (e.target as HTMLElement)?.tagName;
+      if (targetTag === 'INPUT' || targetTag === 'TEXTAREA') return;
+
+      if (e.key === '1') {
+        playClickTone();
+        playScenario('db_oom');
+      } else if (e.key === '2') {
+        playClickTone();
+        playScenario('bad_config');
+      } else if (e.key === '3') {
+        playClickTone();
+        playScenario('cpu_spike');
+      } else if (e.key === '4') {
+        playClickTone();
+        playScenario('slow_leak');
+      } else if (e.key === 'r' || e.key === 'R') {
+        playClickTone();
+        resetStore();
+      } else if (e.key === 'a' || e.key === 'A') {
+        if (incident && incident.status === 'awaiting_approval') {
+          if (!isApprovalOpen) {
+            setIsApprovalOpen(true);
+          } else {
+            handleAuthorizePlaybook();
+          }
+        }
+      } else if (e.key === 'e' || e.key === 'E') {
+        if (incident) {
+          setIsEvidenceOpen((prev) => !prev);
+        }
+      } else if (e.key === 'p' || e.key === 'P') {
+        if (incident) {
+          setIsPostmortemOpen((prev) => !prev);
+        }
+      } else if (e.key === 'm' || e.key === 'M') {
+        toggleSound();
+      } else if (e.key === 'Escape') {
+        setIsEvidenceOpen(false);
+        setIsApprovalOpen(false);
+        setIsPostmortemOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [incident, isApprovalOpen, soundMuted]);
 
   const toggleSound = () => {
     const next = !soundMuted;
@@ -85,14 +136,37 @@ export default function App() {
           <div>
             <h1 className="text-sm font-black tracking-tight text-stone-900 flex items-center gap-2">
               AGNITIA
-              <span className="text-[10px] font-normal text-stone-600 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
-                INFRA RELIABILITY ORCHESTRATOR
+              <span className="text-[10px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+                SRE CONTROL PLANE
               </span>
             </h1>
             <p className="text-[10px] text-stone-500 font-sans">
-              Topological Root Cause Analysis & Autonomous Safe Recovery
+              Topological Root Cause Analysis & Declarative Recovery
             </p>
           </div>
+        </div>
+
+        {/* Global Hotkeys Legend for Judges */}
+        <div className="hidden xl:flex items-center gap-2 text-[9px] font-mono text-stone-500 bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg">
+          <span className="font-extrabold text-stone-400 flex items-center gap-1">
+            <Keyboard size={11} />
+            HOTKEYS:
+          </span>
+          <span>
+            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">1..4</kbd> Inject
+          </span>
+          <span>
+            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">A</kbd> Authorize
+          </span>
+          <span>
+            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">E</kbd> Logs
+          </span>
+          <span>
+            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">P</kbd> Postmortem
+          </span>
+          <span>
+            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">R</kbd> Reset
+          </span>
         </div>
 
         {/* Header Telemetry Badges with Stopwatch & Financial Impact */}
@@ -117,7 +191,7 @@ export default function App() {
                 ? 'bg-stone-100 text-stone-400 border-stone-200'
                 : 'bg-emerald-50 text-emerald-800 border-emerald-300'
             }`}
-            title={soundMuted ? 'Audio muted' : 'Audio alerts enabled'}
+            title={soundMuted ? 'Audio muted (M)' : 'Audio alerts enabled (M)'}
           >
             {soundMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
             <span className="text-[9px] font-bold">{soundMuted ? 'MUTED' : 'AUDIO'}</span>
@@ -126,7 +200,7 @@ export default function App() {
           <div className="bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className="text-stone-500 text-[10px]">CLUSTER:</span>
-            <span className="text-stone-800 font-bold text-[10px]">LOCAL K8S</span>
+            <span className="text-stone-800 font-bold text-[10px]">PROD K8S</span>
           </div>
 
           <div className="bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
@@ -135,9 +209,9 @@ export default function App() {
                 wsConnected ? 'bg-emerald-500' : 'bg-stone-400'
               }`}
             />
-            <span className="text-stone-500 text-[10px]">STREAM:</span>
+            <span className="text-stone-500 text-[10px]">TELEMETRY:</span>
             <span className="font-bold text-[10px] text-stone-700">
-              {wsConnected ? 'LIVE WS' : 'SIMULATOR'}
+              {wsConnected ? 'LIVE WS' : 'STANDALONE'}
             </span>
           </div>
         </div>
@@ -149,12 +223,12 @@ export default function App() {
       )}
 
       {/* 5-Stage Pipeline Progress Strip */}
-      <AgentStrip agentSteps={agentSteps} incident={incident} />
+      <AgentStrip agentSteps={agentSteps} incident={incident} alerts={alerts} />
 
       {/* Main Grid: Left 58% Vertical Map, Right 42% Incident Column */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2.5 min-h-[580px]">
         {/* Left: Vertical Architecture Map with What-If Mode */}
-        <section className="lg:col-span-7 flex flex-col h-[740px] lg:h-full min-h-[700px]">
+        <section className="lg:col-span-7 h-[740px] min-h-[720px] relative">
           <DependencyMap
             services={services}
             activeScenario={activeScenario}
