@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Stopwatch } from '../Stopwatch';
-import { CostTicker } from '../CostTicker';
+import Stopwatch from '../Stopwatch';
+import CostTicker from '../CostTicker';
 
 export const isTimerDemoMode = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -97,26 +97,24 @@ export const TimerDemo: React.FC = () => {
 
         {/* Live Mounted Components */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Stopwatch startedAt={startedAt} resolvedAt={resolvedAt} />
+          <Stopwatch isActive={!!startedAt && !resolvedAt} resolvedAt={resolvedAt} />
           <CostTicker
-            startedAt={startedAt}
+            isActive={!!startedAt && !resolvedAt}
             resolvedAt={resolvedAt}
-            perMinute={Number(import.meta.env.VITE_COST_PER_MINUTE) || 1200}
-            currency="₹"
+            costPerMinute={Number(import.meta.env.VITE_COST_PER_MINUTE) || 4200}
           />
         </div>
 
-        {/* Invalid PerMinute Edge Case Test Component */}
+        {/* Invalid costPerMinute Edge Case Test Component */}
         <div className="p-3 bg-stone-900/60 border border-stone-800 rounded-xl flex items-center justify-between">
           <div className="text-xs text-stone-400">
-            Fallback Test (NaN / 0 perMinute):
+            Fallback Test (NaN costPerMinute):
           </div>
           <div className="scale-90 origin-right">
             <CostTicker
-              startedAt={startedAt}
+              isActive={!!startedAt && !resolvedAt}
               resolvedAt={resolvedAt}
-              perMinute={NaN}
-              currency="₹"
+              costPerMinute={NaN}
             />
           </div>
         </div>
