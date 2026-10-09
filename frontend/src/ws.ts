@@ -93,6 +93,15 @@ export function resetAll() {
   fetch('http://localhost:8000/api/reset', { method: 'POST' }).catch(() => {});
 }
 
+// POST /api/autonomy {level} -- tells the backend's approval gate which level is active.
+export function setAutonomyBackend(level: number) {
+  fetch('http://localhost:8000/api/autonomy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ level }),
+  }).catch(() => {});
+}
+
 function runLocalSimulation(scenarioId: string) {
   const isAmazon = getState().activePresetId === 'amazon-scale';
   console.log(`Running simulation for: ${scenarioId} (Preset: ${isAmazon ? 'Amazon' : 'K8s Core'})`);

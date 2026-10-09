@@ -1,0 +1,125 @@
+{
+  "id": "INC-104",
+  "status": "resolved",
+  "scenario": "db_oom",
+  "root_service": "postgres",
+  "impacted_services": [
+    "auth-service",
+    "payment-service",
+    "api-gateway",
+    "web-ui"
+  ],
+  "raw_alert_count": 56,
+  "started_at": "2026-10-09T03:14:07Z",
+  "resolved_at": "2026-10-09T03:14:45Z",
+  "rca": {
+    "root_cause": "PostgreSQL was killed for exceeding its 64Mi memory limit",
+    "category": "OOMKilled",
+    "confidence": 0.97,
+    "evidence": [
+      {
+        "type": "k8s_event",
+        "source": "postgres-0",
+        "text": "Reason: OOMKilled, Exit Code: 137",
+        "line": null,
+        "verified": true
+      },
+      {
+        "type": "log",
+        "source": "postgres-0",
+        "line": 42,
+        "text": "FATAL: out of memory",
+        "verified": true
+      },
+      {
+        "type": "metric",
+        "source": "postgres-0",
+        "line": null,
+        "text": "memory 63.8Mi of 64Mi limit at 03:14:05",
+        "verified": true
+      }
+    ],
+    "similar_incident": {
+      "id": "INC-087",
+      "similarity": 0.94
+    },
+    "warning": null
+  },
+  "playbook": {
+    "diff": "resources.limits.memory: 64Mi -> 256Mi",
+    "steps": [
+      {
+        "order": 1,
+        "service": "postgres",
+        "action": "patch_memory_limit",
+        "params": {
+          "from": "64Mi",
+          "to": "256Mi"
+        },
+        "risk": "high",
+        "requires_approval": true,
+        "verify": "port 5432 accepting connections"
+      },
+      {
+        "order": 2,
+        "service": "postgres",
+        "action": "wait_for_ready",
+        "params": {
+          "timeout_s": 30
+        },
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "readiness probe passes"
+      },
+      {
+        "order": 3,
+        "service": "auth-service",
+        "action": "rollout_restart",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "health endpoint 200"
+      },
+      {
+        "order": 4,
+        "service": "payment-service",
+        "action": "rollout_restart",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "health endpoint 200"
+      },
+      {
+        "order": 5,
+        "service": "api-gateway",
+        "action": "verify_health",
+        "params": null,
+        "risk": "low",
+        "requires_approval": false,
+        "verify": "error rate below 1%"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "t_s": 0.0,
+      "event": "First alert received"
+    },
+    {
+      "t_s": 0.5,
+      "event": "Alerts correlated into INC-104 (root: postgres)"
+    },
+    {
+      "t_s": 4.2,
+      "event": "RCA completed: OOMKilled isolated on postgres-0"
+    },
+    {
+      "t_s": 12.0,
+      "event": "Playbook approved by sre-lead"
+    },
+    {
+      "t_s": 38.0,
+      "event": "Incident resolved: all services healthy"
+    }
+  ]
+}

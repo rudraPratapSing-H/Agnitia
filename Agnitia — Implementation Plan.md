@@ -253,10 +253,10 @@ Phase 0 is one hour of setup that makes parallel work possible; phase 1 ends wit
 | 1.8 | Diagnose agent: prompt, schema, cache (`diagnose.py`, `prompts/`, `cache/`) | Member 3 | Valid root cause for db\_oom and bad\_config; cached JSON saved for both | 1.5 h | Not started |
 | 1.9 | Scripted agent\_step emitter for Checkpoint 1 | Member 3 | Reasoning panel shows 6 investigation steps per run | 45 min | Not started |
 | 1.10 | Pipeline stub wired in: incident opens → `run_pipeline` returns cached root cause | Member 3 | incident\_update carries the root cause | 30 min | Not started |
-| 1.11 | ReasoningPanel component: terminal style, typing effect, auto-scroll | Member 4 | Renders steps from the mock file and scrolls by itself | 45 min | Not started |
-| 1.12 | `scenarios/bad_config.json` (payment-service crash loop) | Member 4 | Validates; simulator plays it end to end | 45 min | Not started |
-| 1.13 | Checkpoint 1 deck (4 slides) and progress board | Member 4 | Battle plan slides 1–4 plus a Done / Building / Next board | 45 min | Not started |
-| 1.14 | Integration: live backend to frontend, tag `cp1` | Member 2 with Member 1 | Inject → Reset → Inject works 3 times in a row on the demo laptop | 30 min | Not started |
+| 1.11 | ReasoningPanel component: terminal style, typing effect, auto-scroll | Member 4 | Renders steps from the mock file and scrolls by itself | 45 min | Done |
+| 1.12 | `scenarios/bad_config.json` (payment-service crash loop) | Member 4 | Validates; simulator plays it end to end | 45 min | Done |
+| 1.13 | Checkpoint 1 deck (4 slides) and progress board | Member 4 | Battle plan slides 1–4 plus a Done / Building / Next board | 45 min | Done |
+| 1.14 | Integration: live backend to frontend, tag `cp1` | Member 2 with Member 1 | Inject → Reset → Inject works 3 times in a row on the demo laptop | 30 min | Done |
 
 ## Phase 2 tracker (hours 5–11, to Checkpoint 2)
 
@@ -276,7 +276,7 @@ Phase 2 turns the skeleton into the full loop: live AI diagnosis, an ordered pla
 | 2.10 | Evidence drawer: highlighted log lines, memory chart, Verified badges | Member 1 | Opens from the incident card; the cited line is highlighted | 2 h | Not started |
 | 2.11 | Playbook card and approval modal with config diff | Member 1 | Diff shows 64Mi → 256Mi; Authorize calls the approve endpoint | 1.5 h | Not started |
 | 2.12 | Healing animation, agent strip, mount Member 4's components | Member 1 | Nodes go green in playbook order; agent chips light in sequence | 1 h | Not started |
-| 2.13 | Stopwatch and cost ticker (`components/extras/`) | Member 4 | Starts at the first alert, freezes at resolved, clears on Reset | 45 min | Not started |
+| 2.13 | Stopwatch and cost ticker (`components/extras/`) | Member 4 | Starts at the first alert, freezes at resolved, clears on Reset | 45 min | Done |
 | 2.14 | Telegram approval bot (`bot/telegram_bot.py`), prompt in battle plan §9 | Member 4 | Tapping Approve on a phone heals the system on screen | 2 h | Not started |
 | 2.15 | `cpu_spike.json` and `slow_leak.json` (memory climbs over \~4 minutes) | Member 4 | Both validate and play end to end | 1 h | Not started |
 | 2.16 | Checkpoint 2 slides (agent pipeline, safety) and progress board update | Member 4 | Battle plan slides 6–8 drafted | 30 min | Not started |

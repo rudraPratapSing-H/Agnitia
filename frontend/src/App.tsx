@@ -17,6 +17,10 @@ import ArchitectureSelectionPage from './pages/ArchitectureSelectionPage';
 import { PresetId, PRESETS } from './presets';
 import { Shield, Volume2, VolumeX, Keyboard, ArrowLeft, Sparkles, Server } from 'lucide-react';
 import { setMuted as setAudioMuted, playAlertSiren, playSuccessChime, playClickTone } from './lib/sounds';
+import { setVoiceMuted, speakBriefing } from './lib/voice';
+import TimerDemo from './components/extras/dev/TimerDemo';
+import ReasoningDemo from './components/extras/dev/ReasoningDemo';
+import PostmortemDemo from './components/extras/dev/PostmortemDemo';
 
 type AppPage = 'selection' | 'simulation';
 
@@ -28,6 +32,21 @@ function getInitialPage(): AppPage {
 }
 
 export default function App() {
+  const demoParam =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('demo')
+      : null;
+
+  if (demoParam === 'timer') {
+    return <TimerDemo />;
+  }
+  if (demoParam === 'reasoning') {
+    return <ReasoningDemo />;
+  }
+  if (demoParam === 'postmortem') {
+    return <PostmortemDemo />;
+  }
+
   const {
     activePresetId,
     services,
@@ -77,6 +96,12 @@ export default function App() {
   useEffect(() => {
     if (incident && incident.status === 'awaiting_approval') {
       playAlertSiren();
+
+      const rootCause = incident.rca?.root_cause || `an issue in ${incident.root_service}`;
+      speakBriefing(
+        `Incident ${incident.id}. Root cause: ${rootCause}. ` +
+        `${incident.impacted_services.length} services impacted. Awaiting your approval.`
+      );
 
       // If Autonomy Level 3 is active, auto-heal after 1.5s countdown
       if (autonomyLevel === 3) {
@@ -148,6 +173,7 @@ export default function App() {
     const next = !soundMuted;
     setSoundMuted(next);
     setAudioMuted(next);
+    setVoiceMuted(next);
   };
 
   const handleAuthorizePlaybook = () => {
@@ -203,11 +229,11 @@ export default function App() {
           <div>
             <h1 className="text-sm font-black tracking-tight text-stone-900 flex items-center gap-2">
               AGNITIA
-              <span className="text-[10px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+              <span className="text-[11px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
                 SRE MISSION CONTROL
               </span>
             </h1>
-            <p className="text-[10px] text-stone-500 font-sans">
+            <p className="text-[11px] text-stone-500 font-sans">
               Topological Root Cause Analysis & Autonomous Self-Healing
             </p>
           </div>
@@ -246,8 +272,20 @@ export default function App() {
             title={soundMuted ? 'Audio muted (M)' : 'Audio alerts enabled (M)'}
           >
             {soundMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            <span className="text-[9px] font-bold">{soundMuted ? 'MUTED' : 'AUDIO'}</span>
+            <span className="text-[11px] font-bold">{soundMuted ? 'MUTED' : 'AUDIO'}</span>
           </button>
+
+          <div className="bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                wsConnected ? 'bg-emerald-500' : 'bg-stone-400'
+              }`}
+            />
+            <span className="text-stone-500 text-[11px]">TELEMETRY:</span>
+            <span className="font-bold text-[11px] text-stone-700">
+              {wsConnected ? 'LIVE WS' : 'STANDALONE'}
+            </span>
+          </div>
         </div>
       </header>
 

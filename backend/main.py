@@ -13,10 +13,12 @@ from fastapi.responses import JSONResponse
 
 load_dotenv()
 
+from collections import deque
 from backend.bus import bus, emit
 import backend.executor as executor
 import backend.graph as graph
-from backend.models import Incident, ServiceNode, TimelineItem
+from backend.models import Incident, MetricPoint, ServiceNode, TimelineItem
+from backend.predictor import seconds_to_limit
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +49,94 @@ app.add_middleware(
 INCIDENTS: Dict[str, Incident] = {}
 LATEST_ID: Optional[str] = None
 BACKGROUND_TASKS: Set[asyncio.Task] = set()
+
+# Metric buffer per service: deque(maxlen=20) for crash prediction
+METRIC_HISTORY: Dict[str, deque] = {}
+LAST_PREDICTION_TS: Dict[str, float] = {}
+
+
+async def _execute_pipeline_for_incident(incident: Incident) -> None:
+    """Runs the AI pipeline for an incident and emits incident updates."""
+    global LATEST_ID
+    if run_pipeline is not None:
+        try:
+            updated_incident = await run_pipeline(incident, adapter)
+            if updated_incident.playbook is None:
+                try:
+                    from backend.agents.planner import plan_recovery
+                    updated_incident.playbook = await plan_recovery(updated_incident)
+                except Exception:
+                    pass
+            # Autonomy policy check
+            try:
+                from backend.agents.autonomy import needs_approval
+                try:
+                    from backend.agents.autonomy import get_level
+                    level = get_level()
+                except (ImportError, AttributeError):
+                    try:
+                        from backend.agents.autonomy import get_autonomy_level
+                        level = get_autonomy_level()
+                    except (ImportError, AttributeError):
+                        level = int(os.getenv("AUTONOMY_LEVEL", "1"))
+            except (ImportError, Exception):
+                needs_approval = lambda step, lvl: True
+                try:
+                    level = int(os.getenv("AUTONOMY_LEVEL", "1"))
+                except (TypeError, ValueError):
+                    level = 1
+
+            if (
+                updated_incident.playbook is not None
+                and updated_incident.playbook.steps
+                and not any(needs_approval(step, level) for step in updated_incident.playbook.steps)
+            ):
+                actor = f"autonomy-level-{level}"
+                INCIDENTS[updated_incident.id] = updated_incident
+                LATEST_ID = updated_incident.id
+
+                async def _auto_execute(inc_to_run: Incident) -> None:
+                    try:
+                        resolved_incident = await executor.execute(inc_to_run, adapter, approved_by=actor)
+                        INCIDENTS[resolved_incident.id] = resolved_incident
+                        global LATEST_ID
+                        LATEST_ID = resolved_incident.id
+                        await emit("incident_update", resolved_incident)
+
+                        if resolved_incident.status == "resolved":
+                            services_to_clear = set(LAST_PREDICTION_TS.keys()) | {resolved_incident.root_service}
+                            for s in services_to_clear:
+                                await emit("prediction", {"service": s, "seconds": None})
+                            LAST_PREDICTION_TS.clear()
+                    except Exception as err:
+                        logger.exception("Autonomy execution failed: %s", err)
+
+                auto_task = asyncio.create_task(_auto_execute(updated_incident))
+                BACKGROUND_TASKS.add(auto_task)
+                auto_task.add_done_callback(BACKGROUND_TASKS.discard)
+            else:
+                if updated_incident.status != "awaiting_approval":
+                    updated_incident.status = "awaiting_approval"
+
+                INCIDENTS[updated_incident.id] = updated_incident
+                LATEST_ID = updated_incident.id
+                await emit("incident_update", updated_incident)
+        except Exception as exc:
+            logger.exception("Pipeline execution failed: %s", exc)
+            incident.status = "analyzing"
+            INCIDENTS[incident.id] = incident
+            await emit("agent_step", {
+                "agent": "pipeline",
+                "text": f"Pipeline failed: {exc}",
+                "status": "failed",
+            })
+            await emit("incident_update", incident)
+    else:
+        logger.warning("backend.agents.pipeline import failed; using local stub")
+        incident.status = "awaiting_approval"
+        INCIDENTS[incident.id] = incident
+        LATEST_ID = incident.id
+        await emit("incident_update", incident)
 
 
 async def on_alerts_complete(scenario_or_alerts: Any, maybe_alerts: Optional[list] = None) -> None:
@@ -92,66 +182,138 @@ async def on_alerts_complete(scenario_or_alerts: Any, maybe_alerts: Optional[lis
         if delta_s < 0.0:
             delta_s = 0.0
 
-        timeline = [
-            TimelineItem(t_s=0.0, event="First alert received"),
-            TimelineItem(
-                t_s=round(delta_s, 2),
-                event=f"Alerts correlated into {incident_id} (root: {root})",
-            ),
-        ]
-
-        incident = Incident(
-            id=incident_id,
-            status="analyzing",
-            scenario=scenario,
-            root_service=root,
-            impacted_services=imp,
-            raw_alert_count=len(alerts),
-            started_at=first_alert_ts,
-            resolved_at=None,
-            rca=None,
-            playbook=None,
-            timeline=timeline,
-        )
-
-        INCIDENTS[incident.id] = incident
-        LATEST_ID = incident.id
-        await emit("incident_update", incident)
-
-        if run_pipeline is not None:
-            try:
-                updated_incident = await run_pipeline(incident, adapter)
-                if updated_incident.playbook is None:
-                    try:
-                        from backend.agents.planner import plan_recovery
-                        updated_incident.playbook = await plan_recovery(updated_incident)
-                    except Exception:
-                        pass
-                if updated_incident.status != "awaiting_approval":
-                    updated_incident.status = "awaiting_approval"
-
-                INCIDENTS[updated_incident.id] = updated_incident
-                LATEST_ID = updated_incident.id
-                await emit("incident_update", updated_incident)
-            except Exception as exc:
-                logger.exception("Pipeline execution failed: %s", exc)
-                incident.status = "analyzing"
-                INCIDENTS[incident.id] = incident
-                await emit("agent_step", {
-                    "agent": "pipeline",
-                    "text": f"Pipeline failed: {exc}",
-                    "status": "failed",
-                })
-                await emit("incident_update", incident)
+        if incident_id in INCIDENTS:
+            existing = INCIDENTS[incident_id]
+            existing.raw_alert_count = len(alerts)
+            existing.root_service = root
+            existing.impacted_services = imp
+            existing.timeline.append(
+                TimelineItem(
+                    t_s=round(delta_s, 2),
+                    event=f"Alerts correlated into {incident_id} (root: {root})",
+                )
+            )
+            if existing.playbook is None and existing.status in ("detected", "analyzing"):
+                await _execute_pipeline_for_incident(existing)
+            else:
+                INCIDENTS[existing.id] = existing
+                LATEST_ID = existing.id
+                await emit("incident_update", existing)
         else:
-            logger.warning("backend.agents.pipeline import failed (M3 not merged yet); using local stub")
-            incident.status = "awaiting_approval"
+            timeline = [
+                TimelineItem(t_s=0.0, event="First alert received"),
+                TimelineItem(
+                    t_s=round(delta_s, 2),
+                    event=f"Alerts correlated into {incident_id} (root: {root})",
+                ),
+            ]
+
+            incident = Incident(
+                id=incident_id,
+                status="analyzing",
+                scenario=scenario,
+                root_service=root,
+                impacted_services=imp,
+                raw_alert_count=len(alerts),
+                started_at=first_alert_ts,
+                resolved_at=None,
+                rca=None,
+                playbook=None,
+                timeline=timeline,
+            )
+
             INCIDENTS[incident.id] = incident
             LATEST_ID = incident.id
             await emit("incident_update", incident)
+            await _execute_pipeline_for_incident(incident)
     finally:
         if curr_task is not None:
             BACKGROUND_TASKS.discard(curr_task)
+
+
+async def _handle_metric_point(payload: dict) -> None:
+    svc = payload.get("service")
+    if not svc:
+        return
+
+    t_s = float(payload.get("t_s", 0.0))
+    mem_mb = float(payload.get("mem_mb", 0.0))
+    cpu_pct = float(payload.get("cpu_pct", 0.0))
+
+    if svc not in METRIC_HISTORY:
+        METRIC_HISTORY[svc] = deque(maxlen=20)
+    METRIC_HISTORY[svc].append(
+        MetricPoint(t_s=t_s, mem_mb=mem_mb, cpu_pct=cpu_pct, service=svc)
+    )
+
+    limit_mb = 64.0
+    try:
+        services = await adapter.list_services()
+        for s in services:
+            if s.id == svc:
+                limit_mb = s.metrics.mem_limit_mb
+                break
+    except Exception:
+        pass
+
+    sec = seconds_to_limit(list(METRIC_HISTORY[svc]), limit_mb)
+    if sec is not None and sec < 300.0:
+        last_t = LAST_PREDICTION_TS.get(svc)
+        if last_t is None or (t_s - last_t >= 1.0):
+            LAST_PREDICTION_TS[svc] = t_s
+            await emit("prediction", {"service": svc, "seconds": round(sec, 1)})
+
+        scenario_name = getattr(adapter, "_scenario", {}).get("id") if hasattr(adapter, "_scenario") and adapter._scenario else None
+        if scenario_name == "slow_leak":
+            # The first time it crosses 300 s with no incident open, create a PREVENTIVE incident
+            open_incident = any(
+                inc.status in ("detected", "analyzing", "awaiting_approval", "healing")
+                for inc in INCIDENTS.values()
+            )
+            if not open_incident:
+                incident_id = (
+                    getattr(adapter, "_current_incident_id", None)
+                    or f"INC-{getattr(adapter, '_incident_counter', 104)}"
+                )
+
+                now_z = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                preventive_incident = Incident(
+                    id=incident_id,
+                    status="analyzing",
+                    scenario="slow_leak",
+                    root_service=svc,
+                    impacted_services=[],
+                    raw_alert_count=0,
+                    started_at=now_z,
+                    resolved_at=None,
+                    rca=None,
+                    playbook=None,
+                    timeline=[
+                        TimelineItem(
+                            t_s=0.0,
+                            event=f"Preventive alert: memory leak detected on {svc} (<300s to limit)",
+                        ),
+                    ],
+                )
+                INCIDENTS[preventive_incident.id] = preventive_incident
+                global LATEST_ID
+                LATEST_ID = preventive_incident.id
+                await emit("incident_update", preventive_incident)
+
+                pipe_task = asyncio.create_task(_execute_pipeline_for_incident(preventive_incident))
+                BACKGROUND_TASKS.add(pipe_task)
+                pipe_task.add_done_callback(BACKGROUND_TASKS.discard)
+
+
+async def _bus_event_listener(envelope: Dict[str, Any]) -> None:
+    event_type = envelope.get("type")
+    if event_type == "metric_point":
+        await _handle_metric_point(envelope.get("payload", {}))
+    elif event_type == "reset":
+        METRIC_HISTORY.clear()
+        LAST_PREDICTION_TS.clear()
+
+bus.add_listener(_bus_event_listener)
 
 
 def init_adapter(adapter_type: Optional[str] = None) -> Any:
@@ -217,6 +379,13 @@ async def reset():
     LATEST_ID = None
     executor.clear_audit()
 
+    # Clear predictions on reset: emit prediction {service, seconds: None}
+    services_to_clear = set(LAST_PREDICTION_TS.keys()) | set(METRIC_HISTORY.keys()) | set(graph.DEPENDS_ON.keys())
+    for s in services_to_clear:
+        await emit("prediction", {"service": s, "seconds": None})
+    METRIC_HISTORY.clear()
+    LAST_PREDICTION_TS.clear()
+
     await emit("reset", {})
     services = await adapter.list_services()
     for svc in services:
@@ -271,6 +440,13 @@ async def approve_incident(id: str, body: Optional[dict] = None):
             global LATEST_ID
             LATEST_ID = resolved_incident.id
             await emit("incident_update", resolved_incident)
+
+            # When the incident resolves, emit prediction {service, seconds: null}
+            if resolved_incident.status == "resolved":
+                services_to_clear = set(LAST_PREDICTION_TS.keys()) | {resolved_incident.root_service}
+                for s in services_to_clear:
+                    await emit("prediction", {"service": s, "seconds": None})
+                LAST_PREDICTION_TS.clear()
         except asyncio.CancelledError:
             logger.info("Execution task for %s was cancelled", inc.id)
             raise
@@ -371,9 +547,28 @@ async def get_blast_radius(service: str):
     }
 
 
-@app.post("/api/autonomy")
-async def update_autonomy():
-    raise HTTPException(status_code=501, detail="not implemented yet")
+_autonomy_router_included = False
+try:
+    from backend.agents.autonomy import router as autonomy_router
+    app.include_router(autonomy_router)
+    _autonomy_router_included = True
+except (ImportError, AttributeError):
+    pass
+
+if not _autonomy_router_included:
+    @app.post("/api/autonomy")
+    async def update_autonomy():
+        raise HTTPException(status_code=501, detail="not implemented yet")
+
+
+# Voice briefing: POST /api/tts {text} -> audio/wav (task 3.10, Google/Gemini TTS)
+try:
+    from backend.agents.tts import router as tts_router
+    app.include_router(tts_router)
+except (ImportError, AttributeError):
+    @app.post("/api/tts")
+    async def post_tts():
+        raise HTTPException(status_code=501, detail="not implemented yet")
 
 
 # ── WebSocket Stream ─────────────────────────────────────────────────────────

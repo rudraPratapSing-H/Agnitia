@@ -27,4 +27,5 @@ reset:
 
 # run only from a frozen git tag
 demo:
+	@python scripts/warmup.py || true
 	DEMO_MODE=cache $(MAKE) dev

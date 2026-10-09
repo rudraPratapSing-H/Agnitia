@@ -53,6 +53,14 @@ make reset
 
 ---
 
+## 🎬 Demo
+
+- Click-by-click script with expected results: [`demo/checklist.md`](demo/checklist.md).
+- Automated end-to-end check (inject → approve → resolved, 3 runs): `python demo/smoke.py --runs 3`.
+- Live progress board: open [`demo/progress-board/index.html`](demo/progress-board/index.html) (serve the `demo/progress-board/` folder over HTTP — it `fetch()`es `status.json`, so opening the file directly won't load data).
+- Rehearsal timing log: [`demo/rehearsal-log.md`](demo/rehearsal-log.md).
+- `make demo` runs `DEMO_MODE=cache` only, from a frozen git tag — the demo laptop never runs a branch.
+
 ## ⚡ Chaos Scenarios
 Agnitia includes 4 deterministic chaos scenarios:
 1. `db_oom`: PostgreSQL memory limit exceeded (OOMKilled), 56 downstream alerts collapsed into 1 incident.

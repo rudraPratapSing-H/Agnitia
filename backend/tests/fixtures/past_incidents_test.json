@@ -1,0 +1,85 @@
+[
+  {
+    "id": "INC-087",
+    "title": "PostgreSQL OOMKilled under batch query load",
+    "root_service": "postgres",
+    "category": "OOMKilled",
+    "root_cause": "PostgreSQL was killed for exceeding its 64Mi memory limit",
+    "fix": "Patched container memory limit from 64Mi to 256Mi and restarted dependent services.",
+    "resolved_in_s": 38,
+    "keywords": [
+      "postgres",
+      "oomkilled",
+      "memory",
+      "137",
+      "out of memory",
+      "limit"
+    ]
+  },
+  {
+    "id": "INC-072",
+    "title": "Payment Service CrashLoopBackOff on missing Stripe secret",
+    "root_service": "payment-service",
+    "category": "ConfigError",
+    "root_cause": "Deployment v2.4.1 failed to initialize due to missing STRIPE_SECRET_KEY_V2 environment variable.",
+    "fix": "Rolled back deployment to v2.4.0 and re-applied Kubernetes secret injection.",
+    "resolved_in_s": 45,
+    "keywords": [
+      "payment-service",
+      "crashloop",
+      "config",
+      "stripe",
+      "env",
+      "rollback"
+    ]
+  },
+  {
+    "id": "INC-065",
+    "title": "Auth Service CPU saturation during token verification spike",
+    "root_service": "auth-service",
+    "category": "CPUSaturation",
+    "root_cause": "Bcrypt password hashing threads caused 98% CPU saturation and triggered upstream 502/504 errors.",
+    "fix": "Scaled auth-service deployment replicas from 1 to 3 and tuned HPA target.",
+    "resolved_in_s": 50,
+    "keywords": [
+      "auth-service",
+      "cpu",
+      "throttling",
+      "spike",
+      "scale",
+      "bcrypt"
+    ]
+  },
+  {
+    "id": "INC-054",
+    "title": "Slow connection leak in PostgreSQL connection pool",
+    "root_service": "postgres",
+    "category": "ResourceLeak",
+    "root_cause": "Unclosed database client connections gradually exhausted server memory over 4 hours.",
+    "fix": "Increased memory ceiling to 256Mi and restarted pooler proxy.",
+    "resolved_in_s": 120,
+    "keywords": [
+      "postgres",
+      "leak",
+      "connections",
+      "buffer",
+      "slow"
+    ]
+  },
+  {
+    "id": "INC-041",
+    "title": "API Gateway route timeouts due to upstream network partition",
+    "root_service": "api-gateway",
+    "category": "NetworkPartition",
+    "root_cause": "Corrupted kube-proxy iptables rule dropped traffic between edge gateway and backend tier.",
+    "fix": "Restarted kube-proxy daemonset and flushed iptables.",
+    "resolved_in_s": 30,
+    "keywords": [
+      "api-gateway",
+      "502",
+      "timeout",
+      "network",
+      "partition"
+    ]
+  }
+]
