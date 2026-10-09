@@ -16,8 +16,26 @@ import Stopwatch from './components/extras/Stopwatch';
 import CostTicker from './components/extras/CostTicker';
 import { Shield, Volume2, VolumeX, Keyboard } from 'lucide-react';
 import { setMuted as setAudioMuted, playAlertSiren, playSuccessChime, playClickTone } from './lib/sounds';
+import TimerDemo from './components/extras/dev/TimerDemo';
+import ReasoningDemo from './components/extras/dev/ReasoningDemo';
+import PostmortemDemo from './components/extras/dev/PostmortemDemo';
 
 export default function App() {
+  const demoParam =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('demo')
+      : null;
+
+  if (demoParam === 'timer') {
+    return <TimerDemo />;
+  }
+  if (demoParam === 'reasoning') {
+    return <ReasoningDemo />;
+  }
+  if (demoParam === 'postmortem') {
+    return <PostmortemDemo />;
+  }
+
   const {
     services,
     alerts,

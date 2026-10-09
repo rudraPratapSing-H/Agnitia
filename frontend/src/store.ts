@@ -152,9 +152,15 @@ export function applyWsEvent(event: any) {
     }
 
     case 'incident_update': {
+      // When the backend delivers a terminal status, the scenario playback is
+      // complete — re-enable the Inject buttons (mirrors mock-replay end-timeout).
+      const terminalStatuses = ['awaiting_approval', 'resolved', 'failed'];
+      const isTerminal = terminalStatuses.includes(payload?.status);
       globalState = {
         ...globalState,
-        incident: payload
+        incident: payload,
+        isSimulating: isTerminal ? false : globalState.isSimulating,
+        activeScenario: isTerminal ? payload?.scenario ?? globalState.activeScenario : globalState.activeScenario,
       };
       break;
     }

@@ -2,66 +2,233 @@
   "id": "bad_config",
   "title": "Payment Service Bad Config CrashLoop",
   "root_service": "payment-service",
-  "duration_s": 10,
+  "duration_s": 12,
   "metrics": {
     "payment-service": [
       {
         "t_s": 0.0,
-        "mem_mb": 72.0,
-        "cpu_pct": 5.0
+        "mem_mb": 71.5,
+        "cpu_pct": 4.8,
+        "restarts": 0
       },
       {
         "t_s": 0.5,
-        "mem_mb": 72.0,
-        "cpu_pct": 5.0
+        "mem_mb": 71.7,
+        "cpu_pct": 5.0,
+        "restarts": 0
       },
       {
         "t_s": 1.0,
-        "mem_mb": 72.0,
-        "cpu_pct": 5.0
+        "mem_mb": 71.5,
+        "cpu_pct": 4.8,
+        "restarts": 0
       },
       {
         "t_s": 1.5,
-        "mem_mb": 72.0,
-        "cpu_pct": 5.0
+        "mem_mb": 71.7,
+        "cpu_pct": 5.0,
+        "restarts": 0
       },
       {
         "t_s": 2.0,
-        "mem_mb": 72.0,
-        "cpu_pct": 5.0
+        "mem_mb": 71.5,
+        "cpu_pct": 4.8,
+        "restarts": 0
       },
       {
         "t_s": 2.5,
-        "mem_mb": 72.0,
-        "cpu_pct": 5.0
+        "mem_mb": 71.7,
+        "cpu_pct": 5.0,
+        "restarts": 0
       },
       {
         "t_s": 3.0,
-        "mem_mb": 72.0,
-        "cpu_pct": 5.0
+        "mem_mb": 71.5,
+        "cpu_pct": 4.8,
+        "restarts": 0
       },
       {
         "t_s": 3.5,
-        "mem_mb": 72.0,
-        "cpu_pct": 5.0
+        "mem_mb": 71.7,
+        "cpu_pct": 5.0,
+        "restarts": 0
       },
       {
         "t_s": 4.0,
-        "mem_mb": 72.0,
-        "cpu_pct": 5.0
+        "mem_mb": 71.5,
+        "cpu_pct": 4.8,
+        "restarts": 0
       },
       {
         "t_s": 4.5,
+        "mem_mb": 71.7,
+        "cpu_pct": 5.0,
+        "restarts": 0
+      },
+      {
+        "t_s": 5.0,
         "mem_mb": 72.0,
-        "cpu_pct": 5.0
+        "cpu_pct": 38.5,
+        "restarts": 1
+      },
+      {
+        "t_s": 5.5,
+        "mem_mb": 71.9,
+        "cpu_pct": 6.2,
+        "restarts": 1
+      },
+      {
+        "t_s": 6.0,
+        "mem_mb": 71.9,
+        "cpu_pct": 6.2,
+        "restarts": 1
+      },
+      {
+        "t_s": 6.2,
+        "mem_mb": 72.2,
+        "cpu_pct": 42.0,
+        "restarts": 2
+      },
+      {
+        "t_s": 6.5,
+        "mem_mb": 72.0,
+        "cpu_pct": 7.1,
+        "restarts": 2
+      },
+      {
+        "t_s": 7.0,
+        "mem_mb": 72.0,
+        "cpu_pct": 7.1,
+        "restarts": 2
+      },
+      {
+        "t_s": 7.4,
+        "mem_mb": 72.4,
+        "cpu_pct": 44.0,
+        "restarts": 3
+      },
+      {
+        "t_s": 7.5,
+        "mem_mb": 72.1,
+        "cpu_pct": 7.8,
+        "restarts": 3
+      },
+      {
+        "t_s": 8.0,
+        "mem_mb": 72.1,
+        "cpu_pct": 7.8,
+        "restarts": 3
+      },
+      {
+        "t_s": 8.5,
+        "mem_mb": 72.3,
+        "cpu_pct": 41.5,
+        "restarts": 4
+      },
+      {
+        "t_s": 9.0,
+        "mem_mb": 71.6,
+        "cpu_pct": 3.2,
+        "restarts": 4
+      },
+      {
+        "t_s": 9.5,
+        "mem_mb": 71.6,
+        "cpu_pct": 3.2,
+        "restarts": 4
+      },
+      {
+        "t_s": 10.0,
+        "mem_mb": 71.6,
+        "cpu_pct": 3.2,
+        "restarts": 4
+      },
+      {
+        "t_s": 10.5,
+        "mem_mb": 71.6,
+        "cpu_pct": 3.2,
+        "restarts": 4
+      },
+      {
+        "t_s": 11.0,
+        "mem_mb": 71.6,
+        "cpu_pct": 3.2,
+        "restarts": 4
+      },
+      {
+        "t_s": 11.5,
+        "mem_mb": 71.6,
+        "cpu_pct": 3.2,
+        "restarts": 4
+      },
+      {
+        "t_s": 12.0,
+        "mem_mb": 71.6,
+        "cpu_pct": 3.2,
+        "restarts": 4
       }
     ]
   },
   "events": [
     {
-      "t_s": 2.0,
+      "t_s": 4.8,
       "service": "payment-service",
-      "text": "Back-off restarting failed container: CrashLoopBackOff"
+      "text": "Started container payment-service (deployment revision 7)"
+    },
+    {
+      "t_s": 5.0,
+      "service": "payment-service",
+      "text": "Reason: Error, Exit Code: 1 (container payment-service terminated unexpectedly)"
+    },
+    {
+      "t_s": 5.2,
+      "service": "payment-service",
+      "text": "Back-off restarting failed container: CrashLoopBackOff (restart count: 1)"
+    },
+    {
+      "t_s": 6.0,
+      "service": "payment-service",
+      "text": "Started container payment-service (pod payment-service-7f49c8dbb6-q8x2m)"
+    },
+    {
+      "t_s": 6.2,
+      "service": "payment-service",
+      "text": "Reason: Error, Exit Code: 1 (container payment-service terminated unexpectedly)"
+    },
+    {
+      "t_s": 6.4,
+      "service": "payment-service",
+      "text": "Back-off restarting failed container: CrashLoopBackOff (restart count: 2)"
+    },
+    {
+      "t_s": 7.2,
+      "service": "payment-service",
+      "text": "Started container payment-service (pod payment-service-7f49c8dbb6-q8x2m)"
+    },
+    {
+      "t_s": 7.4,
+      "service": "payment-service",
+      "text": "Reason: Error, Exit Code: 1 (container payment-service terminated unexpectedly)"
+    },
+    {
+      "t_s": 7.6,
+      "service": "payment-service",
+      "text": "Back-off restarting failed container: CrashLoopBackOff (restart count: 3)"
+    },
+    {
+      "t_s": 8.3,
+      "service": "payment-service",
+      "text": "Started container payment-service (pod payment-service-7f49c8dbb6-q8x2m)"
+    },
+    {
+      "t_s": 8.5,
+      "service": "payment-service",
+      "text": "Reason: Error, Exit Code: 1 (container payment-service terminated unexpectedly)"
+    },
+    {
+      "t_s": 8.6,
+      "service": "payment-service",
+      "text": "Back-off restarting failed container: CrashLoopBackOff (restart count: 4)"
     }
   ],
   "logs": {
@@ -69,46 +236,1485 @@
       {
         "line": 1,
         "t_s": 1.0,
-        "text": "Starting payment-service v2.4.1..."
+        "text": "2026-10-09 03:14:00.100 [INFO] Container runtime starting payment-service (image: payment-service:rev-7)"
       },
       {
         "line": 2,
-        "t_s": 1.5,
-        "text": "ConfigError: Missing required env var STRIPE_SECRET_KEY_V2"
+        "t_s": 1.1,
+        "text": "2026-10-09 03:14:00.210 [INFO] Linux kernel 5.15.0-89-generic x86_64; cgroup v2 initialized"
       },
       {
         "line": 3,
+        "t_s": 1.2,
+        "text": "2026-10-09 03:14:00.320 [INFO] Loading application environment variables from /etc/config/app.env"
+      },
+      {
+        "line": 4,
+        "t_s": 1.5,
+        "text": "2026-10-09 03:14:00.410 [INFO] Environment loaded: PORT=8082, DB_POOL_SIZE=10, RETRY_ATTEMPTS=3"
+      },
+      {
+        "line": 5,
+        "t_s": 2.0,
+        "text": "2026-10-09 03:14:00.520 [INFO] Initializing payment provider clients: Stripe v12.4, Adyen v9.1"
+      },
+      {
+        "line": 6,
+        "t_s": 2.2,
+        "text": "2026-10-09 03:14:00.650 [INFO] Initializing postgres database connection pool to postgres:5432..."
+      },
+      {
+        "line": 7,
+        "t_s": 2.5,
+        "text": "2026-10-09 03:14:00.780 [INFO] Postgres pool connected: 10 connections established, ping 0.8ms"
+      },
+      {
+        "line": 8,
+        "t_s": 2.8,
+        "text": "2026-10-09 03:14:00.890 [INFO] Registering payment webhook handlers on /webhooks/stripe, /webhooks/adyen"
+      },
+      {
+        "line": 9,
+        "t_s": 3.0,
+        "text": "2026-10-09 03:14:01.010 [INFO] TLS certificates loaded from /etc/tls/certs/payment-tls.crt"
+      },
+      {
+        "line": 10,
+        "t_s": 3.2,
+        "text": "2026-10-09 03:14:01.120 [INFO] HTTP server bound to 0.0.0.0:8082, worker concurrency=4"
+      },
+      {
+        "line": 11,
+        "t_s": 3.5,
+        "text": "2026-10-09 03:14:01.250 [INFO] Service discovery registered: payment-service.default.svc.cluster.local"
+      },
+      {
+        "line": 12,
+        "t_s": 3.8,
+        "text": "2026-10-09 03:14:01.380 [INFO] Health probe handler listening on /healthz and /ready"
+      },
+      {
+        "line": 13,
+        "t_s": 4.0,
+        "text": "2026-10-09 03:14:01.500 [INFO] Readiness check passed: all dependencies online"
+      },
+      {
+        "line": 14,
+        "t_s": 4.2,
+        "text": "2026-10-09 03:14:01.620 [INFO] Revision 6 successfully serving traffic, request count=1420"
+      },
+      {
+        "line": 15,
+        "t_s": 4.4,
+        "text": "2026-10-09 03:14:01.750 [INFO] Rolling update triggered: updating deployment to revision 7"
+      },
+      {
+        "line": 16,
+        "t_s": 4.6,
+        "text": "2026-10-09 03:14:01.890 [INFO] Kubelet creating container payment-service for pod payment-service-7f49c8dbb6-q8x2m"
+      },
+      {
+        "line": 17,
+        "t_s": 4.7,
+        "text": "2026-10-09 03:14:02.010 [INFO] Pulling configmap payment-config (revision 7)... updated 12s ago"
+      },
+      {
+        "line": 18,
+        "t_s": 4.8,
+        "text": "2026-10-09 03:14:02.150 [INFO] Injected environment variable PAYMENT_TIMEOUT_MS='abc'"
+      },
+      {
+        "line": 19,
+        "t_s": 4.9,
+        "text": "2026-10-09 03:14:02.260 [INFO] Starting payment-service bootstrap sequence (PID 1)"
+      },
+      {
+        "line": 20,
+        "t_s": 4.95,
+        "text": "2026-10-09 03:14:02.350 [INFO] Parsing application timeout settings from environment"
+      },
+      {
+        "line": 21,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:02.401 [DEBUG] Reading PAYMENT_TIMEOUT_MS from os.environ"
+      },
+      {
+        "line": 22,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:02.405 [DEBUG] Attempting integer parse for timeout duration in milliseconds"
+      },
+      {
+        "line": 23,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:02.410 [ERROR] config parsing failed during application bootstrap"
+      },
+      {
+        "line": 24,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:02.412 [ERROR] config error: invalid value for PAYMENT_TIMEOUT_MS: 'abc'"
+      },
+      {
+        "line": 25,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:02.415 Traceback (most recent call last):"
+      },
+      {
+        "line": 26,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:02.418   File \"/app/config.py\", line 42, in load_config"
+      },
+      {
+        "line": 27,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:02.420     timeout_ms = int(os.environ.get('PAYMENT_TIMEOUT_MS', '3000'))"
+      },
+      {
+        "line": 28,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:02.423 ValueError: invalid literal for int() with base 10: 'abc'"
+      },
+      {
+        "line": 29,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:02.425   File \"/app/main.py\", line 18, in <module>"
+      },
+      {
+        "line": 30,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:02.428 [FATAL] Process exited with status code 1. Terminating container."
+      },
+      {
+        "line": 31,
+        "t_s": 5.8,
+        "text": "2026-10-09 03:14:03.100 [INFO] Kubelet restarting container payment-service (attempt 2)..."
+      },
+      {
+        "line": 32,
+        "t_s": 5.9,
+        "text": "2026-10-09 03:14:03.220 [INFO] Container payment-service restarted. Bootstrapping PID 1"
+      },
+      {
+        "line": 33,
+        "t_s": 6.0,
+        "text": "2026-10-09 03:14:03.350 [INFO] Parsing application timeout settings from environment"
+      },
+      {
+        "line": 34,
+        "t_s": 6.1,
+        "text": "2026-10-09 03:14:03.401 [DEBUG] Reading PAYMENT_TIMEOUT_MS from os.environ"
+      },
+      {
+        "line": 35,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:03.412 [ERROR] config error: invalid value for PAYMENT_TIMEOUT_MS: 'abc'"
+      },
+      {
+        "line": 36,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:03.415 Traceback (most recent call last):"
+      },
+      {
+        "line": 37,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:03.418   File \"/app/config.py\", line 42, in load_config"
+      },
+      {
+        "line": 38,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:03.420     timeout_ms = int(os.environ.get('PAYMENT_TIMEOUT_MS', '3000'))"
+      },
+      {
+        "line": 39,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:03.423 ValueError: invalid literal for int() with base 10: 'abc'"
+      },
+      {
+        "line": 40,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:03.428 [FATAL] Process exited with status code 1. Terminating container."
+      },
+      {
+        "line": 41,
+        "t_s": 7.0,
+        "text": "2026-10-09 03:14:04.100 [INFO] Kubelet restarting container payment-service (attempt 3)..."
+      },
+      {
+        "line": 42,
+        "t_s": 7.1,
+        "text": "2026-10-09 03:14:04.220 [INFO] Container payment-service restarted. Bootstrapping PID 1"
+      },
+      {
+        "line": 43,
+        "t_s": 7.2,
+        "text": "2026-10-09 03:14:04.350 [INFO] Parsing application timeout settings from environment"
+      },
+      {
+        "line": 44,
+        "t_s": 7.3,
+        "text": "2026-10-09 03:14:04.401 [DEBUG] Reading PAYMENT_TIMEOUT_MS from os.environ"
+      },
+      {
+        "line": 45,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:04.412 [ERROR] config error: invalid value for PAYMENT_TIMEOUT_MS: 'abc'"
+      },
+      {
+        "line": 46,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:04.415 Traceback (most recent call last):"
+      },
+      {
+        "line": 47,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:04.418   File \"/app/config.py\", line 42, in load_config"
+      },
+      {
+        "line": 48,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:04.420     timeout_ms = int(os.environ.get('PAYMENT_TIMEOUT_MS', '3000'))"
+      },
+      {
+        "line": 49,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:04.423 ValueError: invalid literal for int() with base 10: 'abc'"
+      },
+      {
+        "line": 50,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:04.428 [FATAL] Process exited with status code 1. CrashLoopBackOff active."
+      }
+    ],
+    "api-gateway": [
+      {
+        "line": 1,
+        "t_s": 0.2,
+        "text": "2026-10-09 03:14:00.2 [INFO] [req-1001] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 2,
+        "t_s": 0.4,
+        "text": "2026-10-09 03:14:00.4 [INFO] [req-1002] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 3,
+        "t_s": 0.6,
+        "text": "2026-10-09 03:14:00.6 [INFO] [req-1003] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 4,
+        "t_s": 0.8,
+        "text": "2026-10-09 03:14:00.8 [INFO] [req-1004] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 5,
+        "t_s": 1.0,
+        "text": "2026-10-09 03:14:01.0 [INFO] [req-1005] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 6,
+        "t_s": 1.2,
+        "text": "2026-10-09 03:14:01.2 [INFO] [req-1006] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 7,
+        "t_s": 1.4,
+        "text": "2026-10-09 03:14:01.4 [INFO] [req-1007] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 8,
+        "t_s": 1.6,
+        "text": "2026-10-09 03:14:01.6 [INFO] [req-1008] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 9,
         "t_s": 1.8,
-        "text": "Process exited with code 1"
+        "text": "2026-10-09 03:14:01.8 [INFO] [req-1009] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 10,
+        "t_s": 2.0,
+        "text": "2026-10-09 03:14:02.0 [INFO] [req-1010] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 11,
+        "t_s": 2.2,
+        "text": "2026-10-09 03:14:02.2 [INFO] [req-1011] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 12,
+        "t_s": 2.4,
+        "text": "2026-10-09 03:14:02.4 [INFO] [req-1012] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 13,
+        "t_s": 2.6,
+        "text": "2026-10-09 03:14:02.6 [INFO] [req-1013] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 14,
+        "t_s": 2.8,
+        "text": "2026-10-09 03:14:02.8 [INFO] [req-1014] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 15,
+        "t_s": 3.0,
+        "text": "2026-10-09 03:14:03.0 [INFO] [req-1015] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 16,
+        "t_s": 3.2,
+        "text": "2026-10-09 03:14:03.2 [INFO] [req-1016] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 17,
+        "t_s": 3.4,
+        "text": "2026-10-09 03:14:03.4 [INFO] [req-1017] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 18,
+        "t_s": 3.6,
+        "text": "2026-10-09 03:14:03.6 [INFO] [req-1018] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 19,
+        "t_s": 3.8,
+        "text": "2026-10-09 03:14:03.8 [INFO] [req-1019] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 20,
+        "t_s": 4.0,
+        "text": "2026-10-09 03:14:04.0 [INFO] [req-1020] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 21,
+        "t_s": 4.2,
+        "text": "2026-10-09 03:14:04.2 [INFO] [req-1021] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 22,
+        "t_s": 4.4,
+        "text": "2026-10-09 03:14:04.4 [INFO] [req-1022] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 23,
+        "t_s": 4.6,
+        "text": "2026-10-09 03:14:04.6 [INFO] [req-1023] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 24,
+        "t_s": 4.8,
+        "text": "2026-10-09 03:14:04.8 [INFO] [req-1024] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 25,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:05.0 [INFO] [req-1025] Proxying route /api/v1/auth to auth-service:8081 - 200 OK (12ms)"
+      },
+      {
+        "line": 26,
+        "t_s": 5.2,
+        "text": "2026-10-09 03:14:05.2 [ERROR] [req-1026] Upstream error connecting to payment-service:8082: connection refused"
+      },
+      {
+        "line": 27,
+        "t_s": 5.4,
+        "text": "2026-10-09 03:14:05.4 [ERROR] [req-1027] Upstream error connecting to payment-service:8082: connection refused"
+      },
+      {
+        "line": 28,
+        "t_s": 5.6,
+        "text": "2026-10-09 03:14:05.6 [ERROR] [req-1028] Upstream error connecting to payment-service:8082: connection refused"
+      },
+      {
+        "line": 29,
+        "t_s": 5.8,
+        "text": "2026-10-09 03:14:05.8 [ERROR] [req-1029] Upstream error connecting to payment-service:8082: connection refused"
+      },
+      {
+        "line": 30,
+        "t_s": 6.0,
+        "text": "2026-10-09 03:14:06.0 [ERROR] [req-1030] Upstream error connecting to payment-service:8082: connection refused"
+      },
+      {
+        "line": 31,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:06.2 [ERROR] [req-1031] 503 Service Unavailable returned to client for /api/v1/payments/charge"
+      },
+      {
+        "line": 32,
+        "t_s": 6.4,
+        "text": "2026-10-09 03:14:06.4 [ERROR] [req-1032] 503 Service Unavailable returned to client for /api/v1/payments/charge"
+      },
+      {
+        "line": 33,
+        "t_s": 6.6,
+        "text": "2026-10-09 03:14:06.6 [ERROR] [req-1033] 503 Service Unavailable returned to client for /api/v1/payments/charge"
+      },
+      {
+        "line": 34,
+        "t_s": 6.8,
+        "text": "2026-10-09 03:14:06.8 [ERROR] [req-1034] 503 Service Unavailable returned to client for /api/v1/payments/charge"
+      },
+      {
+        "line": 35,
+        "t_s": 7.0,
+        "text": "2026-10-09 03:14:07.0 [ERROR] [req-1035] 503 Service Unavailable returned to client for /api/v1/payments/charge"
+      },
+      {
+        "line": 36,
+        "t_s": 7.2,
+        "text": "2026-10-09 03:14:07.2 [ERROR] [req-1036] 503 Service Unavailable returned to client for /api/v1/payments/charge"
+      },
+      {
+        "line": 37,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:07.4 [ERROR] [req-1037] 503 Service Unavailable returned to client for /api/v1/payments/charge"
+      },
+      {
+        "line": 38,
+        "t_s": 7.6,
+        "text": "2026-10-09 03:14:07.6 [ERROR] [req-1038] 503 Service Unavailable returned to client for /api/v1/payments/charge"
+      },
+      {
+        "line": 39,
+        "t_s": 7.8,
+        "text": "2026-10-09 03:14:07.8 [ERROR] [req-1039] 503 Service Unavailable returned to client for /api/v1/payments/charge"
+      },
+      {
+        "line": 40,
+        "t_s": 8.0,
+        "text": "2026-10-09 03:14:08.0 [ERROR] [req-1040] 503 Service Unavailable returned to client for /api/v1/payments/charge"
+      },
+      {
+        "line": 41,
+        "t_s": 8.2,
+        "text": "2026-10-09 03:14:08.2 [WARN] [req-1041] Circuit breaker OPEN: fast-failing request for payment-service"
+      },
+      {
+        "line": 42,
+        "t_s": 8.4,
+        "text": "2026-10-09 03:14:08.4 [WARN] [req-1042] Circuit breaker OPEN: fast-failing request for payment-service"
+      },
+      {
+        "line": 43,
+        "t_s": 8.6,
+        "text": "2026-10-09 03:14:08.6 [WARN] [req-1043] Circuit breaker OPEN: fast-failing request for payment-service"
+      },
+      {
+        "line": 44,
+        "t_s": 8.8,
+        "text": "2026-10-09 03:14:08.8 [WARN] [req-1044] Circuit breaker OPEN: fast-failing request for payment-service"
+      },
+      {
+        "line": 45,
+        "t_s": 9.0,
+        "text": "2026-10-09 03:14:09.0 [WARN] [req-1045] Circuit breaker OPEN: fast-failing request for payment-service"
+      },
+      {
+        "line": 46,
+        "t_s": 9.2,
+        "text": "2026-10-09 03:14:09.2 [WARN] [req-1046] Circuit breaker OPEN: fast-failing request for payment-service"
+      },
+      {
+        "line": 47,
+        "t_s": 9.4,
+        "text": "2026-10-09 03:14:09.4 [WARN] [req-1047] Circuit breaker OPEN: fast-failing request for payment-service"
+      },
+      {
+        "line": 48,
+        "t_s": 9.6,
+        "text": "2026-10-09 03:14:09.6 [WARN] [req-1048] Circuit breaker OPEN: fast-failing request for payment-service"
+      },
+      {
+        "line": 49,
+        "t_s": 9.8,
+        "text": "2026-10-09 03:14:09.8 [WARN] [req-1049] Circuit breaker OPEN: fast-failing request for payment-service"
+      },
+      {
+        "line": 50,
+        "t_s": 10.0,
+        "text": "2026-10-09 03:14:010.0 [WARN] [req-1050] Circuit breaker OPEN: fast-failing request for payment-service"
+      }
+    ],
+    "web-ui": [
+      {
+        "line": 1,
+        "t_s": 0.2,
+        "text": "2026-10-09 03:14:00.2 [INFO] [session-usr-201] Render page /products/1 status=200 response_time=18ms"
+      },
+      {
+        "line": 2,
+        "t_s": 0.4,
+        "text": "2026-10-09 03:14:00.4 [INFO] [session-usr-202] Render page /products/2 status=200 response_time=18ms"
+      },
+      {
+        "line": 3,
+        "t_s": 0.6,
+        "text": "2026-10-09 03:14:00.6 [INFO] [session-usr-203] Render page /products/3 status=200 response_time=18ms"
+      },
+      {
+        "line": 4,
+        "t_s": 0.8,
+        "text": "2026-10-09 03:14:00.8 [INFO] [session-usr-204] Render page /products/4 status=200 response_time=18ms"
+      },
+      {
+        "line": 5,
+        "t_s": 1.0,
+        "text": "2026-10-09 03:14:01.0 [INFO] [session-usr-205] Render page /products/5 status=200 response_time=18ms"
+      },
+      {
+        "line": 6,
+        "t_s": 1.2,
+        "text": "2026-10-09 03:14:01.2 [INFO] [session-usr-206] Render page /products/6 status=200 response_time=18ms"
+      },
+      {
+        "line": 7,
+        "t_s": 1.4,
+        "text": "2026-10-09 03:14:01.4 [INFO] [session-usr-207] Render page /products/7 status=200 response_time=18ms"
+      },
+      {
+        "line": 8,
+        "t_s": 1.6,
+        "text": "2026-10-09 03:14:01.6 [INFO] [session-usr-208] Render page /products/8 status=200 response_time=18ms"
+      },
+      {
+        "line": 9,
+        "t_s": 1.8,
+        "text": "2026-10-09 03:14:01.8 [INFO] [session-usr-209] Render page /products/9 status=200 response_time=18ms"
+      },
+      {
+        "line": 10,
+        "t_s": 2.0,
+        "text": "2026-10-09 03:14:02.0 [INFO] [session-usr-210] Render page /products/10 status=200 response_time=18ms"
+      },
+      {
+        "line": 11,
+        "t_s": 2.2,
+        "text": "2026-10-09 03:14:02.2 [INFO] [session-usr-211] Render page /products/11 status=200 response_time=18ms"
+      },
+      {
+        "line": 12,
+        "t_s": 2.4,
+        "text": "2026-10-09 03:14:02.4 [INFO] [session-usr-212] Render page /products/12 status=200 response_time=18ms"
+      },
+      {
+        "line": 13,
+        "t_s": 2.6,
+        "text": "2026-10-09 03:14:02.6 [INFO] [session-usr-213] Render page /products/13 status=200 response_time=18ms"
+      },
+      {
+        "line": 14,
+        "t_s": 2.8,
+        "text": "2026-10-09 03:14:02.8 [INFO] [session-usr-214] Render page /products/14 status=200 response_time=18ms"
+      },
+      {
+        "line": 15,
+        "t_s": 3.0,
+        "text": "2026-10-09 03:14:03.0 [INFO] [session-usr-215] Render page /products/15 status=200 response_time=18ms"
+      },
+      {
+        "line": 16,
+        "t_s": 3.2,
+        "text": "2026-10-09 03:14:03.2 [INFO] [session-usr-216] Render page /products/16 status=200 response_time=18ms"
+      },
+      {
+        "line": 17,
+        "t_s": 3.4,
+        "text": "2026-10-09 03:14:03.4 [INFO] [session-usr-217] Render page /products/17 status=200 response_time=18ms"
+      },
+      {
+        "line": 18,
+        "t_s": 3.6,
+        "text": "2026-10-09 03:14:03.6 [INFO] [session-usr-218] Render page /products/18 status=200 response_time=18ms"
+      },
+      {
+        "line": 19,
+        "t_s": 3.8,
+        "text": "2026-10-09 03:14:03.8 [INFO] [session-usr-219] Render page /products/19 status=200 response_time=18ms"
+      },
+      {
+        "line": 20,
+        "t_s": 4.0,
+        "text": "2026-10-09 03:14:04.0 [INFO] [session-usr-220] Render page /products/20 status=200 response_time=18ms"
+      },
+      {
+        "line": 21,
+        "t_s": 4.2,
+        "text": "2026-10-09 03:14:04.2 [INFO] [session-usr-221] Render page /products/21 status=200 response_time=18ms"
+      },
+      {
+        "line": 22,
+        "t_s": 4.4,
+        "text": "2026-10-09 03:14:04.4 [INFO] [session-usr-222] Render page /products/22 status=200 response_time=18ms"
+      },
+      {
+        "line": 23,
+        "t_s": 4.6,
+        "text": "2026-10-09 03:14:04.6 [INFO] [session-usr-223] Render page /products/23 status=200 response_time=18ms"
+      },
+      {
+        "line": 24,
+        "t_s": 4.8,
+        "text": "2026-10-09 03:14:04.8 [INFO] [session-usr-224] Render page /products/24 status=200 response_time=18ms"
+      },
+      {
+        "line": 25,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:05.0 [INFO] [session-usr-225] Render page /products/25 status=200 response_time=18ms"
+      },
+      {
+        "line": 26,
+        "t_s": 5.2,
+        "text": "2026-10-09 03:14:05.2 [INFO] [session-usr-226] Render page /products/26 status=200 response_time=18ms"
+      },
+      {
+        "line": 27,
+        "t_s": 5.4,
+        "text": "2026-10-09 03:14:05.4 [ERROR] [session-usr-227] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 28,
+        "t_s": 5.6,
+        "text": "2026-10-09 03:14:05.6 [ERROR] [session-usr-228] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 29,
+        "t_s": 5.8,
+        "text": "2026-10-09 03:14:05.8 [ERROR] [session-usr-229] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 30,
+        "t_s": 6.0,
+        "text": "2026-10-09 03:14:06.0 [ERROR] [session-usr-230] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 31,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:06.2 [ERROR] [session-usr-231] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 32,
+        "t_s": 6.4,
+        "text": "2026-10-09 03:14:06.4 [ERROR] [session-usr-232] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 33,
+        "t_s": 6.6,
+        "text": "2026-10-09 03:14:06.6 [ERROR] [session-usr-233] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 34,
+        "t_s": 6.8,
+        "text": "2026-10-09 03:14:06.8 [ERROR] [session-usr-234] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 35,
+        "t_s": 7.0,
+        "text": "2026-10-09 03:14:07.0 [ERROR] [session-usr-235] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 36,
+        "t_s": 7.2,
+        "text": "2026-10-09 03:14:07.2 [ERROR] [session-usr-236] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 37,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:07.4 [ERROR] [session-usr-237] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 38,
+        "t_s": 7.6,
+        "text": "2026-10-09 03:14:07.6 [ERROR] [session-usr-238] Checkout POST /api/v1/checkout failed: 503 Service Unavailable"
+      },
+      {
+        "line": 39,
+        "t_s": 7.8,
+        "text": "2026-10-09 03:14:07.8 [CRITICAL] [session-usr-239] Payment transaction failed: downstream gateway unavailable"
+      },
+      {
+        "line": 40,
+        "t_s": 8.0,
+        "text": "2026-10-09 03:14:08.0 [CRITICAL] [session-usr-240] Payment transaction failed: downstream gateway unavailable"
+      },
+      {
+        "line": 41,
+        "t_s": 8.2,
+        "text": "2026-10-09 03:14:08.2 [CRITICAL] [session-usr-241] Payment transaction failed: downstream gateway unavailable"
+      },
+      {
+        "line": 42,
+        "t_s": 8.4,
+        "text": "2026-10-09 03:14:08.4 [CRITICAL] [session-usr-242] Payment transaction failed: downstream gateway unavailable"
+      },
+      {
+        "line": 43,
+        "t_s": 8.6,
+        "text": "2026-10-09 03:14:08.6 [CRITICAL] [session-usr-243] Payment transaction failed: downstream gateway unavailable"
+      },
+      {
+        "line": 44,
+        "t_s": 8.8,
+        "text": "2026-10-09 03:14:08.8 [CRITICAL] [session-usr-244] Payment transaction failed: downstream gateway unavailable"
+      },
+      {
+        "line": 45,
+        "t_s": 9.0,
+        "text": "2026-10-09 03:14:09.0 [CRITICAL] [session-usr-245] Payment transaction failed: downstream gateway unavailable"
+      },
+      {
+        "line": 46,
+        "t_s": 9.2,
+        "text": "2026-10-09 03:14:09.2 [CRITICAL] [session-usr-246] Payment transaction failed: downstream gateway unavailable"
+      },
+      {
+        "line": 47,
+        "t_s": 9.4,
+        "text": "2026-10-09 03:14:09.4 [CRITICAL] [session-usr-247] Payment transaction failed: downstream gateway unavailable"
+      },
+      {
+        "line": 48,
+        "t_s": 9.6,
+        "text": "2026-10-09 03:14:09.6 [CRITICAL] [session-usr-248] Payment transaction failed: downstream gateway unavailable"
+      },
+      {
+        "line": 49,
+        "t_s": 9.8,
+        "text": "2026-10-09 03:14:09.8 [CRITICAL] [session-usr-249] Payment transaction failed: downstream gateway unavailable"
+      },
+      {
+        "line": 50,
+        "t_s": 10.0,
+        "text": "2026-10-09 03:14:010.0 [CRITICAL] [session-usr-250] Payment transaction failed: downstream gateway unavailable"
+      }
+    ],
+    "auth-service": [
+      {
+        "line": 1,
+        "t_s": 0.2,
+        "text": "2026-10-09 03:14:00.2 [INFO] [auth-worker-0] JWT token validated for user #501; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 2,
+        "t_s": 0.4,
+        "text": "2026-10-09 03:14:00.4 [INFO] [auth-worker-0] JWT token validated for user #502; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 3,
+        "t_s": 0.6,
+        "text": "2026-10-09 03:14:00.6 [INFO] [auth-worker-0] JWT token validated for user #503; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 4,
+        "t_s": 0.8,
+        "text": "2026-10-09 03:14:00.8 [INFO] [auth-worker-0] JWT token validated for user #504; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 5,
+        "t_s": 1.0,
+        "text": "2026-10-09 03:14:01.0 [INFO] [auth-worker-0] JWT token validated for user #505; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 6,
+        "t_s": 1.2,
+        "text": "2026-10-09 03:14:01.2 [INFO] [auth-worker-0] JWT token validated for user #506; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 7,
+        "t_s": 1.4,
+        "text": "2026-10-09 03:14:01.4 [INFO] [auth-worker-0] JWT token validated for user #507; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 8,
+        "t_s": 1.6,
+        "text": "2026-10-09 03:14:01.6 [INFO] [auth-worker-0] JWT token validated for user #508; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 9,
+        "t_s": 1.8,
+        "text": "2026-10-09 03:14:01.8 [INFO] [auth-worker-0] JWT token validated for user #509; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 10,
+        "t_s": 2.0,
+        "text": "2026-10-09 03:14:02.0 [INFO] [auth-worker-0] JWT token validated for user #510; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 11,
+        "t_s": 2.2,
+        "text": "2026-10-09 03:14:02.2 [INFO] [auth-worker-0] JWT token validated for user #511; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 12,
+        "t_s": 2.4,
+        "text": "2026-10-09 03:14:02.4 [INFO] [auth-worker-0] JWT token validated for user #512; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 13,
+        "t_s": 2.6,
+        "text": "2026-10-09 03:14:02.6 [INFO] [auth-worker-0] JWT token validated for user #513; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 14,
+        "t_s": 2.8,
+        "text": "2026-10-09 03:14:02.8 [INFO] [auth-worker-0] JWT token validated for user #514; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 15,
+        "t_s": 3.0,
+        "text": "2026-10-09 03:14:03.0 [INFO] [auth-worker-0] JWT token validated for user #515; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 16,
+        "t_s": 3.2,
+        "text": "2026-10-09 03:14:03.2 [INFO] [auth-worker-0] JWT token validated for user #516; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 17,
+        "t_s": 3.4,
+        "text": "2026-10-09 03:14:03.4 [INFO] [auth-worker-0] JWT token validated for user #517; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 18,
+        "t_s": 3.6,
+        "text": "2026-10-09 03:14:03.6 [INFO] [auth-worker-0] JWT token validated for user #518; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 19,
+        "t_s": 3.8,
+        "text": "2026-10-09 03:14:03.8 [INFO] [auth-worker-0] JWT token validated for user #519; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 20,
+        "t_s": 4.0,
+        "text": "2026-10-09 03:14:04.0 [INFO] [auth-worker-0] JWT token validated for user #520; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 21,
+        "t_s": 4.2,
+        "text": "2026-10-09 03:14:04.2 [INFO] [auth-worker-0] JWT token validated for user #521; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 22,
+        "t_s": 4.4,
+        "text": "2026-10-09 03:14:04.4 [INFO] [auth-worker-0] JWT token validated for user #522; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 23,
+        "t_s": 4.6,
+        "text": "2026-10-09 03:14:04.6 [INFO] [auth-worker-0] JWT token validated for user #523; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 24,
+        "t_s": 4.8,
+        "text": "2026-10-09 03:14:04.8 [INFO] [auth-worker-0] JWT token validated for user #524; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 25,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:05.0 [INFO] [auth-worker-0] JWT token validated for user #525; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 26,
+        "t_s": 5.2,
+        "text": "2026-10-09 03:14:05.2 [INFO] [auth-worker-0] JWT token validated for user #526; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 27,
+        "t_s": 5.4,
+        "text": "2026-10-09 03:14:05.4 [INFO] [auth-worker-0] JWT token validated for user #527; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 28,
+        "t_s": 5.6,
+        "text": "2026-10-09 03:14:05.6 [INFO] [auth-worker-0] JWT token validated for user #528; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 29,
+        "t_s": 5.8,
+        "text": "2026-10-09 03:14:05.8 [INFO] [auth-worker-0] JWT token validated for user #529; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 30,
+        "t_s": 6.0,
+        "text": "2026-10-09 03:14:06.0 [INFO] [auth-worker-0] JWT token validated for user #530; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 31,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:06.2 [INFO] [auth-worker-0] JWT token validated for user #531; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 32,
+        "t_s": 6.4,
+        "text": "2026-10-09 03:14:06.4 [INFO] [auth-worker-0] JWT token validated for user #532; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 33,
+        "t_s": 6.6,
+        "text": "2026-10-09 03:14:06.6 [INFO] [auth-worker-0] JWT token validated for user #533; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 34,
+        "t_s": 6.8,
+        "text": "2026-10-09 03:14:06.8 [INFO] [auth-worker-0] JWT token validated for user #534; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 35,
+        "t_s": 7.0,
+        "text": "2026-10-09 03:14:07.0 [INFO] [auth-worker-0] JWT token validated for user #535; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 36,
+        "t_s": 7.2,
+        "text": "2026-10-09 03:14:07.2 [INFO] [auth-worker-0] JWT token validated for user #536; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 37,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:07.4 [INFO] [auth-worker-0] JWT token validated for user #537; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 38,
+        "t_s": 7.6,
+        "text": "2026-10-09 03:14:07.6 [INFO] [auth-worker-0] JWT token validated for user #538; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 39,
+        "t_s": 7.8,
+        "text": "2026-10-09 03:14:07.8 [INFO] [auth-worker-0] JWT token validated for user #539; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 40,
+        "t_s": 8.0,
+        "text": "2026-10-09 03:14:08.0 [INFO] [auth-worker-0] JWT token validated for user #540; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 41,
+        "t_s": 8.2,
+        "text": "2026-10-09 03:14:08.2 [INFO] [auth-worker-0] JWT token validated for user #541; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 42,
+        "t_s": 8.4,
+        "text": "2026-10-09 03:14:08.4 [INFO] [auth-worker-0] JWT token validated for user #542; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 43,
+        "t_s": 8.6,
+        "text": "2026-10-09 03:14:08.6 [INFO] [auth-worker-0] JWT token validated for user #543; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 44,
+        "t_s": 8.8,
+        "text": "2026-10-09 03:14:08.8 [INFO] [auth-worker-0] JWT token validated for user #544; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 45,
+        "t_s": 9.0,
+        "text": "2026-10-09 03:14:09.0 [INFO] [auth-worker-0] JWT token validated for user #545; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 46,
+        "t_s": 9.2,
+        "text": "2026-10-09 03:14:09.2 [INFO] [auth-worker-0] JWT token validated for user #546; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 47,
+        "t_s": 9.4,
+        "text": "2026-10-09 03:14:09.4 [INFO] [auth-worker-0] JWT token validated for user #547; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 48,
+        "t_s": 9.6,
+        "text": "2026-10-09 03:14:09.6 [INFO] [auth-worker-0] JWT token validated for user #548; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 49,
+        "t_s": 9.8,
+        "text": "2026-10-09 03:14:09.8 [INFO] [auth-worker-0] JWT token validated for user #549; redis session cache hit (0.4ms)"
+      },
+      {
+        "line": 50,
+        "t_s": 10.0,
+        "text": "2026-10-09 03:14:010.0 [INFO] [auth-worker-0] JWT token validated for user #550; redis session cache hit (0.4ms)"
+      }
+    ],
+    "postgres": [
+      {
+        "line": 1,
+        "t_s": 0.2,
+        "text": "2026-10-09 03:14:00.2 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 2,
+        "t_s": 0.4,
+        "text": "2026-10-09 03:14:00.4 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 3,
+        "t_s": 0.6,
+        "text": "2026-10-09 03:14:00.6 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 4,
+        "t_s": 0.8,
+        "text": "2026-10-09 03:14:00.8 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 5,
+        "t_s": 1.0,
+        "text": "2026-10-09 03:14:01.0 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 6,
+        "t_s": 1.2,
+        "text": "2026-10-09 03:14:01.2 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 7,
+        "t_s": 1.4,
+        "text": "2026-10-09 03:14:01.4 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 8,
+        "t_s": 1.6,
+        "text": "2026-10-09 03:14:01.6 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 9,
+        "t_s": 1.8,
+        "text": "2026-10-09 03:14:01.8 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 10,
+        "t_s": 2.0,
+        "text": "2026-10-09 03:14:02.0 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 11,
+        "t_s": 2.2,
+        "text": "2026-10-09 03:14:02.2 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 12,
+        "t_s": 2.4,
+        "text": "2026-10-09 03:14:02.4 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 13,
+        "t_s": 2.6,
+        "text": "2026-10-09 03:14:02.6 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 14,
+        "t_s": 2.8,
+        "text": "2026-10-09 03:14:02.8 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 15,
+        "t_s": 3.0,
+        "text": "2026-10-09 03:14:03.0 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 16,
+        "t_s": 3.2,
+        "text": "2026-10-09 03:14:03.2 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 17,
+        "t_s": 3.4,
+        "text": "2026-10-09 03:14:03.4 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 18,
+        "t_s": 3.6,
+        "text": "2026-10-09 03:14:03.6 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 19,
+        "t_s": 3.8,
+        "text": "2026-10-09 03:14:03.8 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 20,
+        "t_s": 4.0,
+        "text": "2026-10-09 03:14:04.0 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 21,
+        "t_s": 4.2,
+        "text": "2026-10-09 03:14:04.2 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 22,
+        "t_s": 4.4,
+        "text": "2026-10-09 03:14:04.4 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 23,
+        "t_s": 4.6,
+        "text": "2026-10-09 03:14:04.6 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 24,
+        "t_s": 4.8,
+        "text": "2026-10-09 03:14:04.8 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 25,
+        "t_s": 5.0,
+        "text": "2026-10-09 03:14:05.0 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 26,
+        "t_s": 5.2,
+        "text": "2026-10-09 03:14:05.2 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 27,
+        "t_s": 5.4,
+        "text": "2026-10-09 03:14:05.4 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 28,
+        "t_s": 5.6,
+        "text": "2026-10-09 03:14:05.6 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 29,
+        "t_s": 5.8,
+        "text": "2026-10-09 03:14:05.8 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 30,
+        "t_s": 6.0,
+        "text": "2026-10-09 03:14:06.0 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 31,
+        "t_s": 6.2,
+        "text": "2026-10-09 03:14:06.2 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 32,
+        "t_s": 6.4,
+        "text": "2026-10-09 03:14:06.4 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 33,
+        "t_s": 6.6,
+        "text": "2026-10-09 03:14:06.6 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 34,
+        "t_s": 6.8,
+        "text": "2026-10-09 03:14:06.8 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 35,
+        "t_s": 7.0,
+        "text": "2026-10-09 03:14:07.0 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 36,
+        "t_s": 7.2,
+        "text": "2026-10-09 03:14:07.2 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 37,
+        "t_s": 7.4,
+        "text": "2026-10-09 03:14:07.4 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 38,
+        "t_s": 7.6,
+        "text": "2026-10-09 03:14:07.6 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 39,
+        "t_s": 7.8,
+        "text": "2026-10-09 03:14:07.8 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 40,
+        "t_s": 8.0,
+        "text": "2026-10-09 03:14:08.0 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 41,
+        "t_s": 8.2,
+        "text": "2026-10-09 03:14:08.2 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 42,
+        "t_s": 8.4,
+        "text": "2026-10-09 03:14:08.4 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 43,
+        "t_s": 8.6,
+        "text": "2026-10-09 03:14:08.6 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 44,
+        "t_s": 8.8,
+        "text": "2026-10-09 03:14:08.8 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 45,
+        "t_s": 9.0,
+        "text": "2026-10-09 03:14:09.0 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 46,
+        "t_s": 9.2,
+        "text": "2026-10-09 03:14:09.2 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 47,
+        "t_s": 9.4,
+        "text": "2026-10-09 03:14:09.4 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 48,
+        "t_s": 9.6,
+        "text": "2026-10-09 03:14:09.6 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 49,
+        "t_s": 9.8,
+        "text": "2026-10-09 03:14:09.8 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
+      },
+      {
+        "line": 50,
+        "t_s": 10.0,
+        "text": "2026-10-09 03:14:010.0 [LOG] Connection pool active: 18/64 connections; checkpoint complete; latency 1.1ms"
       }
     ]
   },
   "alerts": [
     {
-      "id": "alt-cfg-01",
-      "t_s": 2.0,
+      "id": "a-001",
+      "t_s": 5.0,
       "service": "payment-service",
       "severity": "critical",
-      "message": "Pod CrashLoopBackOff: exit code 1"
+      "message": "Pod CrashLoopBackOff: container payment-service terminated with exit code 1"
     },
     {
-      "id": "alt-cfg-02",
-      "t_s": 2.5,
+      "id": "a-002",
+      "t_s": 5.1,
+      "service": "payment-service",
+      "severity": "error",
+      "message": "Readiness probe failed: HTTP 500 connection refused on :8082/ready"
+    },
+    {
+      "id": "a-003",
+      "t_s": 5.2,
       "service": "api-gateway",
       "severity": "error",
-      "message": "503 Service Unavailable: payment-service"
+      "message": "503 Service Unavailable: upstream payment-service:8082 connection refused"
     },
     {
-      "id": "alt-cfg-03",
-      "t_s": 3.0,
+      "id": "a-004",
+      "t_s": 5.3,
+      "service": "api-gateway",
+      "severity": "error",
+      "message": "Upstream connection failure: dial tcp 10.244.1.42:8082: connect: connection refused"
+    },
+    {
+      "id": "a-005",
+      "t_s": 5.4,
+      "service": "web-ui",
+      "severity": "error",
+      "message": "Checkout failed: 503 Service Unavailable returned from api-gateway on /api/v1/checkout"
+    },
+    {
+      "id": "a-006",
+      "t_s": 5.5,
+      "service": "api-gateway",
+      "severity": "warning",
+      "message": "Upstream request timeout: payment-service failed to respond within 2000ms"
+    },
+    {
+      "id": "a-007",
+      "t_s": 5.6,
+      "service": "web-ui",
+      "severity": "error",
+      "message": "User transaction error: checkout failed for session #9412 due to payment service outage"
+    },
+    {
+      "id": "a-008",
+      "t_s": 5.7,
+      "service": "payment-service",
+      "severity": "warning",
+      "message": "Container payment-service restart count 1 threshold exceeded"
+    },
+    {
+      "id": "a-009",
+      "t_s": 5.8,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "Circuit breaker tripped: payment-service consecutive connection failures > 5"
+    },
+    {
+      "id": "a-010",
+      "t_s": 5.9,
       "service": "web-ui",
       "severity": "warning",
-      "message": "Checkout route degraded"
+      "message": "Payment modal error: 'Payment gateway unavailable, please try again later'"
+    },
+    {
+      "id": "a-011",
+      "t_s": 6.1,
+      "service": "payment-service",
+      "severity": "error",
+      "message": "Liveness probe failed: container failed health check on :8082/healthz"
+    },
+    {
+      "id": "a-012",
+      "t_s": 6.2,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "Pod CrashLoopBackOff: Back-off 20s restarting failed container payment-service"
+    },
+    {
+      "id": "a-013",
+      "t_s": 6.3,
+      "service": "api-gateway",
+      "severity": "error",
+      "message": "503 Service Unavailable: upstream payment-service unhealthy on route /api/v1/payments"
+    },
+    {
+      "id": "a-014",
+      "t_s": 6.4,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "Circuit breaker open: fast-failing traffic to payment-service"
+    },
+    {
+      "id": "a-015",
+      "t_s": 6.5,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Checkout error rate spike: 28% of customer checkout attempts failing"
+    },
+    {
+      "id": "a-016",
+      "t_s": 6.6,
+      "service": "api-gateway",
+      "severity": "error",
+      "message": "HTTP 503 rate spike: 35.4% error rate on /api/v1/payments/process"
+    },
+    {
+      "id": "a-017",
+      "t_s": 6.8,
+      "service": "web-ui",
+      "severity": "error",
+      "message": "Checkout failed: payment confirmation RPC rejected by upstream gateway"
+    },
+    {
+      "id": "a-018",
+      "t_s": 6.9,
+      "service": "api-gateway",
+      "severity": "error",
+      "message": "Upstream connection reset: socket closed by peer on payment-service:8082"
+    },
+    {
+      "id": "a-019",
+      "t_s": 7.0,
+      "service": "payment-service",
+      "severity": "warning",
+      "message": "Container payment-service restart count 2 threshold exceeded"
+    },
+    {
+      "id": "a-020",
+      "t_s": 7.1,
+      "service": "api-gateway",
+      "severity": "error",
+      "message": "503 Service Unavailable: no healthy upstream instances in payment cluster"
+    },
+    {
+      "id": "a-021",
+      "t_s": 7.3,
+      "service": "payment-service",
+      "severity": "error",
+      "message": "Readiness probe failed: Get http://10.244.1.42:8082/ready: dial tcp connect refused"
+    },
+    {
+      "id": "a-022",
+      "t_s": 7.4,
+      "service": "payment-service",
+      "severity": "critical",
+      "message": "Pod CrashLoopBackOff: Back-off 40s restarting failed container payment-service"
+    },
+    {
+      "id": "a-023",
+      "t_s": 7.5,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "High error rate threshold: 62.5% 5xx errors on payment routing paths"
+    },
+    {
+      "id": "a-024",
+      "t_s": 7.6,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Checkout error rate spike: 54% customer transaction failure rate"
+    },
+    {
+      "id": "a-025",
+      "t_s": 7.7,
+      "service": "api-gateway",
+      "severity": "error",
+      "message": "503 Service Unavailable: fallback route active for payment transactions"
+    },
+    {
+      "id": "a-026",
+      "t_s": 7.8,
+      "service": "web-ui",
+      "severity": "error",
+      "message": "User transaction error: payment processing unavailable for session #9488"
+    },
+    {
+      "id": "a-027",
+      "t_s": 8.0,
+      "service": "api-gateway",
+      "severity": "error",
+      "message": "Upstream connection refused: payment-service:8082 host unreachable in service discovery"
+    },
+    {
+      "id": "a-028",
+      "t_s": 8.1,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Frontend telemetry: user checkout drop-off surge (>65% cart abandonment)"
+    },
+    {
+      "id": "a-029",
+      "t_s": 8.2,
+      "service": "api-gateway",
+      "severity": "error",
+      "message": "503 Service Unavailable: payment-service endpoints unhealthy in endpoint slice"
+    },
+    {
+      "id": "a-030",
+      "t_s": 8.4,
+      "service": "api-gateway",
+      "severity": "critical",
+      "message": "Gateway degraded: payment routing cluster offline"
+    },
+    {
+      "id": "a-031",
+      "t_s": 8.5,
+      "service": "web-ui",
+      "severity": "critical",
+      "message": "Checkout failed: payment transaction pipeline completely unresponsive"
     }
   ],
   "fix": {
     "action": "rollback_deployment",
-    "from": "v2.4.1",
-    "to": "v2.4.0"
+    "from": "payment-service:rev-7",
+    "to": "payment-service:rev-6"
   }
 }

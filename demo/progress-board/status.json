@@ -1,0 +1,170 @@
+[
+  {
+    "id": 1,
+    "name": "Live dependency map",
+    "owner": "Member 1",
+    "tier": "Tier 1",
+    "state": "done",
+    "detail": "6 services, pulsing red root, amber victims, animated edges"
+  },
+  {
+    "id": 2,
+    "name": "Chaos panel",
+    "owner": "Member 1",
+    "tier": "Tier 1",
+    "state": "done",
+    "detail": "One-click fault triggers for db_oom, bad_config, cpu_spike"
+  },
+  {
+    "id": 3,
+    "name": "Alert storm funnel",
+    "owner": "Member 1",
+    "tier": "Tier 1",
+    "state": "done",
+    "detail": "56 alerts collapse into 1 incident card (98% noise removed)"
+  },
+  {
+    "id": 8,
+    "name": "Live AI reasoning panel",
+    "owner": "Member 4",
+    "tier": "Tier 2",
+    "state": "done",
+    "detail": "Terminal aesthetic, typed investigation steps, auto-scroll"
+  },
+  {
+    "id": 10,
+    "name": "Phone approval (Telegram)",
+    "owner": "Member 4",
+    "tier": "Tier 2",
+    "state": "done",
+    "detail": "BotEngine ping/pong, incident cards, one-tap approval"
+  },
+  {
+    "id": 12,
+    "name": "Recovery stopwatch & cost counter",
+    "owner": "Member 4",
+    "tier": "Tier 2",
+    "state": "done",
+    "detail": "Live downtime timer and avoided downtime cost counter"
+  },
+  {
+    "id": 19,
+    "name": "Swappable cluster adapter",
+    "owner": "Member 2",
+    "tier": "Tier 3",
+    "state": "done",
+    "detail": "Fast deterministic simulator + real Kind cluster interface"
+  },
+  {
+    "id": 4,
+    "name": "Evidence drawer with verified badges",
+    "owner": "Member 1",
+    "tier": "Tier 1",
+    "state": "done",
+    "detail": "Highlighted log line 42, memory chart, exit code 137"
+  },
+  {
+    "id": 5,
+    "name": "Ordered playbook",
+    "owner": "Member 2",
+    "tier": "Tier 1",
+    "state": "done",
+    "detail": "Dependencies first recovery sequence using topological order; audit log per action"
+  },
+  {
+    "id": 6,
+    "name": "Approval card with config diff",
+    "owner": "Member 1",
+    "tier": "Tier 1",
+    "state": "done",
+    "detail": "64Mi -> 256Mi diff display and human Authorize button"
+  },
+  {
+    "id": 9,
+    "name": "Agent pipeline strip",
+    "owner": "Member 3",
+    "tier": "Tier 2",
+    "state": "done",
+    "detail": "Triage -> Diagnose -> Plan -> Execute -> Verify active chips, demo-mode cache fallback"
+  },
+  {
+    "id": 13,
+    "name": "Citation verifier guard",
+    "owner": "Member 3",
+    "tier": "Tier 2",
+    "state": "done",
+    "detail": "Planted fake log line is flagged and confidence drops 0.2"
+  },
+  {
+    "id": 7,
+    "name": "Healing animation",
+    "owner": "Member 1",
+    "tier": "Tier 1",
+    "state": "done",
+    "detail": "Nodes turn green in order as health checks pass"
+  },
+  {
+    "id": 11,
+    "name": "Voice briefing",
+    "owner": "Member 4",
+    "tier": "Tier 2",
+    "state": "building",
+    "detail": "speak()/playSiren()/playChime()/setMuted() ready (lib/voice.ts, lib/sounds.ts); wiring to awaiting_approval/inject events pending"
+  },
+  {
+    "id": 14,
+    "name": "One-click postmortem",
+    "owner": "Member 4",
+    "tier": "Tier 2",
+    "state": "building",
+    "detail": "PostmortemView fetches, renders and downloads .md (verified via ?demo=postmortem); backend route still returns 501, and it isn't mounted on the incident card yet"
+  },
+  {
+    "id": 15,
+    "name": "What-if blast radius",
+    "owner": "Member 1",
+    "tier": "Tier 2",
+    "state": "done",
+    "detail": "Click any node to highlight its downstream blast radius"
+  },
+  {
+    "id": 16,
+    "name": "Crash prediction",
+    "owner": "Member 2",
+    "tier": "Tier 3",
+    "state": "done",
+    "detail": "seconds_to_limit() + prediction banner; slow_leak gives 60s+ warning"
+  },
+  {
+    "id": 17,
+    "name": "Incident memory",
+    "owner": "Member 3",
+    "tier": "Tier 3",
+    "state": "done",
+    "detail": "db_oom matches INC-087 with a similarity score (past_incidents.json, 5 incidents)"
+  },
+  {
+    "id": 18,
+    "name": "Policy autonomy levels",
+    "owner": "Member 3",
+    "tier": "Tier 3",
+    "state": "done",
+    "detail": "Level 1-3 policy slider for automatic vs gated execution"
+  },
+  {
+    "id": 20,
+    "name": "MCP assistant server",
+    "owner": "Member 3",
+    "tier": "Tier 3",
+    "state": "done",
+    "detail": "Model Context Protocol for Claude Desktop external operations"
+  },
+  {
+    "id": 21,
+    "name": "Ask Agnitia chat",
+    "owner": "Member 3",
+    "tier": "Tier 3",
+    "state": "next",
+    "detail": "Stretch idea, not on the tracker -- interactive Q&A over telemetry and root cause data"
+  }
+]
