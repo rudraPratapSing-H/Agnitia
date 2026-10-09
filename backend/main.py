@@ -57,6 +57,7 @@ LAST_PREDICTION_TS: Dict[str, float] = {}
 
 async def _execute_pipeline_for_incident(incident: Incident) -> None:
     """Runs the AI pipeline for an incident and emits incident updates."""
+    global LATEST_ID
     if run_pipeline is not None:
         try:
             updated_incident = await run_pipeline(incident, adapter)
@@ -66,13 +67,60 @@ async def _execute_pipeline_for_incident(incident: Incident) -> None:
                     updated_incident.playbook = await plan_recovery(updated_incident)
                 except Exception:
                     pass
-            if updated_incident.status != "awaiting_approval":
-                updated_incident.status = "awaiting_approval"
+            # Autonomy policy check
+            try:
+                from backend.agents.autonomy import needs_approval
+                try:
+                    from backend.agents.autonomy import get_level
+                    level = get_level()
+                except (ImportError, AttributeError):
+                    try:
+                        from backend.agents.autonomy import get_autonomy_level
+                        level = get_autonomy_level()
+                    except (ImportError, AttributeError):
+                        level = int(os.getenv("AUTONOMY_LEVEL", "1"))
+            except (ImportError, Exception):
+                needs_approval = lambda step, lvl: True
+                try:
+                    level = int(os.getenv("AUTONOMY_LEVEL", "1"))
+                except (TypeError, ValueError):
+                    level = 1
 
-            INCIDENTS[updated_incident.id] = updated_incident
-            global LATEST_ID
-            LATEST_ID = updated_incident.id
-            await emit("incident_update", updated_incident)
+            if (
+                updated_incident.playbook is not None
+                and updated_incident.playbook.steps
+                and not any(needs_approval(step, level) for step in updated_incident.playbook.steps)
+            ):
+                actor = f"autonomy-level-{level}"
+                INCIDENTS[updated_incident.id] = updated_incident
+                LATEST_ID = updated_incident.id
+
+                async def _auto_execute(inc_to_run: Incident) -> None:
+                    try:
+                        resolved_incident = await executor.execute(inc_to_run, adapter, approved_by=actor)
+                        INCIDENTS[resolved_incident.id] = resolved_incident
+                        global LATEST_ID
+                        LATEST_ID = resolved_incident.id
+                        await emit("incident_update", resolved_incident)
+
+                        if resolved_incident.status == "resolved":
+                            services_to_clear = set(LAST_PREDICTION_TS.keys()) | {resolved_incident.root_service}
+                            for s in services_to_clear:
+                                await emit("prediction", {"service": s, "seconds": None})
+                            LAST_PREDICTION_TS.clear()
+                    except Exception as err:
+                        logger.exception("Autonomy execution failed: %s", err)
+
+                auto_task = asyncio.create_task(_auto_execute(updated_incident))
+                BACKGROUND_TASKS.add(auto_task)
+                auto_task.add_done_callback(BACKGROUND_TASKS.discard)
+            else:
+                if updated_incident.status != "awaiting_approval":
+                    updated_incident.status = "awaiting_approval"
+
+                INCIDENTS[updated_incident.id] = updated_incident
+                LATEST_ID = updated_incident.id
+                await emit("incident_update", updated_incident)
         except Exception as exc:
             logger.exception("Pipeline execution failed: %s", exc)
             incident.status = "analyzing"
@@ -499,9 +547,18 @@ async def get_blast_radius(service: str):
     }
 
 
-@app.post("/api/autonomy")
-async def update_autonomy():
-    raise HTTPException(status_code=501, detail="not implemented yet")
+_autonomy_router_included = False
+try:
+    from backend.agents.autonomy import router as autonomy_router
+    app.include_router(autonomy_router)
+    _autonomy_router_included = True
+except (ImportError, AttributeError):
+    pass
+
+if not _autonomy_router_included:
+    @app.post("/api/autonomy")
+    async def update_autonomy():
+        raise HTTPException(status_code=501, detail="not implemented yet")
 
 
 # ── WebSocket Stream ─────────────────────────────────────────────────────────
