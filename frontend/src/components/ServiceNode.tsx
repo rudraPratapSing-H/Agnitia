@@ -93,7 +93,7 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
 
   return (
     <div
-      className={`relative w-[230px] rounded-xl border ${statusStyles.border} ${statusStyles.accent} ${whatIfRing} ${pulseClass} shadow-2xs hover:shadow-md p-3 transition-all duration-300 cursor-pointer ${
+      className={`relative w-[240px] rounded-xl border ${statusStyles.border} ${statusStyles.accent} ${whatIfRing} ${pulseClass} shadow-2xs hover:shadow-md p-3.5 transition-all duration-300 cursor-pointer ${
         selected ? 'ring-2 ring-stone-900 scale-[1.01]' : ''
       }`}
     >
@@ -126,13 +126,13 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
           <div className={`p-1 rounded-md ${statusStyles.iconBg}`}>
             <Icon size={13} />
           </div>
-          <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-stone-500">
+          <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider text-stone-600">
             {tier}
           </span>
         </div>
 
         <span
-          className={`text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded border ${statusStyles.badgeBg} flex items-center gap-1 font-mono`}
+          className={`text-[8.5px] font-bold tracking-wider px-1.5 py-0.5 rounded border ${statusStyles.badgeBg} flex items-center gap-1 font-mono`}
         >
           {status === 'root_cause' && <Flame size={9} className="text-white animate-pulse" />}
           {status === 'impacted' && <AlertTriangle size={9} className="text-amber-600" />}
@@ -144,25 +144,25 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
 
       {/* Service Name & Pod Identifier */}
       <div className="mb-2">
-        <div className="font-mono font-black text-xs text-stone-900 truncate">
+        <div className="font-mono font-black text-[12.5px] text-stone-900 tracking-tight truncate">
           {label || id}
         </div>
-        <div className="text-[9px] text-stone-400 font-mono truncate">
+        <div className="text-[9.5px] text-stone-500 font-mono truncate">
           pod/{id}-0 • ns:prod
         </div>
       </div>
 
       {/* Telemetry Metric Bars */}
-      <div className="space-y-1.5 font-mono text-[9px]">
+      <div className="space-y-1.5 font-mono text-[9.5px]">
         {/* Memory Bar */}
         <div>
-          <div className="flex justify-between text-stone-500 mb-0.5 text-[8.5px]">
-            <span>MEM: {status === 'root_cause' ? memLimit : memMb}MiB / {memLimit}MiB</span>
-            <span className={effectiveMemPercent >= 90 ? 'text-rose-600 font-bold' : ''}>
+          <div className="flex justify-between text-stone-600 mb-0.5 text-[9px]">
+            <span className="font-semibold">MEM: {status === 'root_cause' ? memLimit : memMb}MiB / {memLimit}MiB</span>
+            <span className={effectiveMemPercent >= 90 ? 'text-rose-600 font-bold' : 'font-bold text-stone-700'}>
               {effectiveMemPercent}%
             </span>
           </div>
-          <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden border border-stone-200">
+          <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden border border-stone-200">
             <div
               className={`h-full transition-all duration-300 ${status === 'root_cause' ? 'bg-rose-600 animate-pulse' : statusStyles.barColor}`}
               style={{ width: `${effectiveMemPercent}%` }}
@@ -171,21 +171,21 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
         </div>
 
         {/* CPU & K8s State Indicator */}
-        <div className="flex items-center justify-between text-[8.5px] text-stone-500 pt-1 border-t border-stone-100">
+        <div className="flex items-center justify-between text-[9px] text-stone-600 pt-1 border-t border-stone-100 font-medium">
           <span className="flex items-center gap-1">
-            <Cpu size={10} className="text-stone-400" />
+            <Cpu size={11} className="text-stone-500" />
             <span>CPU: {cpuPct}%</span>
           </span>
           {status === 'root_cause' ? (
-            <span className="text-rose-700 font-bold bg-rose-50 px-1 rounded border border-rose-200 animate-pulse">
+            <span className="text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-300 animate-pulse">
               exitCode: 137
             </span>
           ) : restarts > 0 ? (
-            <span className="text-rose-600 font-bold">
+            <span className="text-rose-600 font-bold bg-rose-50 px-1 rounded border border-rose-200">
               restarts: {restarts}
             </span>
           ) : (
-            <span className="text-stone-400">
+            <span className="text-emerald-700 font-bold bg-emerald-50 px-1 rounded border border-emerald-200">
               ready: 1/1
             </span>
           )}
@@ -193,13 +193,13 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
 
         {/* Explicit Dependency Connectivity Footer */}
         {data.depends_on && data.depends_on.length > 0 ? (
-          <div className="flex items-center gap-1.5 text-[8px] font-mono text-stone-600 pt-1.5 border-t border-stone-200/80 flex-wrap">
-            <span className="text-stone-400 font-bold uppercase tracking-wider shrink-0 text-[7.5px]">Depends on:</span>
+          <div className="flex items-center gap-1.5 text-[8.5px] font-mono text-stone-700 pt-1.5 border-t border-stone-200/80 flex-wrap">
+            <span className="text-stone-500 font-bold uppercase tracking-wider shrink-0 text-[8px]">Depends on:</span>
             <div className="flex flex-wrap gap-1">
               {data.depends_on.map((dep: string) => (
                 <span
                   key={dep}
-                  className="bg-stone-100 text-stone-800 font-semibold px-1.5 py-0.2 rounded border border-stone-300/90 text-[7.5px]"
+                  className="bg-stone-100 text-stone-800 font-bold px-1.5 py-0.5 rounded border border-stone-300/90 text-[8px]"
                 >
                   {dep}
                 </span>
@@ -207,11 +207,11 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 text-[8px] font-mono text-stone-400 pt-1.5 border-t border-stone-200/80">
-            <span className="text-emerald-700 font-bold uppercase tracking-wider bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-300 shrink-0 text-[7.5px]">
+          <div className="flex items-center gap-1.5 text-[8.5px] font-mono text-stone-500 pt-1.5 border-t border-stone-200/80">
+            <span className="text-emerald-800 font-bold uppercase tracking-wider bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-300 shrink-0 text-[8px]">
               Root Source
             </span>
-            <span className="text-stone-500 text-[7.5px]">Data Tier • 0 Upstream</span>
+            <span className="text-stone-600 text-[8px] font-medium">Data Tier • 0 Upstream</span>
           </div>
         )}
       </div>

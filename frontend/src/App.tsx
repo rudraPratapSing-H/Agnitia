@@ -183,8 +183,20 @@ export default function App() {
     <div className="min-h-screen bg-[#f7f5f0] text-stone-900 flex flex-col p-3 md:p-4 gap-2.5 select-none font-sans">
       {/* Simulation Navbar */}
       <header className="bg-white border border-stone-200 rounded-xl px-4 py-2.5 shadow-2xs flex flex-wrap items-center justify-between gap-2 font-mono">
-        {/* Left: Brand + Back to Architecture Selection */}
-        <div className="flex items-center gap-3">
+        {/* Left: Switch Architecture Arrow Button + Brand */}
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => {
+              playClickTone();
+              navigateTo('selection');
+            }}
+            className="p-1.5 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 hover:text-stone-950 transition-all shadow-2xs active:scale-95 cursor-pointer hover:border-stone-300"
+            title="Switch Architecture"
+            aria-label="Switch Architecture"
+          >
+            <ArrowLeft size={16} />
+          </button>
+
           <div className="w-7 h-7 rounded-lg bg-stone-900 text-white flex items-center justify-center shadow-xs">
             <Shield size={16} />
           </div>
@@ -199,20 +211,6 @@ export default function App() {
               Topological Root Cause Analysis & Autonomous Self-Healing
             </p>
           </div>
-        </div>
-
-        {/* Center: Switch Architecture Button */}
-        <div>
-          <button
-            onClick={() => {
-              playClickTone();
-              navigateTo('selection');
-            }}
-            className="bg-stone-50 hover:bg-stone-100 text-stone-800 border border-stone-200 px-3.5 py-1.5 rounded-lg text-xs font-bold font-mono tracking-wider flex items-center gap-2 transition-all shadow-2xs active:scale-98"
-          >
-            <ArrowLeft size={13} />
-            <span>SWITCH ARCHITECTURE</span>
-          </button>
         </div>
 
         {/* Right: Active Topology Badge + Telemetry Controls */}

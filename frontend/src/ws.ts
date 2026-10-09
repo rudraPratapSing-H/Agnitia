@@ -138,7 +138,25 @@ function runLocalSimulation(scenarioId: string) {
 
 export function executeFullHealFlow() {
   clearActiveSimulation();
-  const isAmazon = getState().activePresetId === 'amazon-scale';
+  const state = getState();
+  const isAmazon = state.activePresetId === 'amazon-scale';
+  const inc = state.incident;
+
+  if (inc) {
+    applyWsEvent({
+      type: 'incident_update',
+      payload: { ...inc, status: 'healing' }
+    });
+  }
+
+  // Also notify live backend if connected
+  if (inc && inc.id && state.wsConnected) {
+    fetch(`http://localhost:8000/api/incidents/${inc.id}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ approved_by: 'ui' })
+    }).catch(() => {});
+  }
 
   if (isAmazon) {
     if (currentActiveScenario === 'bad_config') {

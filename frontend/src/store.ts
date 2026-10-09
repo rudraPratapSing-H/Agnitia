@@ -56,11 +56,17 @@ export function applyWsEvent(event: any) {
         const currentService = globalState.services[payload.id];
         let nextStatus = payload.status !== undefined ? payload.status : currentService.status;
 
-        // Protection: do not allow routine telemetry healthy pings to wipe out active root_cause or impacted state
+        // Protection: ONLY prevent background healthy pings from overwriting failures
+        // while we are actively propagating failure blast waves (before triage/approval).
+        // Once healing starts or during explicit recovery/healthy steps, ALWAYS allow the service to become healthy!
+        const isActivelyInjectingFailure =
+          globalState.isSimulating &&
+          (!globalState.incident || globalState.incident.status === 'detected' || globalState.incident.status === 'analyzing');
+
         if (
+          isActivelyInjectingFailure &&
           (currentService.status === 'root_cause' || currentService.status === 'impacted') &&
           nextStatus === 'healthy' &&
-          (globalState.isSimulating || (globalState.incident && globalState.incident.status !== 'resolved')) &&
           payload.status !== 'recovering'
         ) {
           nextStatus = currentService.status;
@@ -123,9 +129,33 @@ export function applyWsEvent(event: any) {
     }
 
     case 'incident_update': {
+      let updatedServices = globalState.services;
+
+      // When incident is resolved, EVERY single pod in the topology is guaranteed to be HEALTHY (green)!
+      if (payload && payload.status === 'resolved') {
+        updatedServices = { ...globalState.services };
+        Object.keys(updatedServices).forEach((srvId) => {
+          const srv = updatedServices[srvId];
+          if (srv.status === 'root_cause' || srv.status === 'impacted' || srv.status === 'recovering') {
+            updatedServices[srvId] = {
+              ...srv,
+              status: 'healthy',
+              metrics: {
+                ...srv.metrics,
+                cpu_pct: Math.min(srv.metrics?.cpu_pct ?? 15, 20),
+                restarts: 0
+              }
+            };
+          }
+        });
+      }
+
       globalState = {
         ...globalState,
-        incident: payload
+        incident: payload,
+        services: updatedServices,
+        isSimulating: payload?.status === 'resolved' ? false : globalState.isSimulating,
+        activeScenario: payload?.status === 'resolved' ? null : globalState.activeScenario
       };
       break;
     }
