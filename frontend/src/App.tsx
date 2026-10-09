@@ -11,6 +11,7 @@ import ReasoningPanel from './components/extras/ReasoningPanel';
 import { Shield, AlertTriangle } from 'lucide-react';
 import TimerDemo from './components/extras/dev/TimerDemo';
 import ReasoningDemo from './components/extras/dev/ReasoningDemo';
+import PostmortemDemo from './components/extras/dev/PostmortemDemo';
 
 export default function App() {
   const demoParam =
@@ -23,6 +24,9 @@ export default function App() {
   }
   if (demoParam === 'reasoning') {
     return <ReasoningDemo />;
+  }
+  if (demoParam === 'postmortem') {
+    return <PostmortemDemo />;
   }
 
   const {
