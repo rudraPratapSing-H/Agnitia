@@ -14,7 +14,7 @@ import backend.main as main_module
 async def test_post_tts_returns_wav_audio(monkeypatch):
     async def fake_synthesize(text, *, voice=tts.DEFAULT_VOICE):
         assert text == "hello from the test"
-        return b"RIFF....WAVEfake"
+        return b"RIFF....WAVEfake", "audio/wav"
 
     monkeypatch.setattr(tts, "synthesize_speech", fake_synthesize)
 
@@ -25,6 +25,21 @@ async def test_post_tts_returns_wav_audio(monkeypatch):
     assert resp.status_code == 200
     assert resp.headers["content-type"] == "audio/wav"
     assert resp.content == b"RIFF....WAVEfake"
+
+
+async def test_post_tts_returns_mp3_when_cloud_tts_configured(monkeypatch):
+    async def fake_synthesize(text, *, voice=tts.DEFAULT_VOICE):
+        return b"ID3fakemp3bytes", "audio/mpeg"
+
+    monkeypatch.setattr(tts, "synthesize_speech", fake_synthesize)
+
+    transport = ASGITransport(app=main_module.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.post("/api/tts", json={"text": "hello"})
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "audio/mpeg"
+    assert resp.content == b"ID3fakemp3bytes"
 
 
 async def test_post_tts_rejects_empty_text():

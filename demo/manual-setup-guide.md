@@ -6,27 +6,33 @@ unblock the rest.
 
 ---
 
-## 0. Voice briefing quota — read this before rehearsing
+## 0. Voice briefing — status after rehearsal
 
-Rehearsed the voice briefing end to end today. The mechanism works correctly in both
-directions:
+Rehearsed the voice briefing end to end, twice, against the real backend.
 
-- **Real Google TTS path:** confirmed live — a real call to `gemini-3.8-flash-tts` returns
-  genuine WAV audio and plays via the browser's `<audio>` element.
-- **Fallback path:** also confirmed live, because it actually triggered — `gemini-3.8-flash-tts`'s
-  **free tier is capped at 10 requests per day** (`429 RESOURCE_EXHAUSTED`, ~12-hour retry
-  window). Once that quota was hit, every subsequent briefing correctly fell back to the
-  browser's own `speechSynthesis`, with the right text, no hang, no silent failure.
+**First pass** used Gemini's native TTS (`gemini-3.8-flash-tts` via `LLM_API_KEY`) as the only
+path. Its free tier turned out to be capped at **10 requests/day**
+(`429 RESOURCE_EXHAUSTED`, ~12h retry window) — rehearsal testing alone exhausted it. The
+fallback to the browser's own `speechSynthesis` correctly took over when that happened: right
+text, no hang, no silent failure. Good safety net, but not the voice you'd want on stage if it
+switches mid-rehearsal.
 
-**What this means for you:** if your `LLM_API_KEY` is on the free tier, casual testing during
-rehearsals will burn through the day's 10 TTS calls fast, and the actual stage demo will run
-on the browser fallback voice instead of the nicer Google voice — functionally fine (the
-briefing still plays), but not what you rehearsed sounding like. Before the Final:
-- Check whether your key is on a paid tier (Google AI Studio → your project's billing), or
-- Budget TTS calls deliberately during rehearsal (don't trigger `awaiting_approval` more than
-  necessary), or
-- Accept the browser-voice fallback as the real stage behavior and rehearse with sound off
-  for the Google voice specifically, relying on the fallback intentionally.
+**Fixed:** added a second, preferred path — the dedicated **Cloud Text-to-Speech API**
+(`texttospeech.googleapis.com`), a separate GCP product/credential/quota from the Gemini API
+key, configured via `GOOGLE_TTS_API_KEY`. Rehearsed again with it live:
+- Real synthesis call: ~1-2s (faster than the Gemini-native path's 4-9s).
+- Real 10.6-second MP3 played start to finish via the browser's `<audio>` element --
+  confirmed via the `playing` and `ended` events, not just "no error."
+- `speechSynthesis` fallback call count: 0 -- the real voice was used, not the browser fallback.
+- No quota wall hit.
+
+**If `GOOGLE_TTS_API_KEY` is set** (it is, in this repo's local `.env` -- not committed), this
+is the path that runs. If it's ever unset or that key stops working, it falls back to
+Gemini-native TTS, and from there to the browser's `speechSynthesis` if that also fails -- two
+layers of safety net, same principle as `DEMO_MODE=cache` elsewhere in this app. Nothing
+further to do here before the Final unless the Cloud TTS key itself needs rotating or hits its
+own billing limits (check the GCP project's billing/quota page if the voice briefing ever goes
+quiet on that key).
 
 ---
 

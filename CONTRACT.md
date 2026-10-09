@@ -199,7 +199,8 @@ export function setMuted(muted: boolean): void
 | Variable | Example | Used by |
 | --- | --- | --- |
 | `LLM_API_KEY`, `LLM_MODEL` | your key and chosen model | Member 3 |
-| `TTS_MODEL` | `gemini-3.8-flash-tts` (default) -- reuses `LLM_API_KEY` | Member 3 |
+| `GOOGLE_TTS_API_KEY` | Cloud Text-to-Speech API key (preferred; separate quota from `LLM_API_KEY`) | Member 3 |
+| `TTS_MODEL` | `gemini-3.8-flash-tts` (default) -- fallback path, reuses `LLM_API_KEY` | Member 3 |
 | `DEMO_MODE` | `auto` (live, cache on failure), `cache`, `live` | Member 3 |
 | `AUTONOMY_LEVEL` | `2` | Member 3 |
 | `ADAPTER` | `simulator` or `k8s` | Member 2 |
