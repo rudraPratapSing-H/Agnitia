@@ -1,6 +1,6 @@
-// D:\CoffeeOverflow\Agnitia\frontend\src\App.tsx - SRE Mission Control with Global Hotkeys
+// frontend/src/App.tsx - SRE Mission Control & Multi-Architecture Control Plane
 import React, { useEffect, useState } from 'react';
-import { useAgnitiaStore, setWhatIfNode, setSoundMuted, setAutonomyLevel, resetStore } from './store';
+import { useAgnitiaStore, setWhatIfNode, setSoundMuted, resetStore, setActivePreset } from './store';
 import { connectWebSocket, executeFullHealFlow, playScenario } from './ws';
 import DependencyMap from './components/DependencyMap';
 import AlertFunnel from './components/AlertFunnel';
@@ -14,11 +14,14 @@ import PostmortemView from './components/extras/PostmortemView';
 import ReasoningPanel from './components/extras/ReasoningPanel';
 import Stopwatch from './components/extras/Stopwatch';
 import CostTicker from './components/extras/CostTicker';
-import { Shield, Volume2, VolumeX, Keyboard } from 'lucide-react';
+import ArchitectureCatalog from './components/ArchitectureCatalog';
+import { PRESETS } from './presets';
+import { Shield, Volume2, VolumeX, Keyboard, Layers, Activity, Sparkles } from 'lucide-react';
 import { setMuted as setAudioMuted, playAlertSiren, playSuccessChime, playClickTone } from './lib/sounds';
 
 export default function App() {
   const {
+    activePresetId,
     services,
     alerts,
     incident,
@@ -33,10 +36,13 @@ export default function App() {
     soundMuted
   } = useAgnitiaStore();
 
+  const [activeView, setActiveView] = useState<'mission-control' | 'catalog'>('mission-control');
   const [isEvidenceOpen, setIsEvidenceOpen] = useState(false);
   const [isApprovalOpen, setIsApprovalOpen] = useState(false);
   const [isPostmortemOpen, setIsPostmortemOpen] = useState(false);
   const [isAuthorizing, setIsAuthorizing] = useState(false);
+
+  const currentPreset = PRESETS[activePresetId] || PRESETS['k8s-core'];
 
   useEffect(() => {
     connectWebSocket();
@@ -81,6 +87,9 @@ export default function App() {
       } else if (e.key === 'r' || e.key === 'R') {
         playClickTone();
         resetStore();
+      } else if (e.key === 'c' || e.key === 'C') {
+        playClickTone();
+        setActiveView((prev) => (prev === 'mission-control' ? 'catalog' : 'mission-control'));
       } else if (e.key === 'a' || e.key === 'A') {
         if (incident && incident.status === 'awaiting_approval') {
           if (!isApprovalOpen) {
@@ -141,13 +150,46 @@ export default function App() {
               </span>
             </h1>
             <p className="text-[10px] text-stone-500 font-sans">
-              Topological Root Cause Analysis & Declarative Recovery
+              Topological Root Cause Analysis & Autonomous Self-Healing
             </p>
           </div>
         </div>
 
-        {/* Global Hotkeys Legend for Judges */}
-        <div className="hidden xl:flex items-center gap-2 text-[9px] font-mono text-stone-500 bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg">
+        {/* View Switcher: Mission Control vs Architecture Catalog */}
+        <div className="bg-stone-100 p-1 rounded-lg border border-stone-200 flex items-center gap-1 text-[11px] font-mono">
+          <button
+            onClick={() => {
+              playClickTone();
+              setActiveView('mission-control');
+            }}
+            className={`px-3 py-1.5 rounded-md font-bold transition-all flex items-center gap-1.5 ${
+              activeView === 'mission-control'
+                ? 'bg-white text-stone-900 shadow-2xs'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            <Activity size={13} />
+            <span>MISSION CONTROL</span>
+          </button>
+          <button
+            onClick={() => {
+              playClickTone();
+              setActiveView('catalog');
+            }}
+            className={`px-3 py-1.5 rounded-md font-bold transition-all flex items-center gap-1.5 ${
+              activeView === 'catalog'
+                ? 'bg-white text-stone-900 shadow-2xs'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            <Layers size={13} />
+            <span>ARCHITECTURE PRESETS</span>
+            <span className="text-[9px] bg-stone-200/80 text-stone-700 px-1 rounded font-bold">2</span>
+          </button>
+        </div>
+
+        {/* Global Hotkeys Legend */}
+        <div className="hidden 2xl:flex items-center gap-2 text-[9px] font-mono text-stone-500 bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg">
           <span className="font-extrabold text-stone-400 flex items-center gap-1">
             <Keyboard size={11} />
             HOTKEYS:
@@ -156,21 +198,35 @@ export default function App() {
             <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">1..4</kbd> Inject
           </span>
           <span>
+            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">C</kbd> Presets
+          </span>
+          <span>
             <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">A</kbd> Authorize
-          </span>
-          <span>
-            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">E</kbd> Logs
-          </span>
-          <span>
-            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">P</kbd> Postmortem
           </span>
           <span>
             <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">R</kbd> Reset
           </span>
         </div>
 
-        {/* Header Telemetry Badges with Stopwatch & Financial Impact */}
+        {/* Header Telemetry Badges with Preset Indicator */}
         <div className="flex items-center gap-2 text-xs flex-wrap">
+          {/* Active Preset Pill */}
+          <div className="bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-mono">
+            <span className="text-stone-400 text-[10px]">TOPOLOGY:</span>
+            <button
+              onClick={() => {
+                playClickTone();
+                setActivePreset(activePresetId === 'k8s-core' ? 'amazon-scale' : 'k8s-core');
+              }}
+              title="Click to toggle architecture preset"
+              className="text-[10px] font-bold text-stone-900 hover:text-amber-700 flex items-center gap-1"
+            >
+              {activePresetId === 'amazon-scale' ? <Sparkles size={11} className="text-amber-600" /> : null}
+              <span>{currentPreset.shortName}</span>
+              <span className="text-[8px] text-stone-400 underline ml-0.5">toggle</span>
+            </button>
+          </div>
+
           {/* MTTR Stopwatch */}
           <Stopwatch
             isActive={!!incident && incident.status !== 'resolved'}
@@ -198,19 +254,13 @@ export default function App() {
           </button>
 
           <div className="bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-stone-500 text-[10px]">CLUSTER:</span>
-            <span className="text-stone-800 font-bold text-[10px]">PROD K8S</span>
-          </div>
-
-          <div className="bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full ${
                 wsConnected ? 'bg-emerald-500' : 'bg-stone-400'
               }`}
             />
             <span className="text-stone-500 text-[10px]">TELEMETRY:</span>
-            <span className="font-bold text-[10px] text-stone-700">
+            <span className="font-bold text-[10px] text-stone-700 font-mono">
               {wsConnected ? 'LIVE WS' : 'STANDALONE'}
             </span>
           </div>
@@ -218,38 +268,49 @@ export default function App() {
       </header>
 
       {/* Early Predictive Capacity Alert Banner */}
-      {prediction && (
-        <PredictionBanner prediction={prediction} />
+      {prediction && <PredictionBanner prediction={prediction} />}
+
+      {/* Active View Content */}
+      {activeView === 'catalog' ? (
+        <ArchitectureCatalog
+          activePresetId={activePresetId}
+          onSelectPreset={() => setActiveView('mission-control')}
+          onReturnToMissionControl={() => setActiveView('mission-control')}
+        />
+      ) : (
+        <>
+          {/* 5-Stage Pipeline Progress Strip */}
+          <AgentStrip agentSteps={agentSteps} incident={incident} alerts={alerts} />
+
+          {/* Main Grid: Left 58% Vertical Map, Right 42% Incident Column */}
+          <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2.5 min-h-[580px]">
+            {/* Left: Vertical Architecture Map with What-If Mode */}
+            <section className="lg:col-span-7 h-[740px] min-h-[720px] relative">
+              <DependencyMap
+                services={services}
+                activePresetId={activePresetId}
+                activeScenario={activeScenario}
+                whatIfNode={whatIfNode}
+                onSelectWhatIf={setWhatIfNode}
+                onOpenCatalog={() => setActiveView('catalog')}
+              />
+            </section>
+
+            {/* Right: Alert Stream, Incident Dossier & Log */}
+            <section className="lg:col-span-5 flex flex-col gap-2.5 overflow-y-auto max-h-[760px] custom-scrollbar pr-1">
+              <AlertFunnel alerts={alerts} incident={incident} />
+              <IncidentCard
+                incident={incident}
+                stepStatus={stepStatus}
+                onOpenEvidence={() => setIsEvidenceOpen(true)}
+                onOpenApproval={() => setIsApprovalOpen(true)}
+                onOpenPostmortem={() => setIsPostmortemOpen(true)}
+              />
+              <ReasoningPanel steps={agentSteps} isSimulating={isSimulating} />
+            </section>
+          </main>
+        </>
       )}
-
-      {/* 5-Stage Pipeline Progress Strip */}
-      <AgentStrip agentSteps={agentSteps} incident={incident} alerts={alerts} />
-
-      {/* Main Grid: Left 58% Vertical Map, Right 42% Incident Column */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2.5 min-h-[580px]">
-        {/* Left: Vertical Architecture Map with What-If Mode */}
-        <section className="lg:col-span-7 h-[740px] min-h-[720px] relative">
-          <DependencyMap
-            services={services}
-            activeScenario={activeScenario}
-            whatIfNode={whatIfNode}
-            onSelectWhatIf={setWhatIfNode}
-          />
-        </section>
-
-        {/* Right: Alert Stream, Incident Dossier & Log */}
-        <section className="lg:col-span-5 flex flex-col gap-2.5 overflow-y-auto max-h-[760px] custom-scrollbar pr-1">
-          <AlertFunnel alerts={alerts} incident={incident} />
-          <IncidentCard
-            incident={incident}
-            stepStatus={stepStatus}
-            onOpenEvidence={() => setIsEvidenceOpen(true)}
-            onOpenApproval={() => setIsApprovalOpen(true)}
-            onOpenPostmortem={() => setIsPostmortemOpen(true)}
-          />
-          <ReasoningPanel steps={agentSteps} isSimulating={isSimulating} />
-        </section>
-      </main>
 
       {/* Bottom Chaos Action Bar + Autonomy Control */}
       <footer className="mt-auto">

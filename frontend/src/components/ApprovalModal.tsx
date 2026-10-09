@@ -46,36 +46,58 @@ export default function ApprovalModal({
   let diffNewSub = '+ requests.memory: "128Mi"';
   let kubectlCmd = "kubectl patch deployment postgres -n default --type='strategic' -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"postgres\",\"resources\":{\"limits\":{\"memory\":\"256Mi\"},\"requests\":{\"memory\":\"128Mi\"}}}]}}}}'";
 
-  if (scenario === 'bad_config' || root_service === 'payment-service') {
+  if (root_service === 'aurora-orders-db' && scenario === 'db_oom') {
+    targetWorkload = 'apps/v1/StatefulSet: aurora-orders-db (namespace: retail, cluster: aws-eks-prod)';
+    actionDesc = 'Patch container memory limit from 4096Mi to 8192Mi to eliminate shared_buffers allocation failure and OOM loop.';
+    diffFile = 'aws/aurora-statefulset.yaml';
+    diffHeader = '@@ spec.template.spec.containers[0].resources @@';
+    diffOld = '- limits.memory: "4096Mi"';
+    diffNew = '+ limits.memory: "8192Mi"';
+    diffOldSub = '- requests.memory: "2048Mi"';
+    diffNewSub = '+ requests.memory: "4096Mi"';
+    kubectlCmd = "kubectl patch statefulset aurora-orders-db -n retail -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"aurora\",\"resources\":{\"limits\":{\"memory\":\"8192Mi\"},\"requests\":{\"memory\":\"4096Mi\"}}}]}}}}'";
+  } else if (scenario === 'bad_config' || root_service === 'payment-service') {
     targetWorkload = 'apps/v1/Deployment: payment-service (namespace: default, cluster: prod-us-east-1)';
-    actionDesc = 'Rollback broken deployment revision #24 to stable revision #23 to restore missing STRIPE_API_SECRET env var.';
+    actionDesc = 'Rollback broken deployment revision to stable revision to restore missing API keys and secrets.';
     diffFile = 'k8s/payment-service-deployment.yaml';
     diffHeader = '@@ spec.template.spec.containers[0].image @@';
-    diffOld = '- image: "payment-service:v2.4.1" # missing STRIPE_API_SECRET';
-    diffNew = '+ image: "payment-service:v2.4.0" # validated stable revision #23';
+    diffOld = '- image: "payment-service:v2.4.1" # missing secret tokens';
+    diffNew = '+ image: "payment-service:v2.4.0" # validated stable revision';
     diffOldSub = '';
     diffNewSub = '';
-    kubectlCmd = 'kubectl rollout undo deployment/payment-service --to-revision=23 -n default';
+    kubectlCmd = 'kubectl rollout undo deployment/payment-service -n default';
   } else if (scenario === 'cpu_spike' || root_service === 'auth-service') {
     targetWorkload = 'apps/v1/Deployment: auth-service (namespace: default, cluster: prod-us-east-1)';
-    actionDesc = 'Scale deployment replicas from 1 to 3 to relieve 100% CPU thread pool saturation and restore P99 latency.';
+    actionDesc = 'Scale deployment replicas from 2 to 6 to relieve 100% CPU thread pool saturation and restore P99 latency.';
     diffFile = 'k8s/auth-service-hpa.yaml';
     diffHeader = '@@ spec.replicas @@';
-    diffOld = '- replicas: 1';
-    diffNew = '+ replicas: 3';
+    diffOld = '- replicas: 2';
+    diffNew = '+ replicas: 6';
     diffOldSub = '';
     diffNewSub = '';
-    kubectlCmd = 'kubectl scale deployment auth-service --replicas=3 -n default';
+    kubectlCmd = 'kubectl scale deployment auth-service --replicas=6 -n default';
   } else if (scenario === 'slow_leak') {
-    targetWorkload = 'apps/v1/Deployment: postgres (namespace: default, cluster: prod-us-east-1)';
-    actionDesc = 'Pre-emptively expand container memory limit from 64Mi to 128Mi based on linear memory gradient forecast.';
-    diffFile = 'k8s/postgres-deployment.yaml';
-    diffHeader = '@@ spec.template.spec.containers[0].resources.limits @@';
-    diffOld = '- limits.memory: "64Mi"';
-    diffNew = '+ limits.memory: "128Mi"';
-    diffOldSub = '';
-    diffNewSub = '';
-    kubectlCmd = "kubectl patch deployment postgres -n default -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"postgres\",\"resources\":{\"limits\":{\"memory\":\"128Mi\"}}}]}}}}'";
+    if (root_service === 'aurora-orders-db') {
+      targetWorkload = 'apps/v1/StatefulSet: aurora-orders-db (namespace: retail, cluster: aws-eks-prod)';
+      actionDesc = 'Pre-emptively expand container memory limit from 4096Mi to 8192Mi based on buffer pool gradient forecast.';
+      diffFile = 'aws/aurora-statefulset.yaml';
+      diffHeader = '@@ spec.template.spec.containers[0].resources.limits @@';
+      diffOld = '- limits.memory: "4096Mi"';
+      diffNew = '+ limits.memory: "8192Mi"';
+      diffOldSub = '';
+      diffNewSub = '';
+      kubectlCmd = "kubectl patch statefulset aurora-orders-db -n retail -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"aurora\",\"resources\":{\"limits\":{\"memory\":\"8192Mi\"}}}]}}}}'";
+    } else {
+      targetWorkload = 'apps/v1/Deployment: postgres (namespace: default, cluster: prod-us-east-1)';
+      actionDesc = 'Pre-emptively expand container memory limit from 64Mi to 128Mi based on linear memory gradient forecast.';
+      diffFile = 'k8s/postgres-deployment.yaml';
+      diffHeader = '@@ spec.template.spec.containers[0].resources.limits @@';
+      diffOld = '- limits.memory: "64Mi"';
+      diffNew = '+ limits.memory: "128Mi"';
+      diffOldSub = '';
+      diffNewSub = '';
+      kubectlCmd = "kubectl patch deployment postgres -n default -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"postgres\",\"resources\":{\"limits\":{\"memory\":\"128Mi\"}}}]}}}}'";
+    }
   }
 
   const handleCopyCmd = () => {
