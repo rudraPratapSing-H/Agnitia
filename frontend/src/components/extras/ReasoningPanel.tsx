@@ -25,11 +25,12 @@ function derivePodName(step: AgentStep): string {
   if (text.includes('inventory')) return 'pod/inventory-manager';
   if (text.includes('order')) return 'pod/order-orchestrator';
 
-  // Orchestrator Agents
+  // Orchestrator Agents (The 5 Agents)
   if (agent === 'triage') return 'pod/triage-agent';
   if (agent === 'diagnose') return 'pod/diagnose-agent';
-  if (agent === 'plan') return 'pod/planner-agent';
-  if (agent === 'execute') return 'pod/remediator';
+  if (agent.includes('citation') || text.includes('citation')) return 'pod/citation-verifier';
+  if (agent === 'plan' || agent === 'planner') return 'pod/planner-agent';
+  if (agent === 'execute' || agent === 'executor') return 'pod/executor-agent';
   if (agent === 'verify') return 'pod/prober';
 
   return 'pod/system';

@@ -5,7 +5,7 @@ export type ServiceStatus = 'healthy' | 'root_cause' | 'impacted' | 'recovering'
 export type AlertSeverity = 'info' | 'warning' | 'error' | 'critical';
 export type IncidentStatus = 'detected' | 'analyzing' | 'awaiting_approval' | 'healing' | 'resolved';
 export type ActionRisk = 'low' | 'medium' | 'high';
-export type AgentStage = 'triage' | 'diagnose' | 'plan' | 'execute' | 'verify';
+export type AgentStage = 'triage' | 'diagnose' | 'citation_verifier' | 'citations' | 'plan' | 'planner' | 'execute' | 'executor' | 'verify' | string;
 
 export interface ServiceMetrics {
   mem_mb: number;

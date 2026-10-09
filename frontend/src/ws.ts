@@ -405,10 +405,11 @@ function getK8sDbOomMockEvents() {
     { delay: 4900, type: 'alert', payload: { id: 'a-045', service: 'web-ui', severity: 'critical', message: 'Frontend SSR render failed: Auth endpoint returned 502', ts: '03:14:12.200' } },
     { delay: 5000, type: 'alert', payload: { id: 'a-046', service: 'web-ui', severity: 'critical', message: 'Client telemetry: Checkout modal throwing Uncaught Error', ts: '03:14:12.250' } },
 
-    // AI Agents correlation & diagnosis
+    // AI Agents correlation & diagnosis (The 5 Agents)
     { delay: 6000, type: 'agent_step', payload: { agent: 'triage', text: 'Topological correlation applied: 56 alerts collapsed into 1 root incident (postgres-0).', status: 'done' } },
     { delay: 7000, type: 'agent_step', payload: { agent: 'diagnose', text: 'Hard evidence identified: postgres-0 ExitCode 137, Memory 64MiB/64MiB, log: FATAL out of memory.', status: 'done' } },
-    { delay: 8000, type: 'agent_step', payload: { agent: 'plan', text: 'Topological sequential recovery playbook synthesized. High-risk patch requires Human-in-the-Loop approval.', status: 'done' } },
+    { delay: 7600, type: 'agent_step', payload: { agent: 'citation_verifier', text: 'Citation Verifier: 3/3 citations verified against container logs & cgroup metrics (0 hallucinations).', status: 'done' } },
+    { delay: 8200, type: 'agent_step', payload: { agent: 'plan', text: 'Topological sequential recovery playbook synthesized. High-risk patch requires Human-in-the-Loop approval.', status: 'done' } },
     {
       delay: 8600,
       type: 'incident_update',
@@ -630,10 +631,11 @@ function getAmazonDbOomMockEvents() {
     { delay: 8000, type: 'service_update', payload: { id: 'cloud-front', status: 'impacted', metrics: { mem_mb: 230, mem_limit_mb: 512, cpu_pct: 25, restarts: 0 } } },
     { delay: 8100, type: 'alert', payload: { id: 'amz-12', service: 'cloud-front', severity: 'critical', message: 'CloudFront edge PoP error budget burned: Origin return rate 91% 5xx', ts: '03:14:15.600' } },
 
-    // AI Agents correlation & diagnosis
+    // AI Agents correlation & diagnosis (The 5 Agents)
     { delay: 9200, type: 'agent_step', payload: { agent: 'triage', text: 'Graph topological correlation applied: 84 raw alerts collapsed into 1 root incident (aurora-orders-db).', status: 'done' } },
     { delay: 10400, type: 'agent_step', payload: { agent: 'diagnose', text: 'RCA Confirmed: aurora-orders-db breached 4096Mi cgroup ceiling. Connection pool deadlocks propagated to 8 downstream microservices.', status: 'done' } },
-    { delay: 11400, type: 'agent_step', payload: { agent: 'plan', text: 'Synthesized 6-stage AWS RDS recovery playbook (Buffer pool patch -> Probes -> Circuit breaker reset). Awaiting SRE authorization.', status: 'done' } },
+    { delay: 11000, type: 'agent_step', payload: { agent: 'citation_verifier', text: 'Citation Verifier: 3/3 citations verified against raw telemetry & K8s events (0 hallucinations detected).', status: 'done' } },
+    { delay: 11600, type: 'agent_step', payload: { agent: 'plan', text: 'Synthesized 6-stage AWS RDS recovery playbook (Buffer pool patch -> Probes -> Circuit breaker reset). Awaiting SRE authorization.', status: 'done' } },
 
     {
       delay: 12200,
@@ -785,6 +787,7 @@ function getAmazonBadConfigMockEvents() {
     { delay: 4850, type: 'service_update', payload: { id: 'mobile-bff', status: 'impacted', metrics: { mem_mb: 420, mem_limit_mb: 1024, cpu_pct: 24, restarts: 0 } } },
 
     { delay: 6000, type: 'agent_step', payload: { agent: 'diagnose', text: 'Crash log identified: Missing environment variable secrets in revision #43. Order saga impacted.', status: 'done' } },
+    { delay: 6600, type: 'agent_step', payload: { agent: 'citation_verifier', text: 'Citation Verifier: 2/2 citations verified against container stderr & deployment spec.', status: 'done' } },
     { delay: 7200, type: 'agent_step', payload: { agent: 'plan', text: 'Generated 1-click rollback to revision #42 (payment-service:v3.2.0-stable).', status: 'done' } },
     {
       delay: 8000,
@@ -883,6 +886,7 @@ function getAmazonCpuSpikeMockEvents() {
     { delay: 3250, type: 'service_update', payload: { id: 'mobile-bff', status: 'impacted', metrics: { mem_mb: 430, mem_limit_mb: 1024, cpu_pct: 28, restarts: 0 } } },
 
     { delay: 4400, type: 'agent_step', payload: { agent: 'diagnose', text: 'Cryptographic worker starvation confirmed. Auto-scaling HPA recommended.', status: 'done' } },
+    { delay: 5000, type: 'agent_step', payload: { agent: 'citation_verifier', text: 'Citation Verifier: 2/2 citations verified against Prometheus CPU throttling metrics.', status: 'done' } },
     { delay: 5600, type: 'agent_step', payload: { agent: 'plan', text: 'Autoscale recommendation: Scale auth-service replicas from 2 to 6.', status: 'done' } },
     {
       delay: 6400,
@@ -979,7 +983,8 @@ function getAmazonSlowLeakMockEvents() {
       }
     },
     { delay: 2100, type: 'agent_step', payload: { agent: 'diagnose', text: 'Linear regression forecast: Shared buffer pool slope reaches ceiling in 178s.', status: 'done' } },
-    { delay: 2400, type: 'agent_step', payload: { agent: 'plan', text: 'PREDICTIVE SHIELD: Synthesizing pre-emptive memory patch before outage occurs.', status: 'done' } },
+    { delay: 2300, type: 'agent_step', payload: { agent: 'citation_verifier', text: 'Citation Verifier: 2/2 citations verified against linear memory regression gradient.', status: 'done' } },
+    { delay: 2500, type: 'agent_step', payload: { agent: 'plan', text: 'PREDICTIVE SHIELD: Synthesizing pre-emptive memory patch before outage occurs.', status: 'done' } },
     {
       delay: 2700,
       type: 'incident_update',

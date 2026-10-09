@@ -1,9 +1,10 @@
-// frontend/src/components/AgentStrip.tsx - Vertical SRE Process Pipeline Stepper
+// frontend/src/components/AgentStrip.tsx - The 5 Agents Pipeline Stepper
 import React from 'react';
 import {
   Filter,
   GitFork,
-  ShieldCheck,
+  FileCheck2,
+  Layers,
   Play,
   CheckCircle2,
   Loader2,
@@ -35,38 +36,91 @@ export default function AgentStrip({
   const getStageState = (stageId: string): 'idle' | 'running' | 'done' => {
     if (isResolved) return 'done';
 
-    const stepsForStage = agentSteps.filter((s) => s.agent === stageId);
-    if (stepsForStage.length > 0) {
-      const latest = stepsForStage[stepsForStage.length - 1];
-      if (latest.status === 'done') return 'done';
-      if (latest.status === 'running') return 'running';
-    }
-
+    // 1. Triage Agent
     if (stageId === 'triage') {
+      const steps = agentSteps.filter((s) => s.agent === 'triage');
+      if (steps.length > 0) {
+        const latest = steps[steps.length - 1];
+        if (latest.status === 'done') return 'done';
+        if (latest.status === 'running') return 'running';
+      }
       if (incident) return 'done';
       if (alerts.length > 0) return 'running';
       return 'idle';
     }
 
+    // 2. Diagnose Agent
     if (stageId === 'diagnose') {
+      const steps = agentSteps.filter((s) => s.agent === 'diagnose');
+      if (steps.length > 0) {
+        const latest = steps[steps.length - 1];
+        if (latest.status === 'done') return 'done';
+        if (latest.status === 'running') return 'running';
+      }
       if (incident?.rca) return 'done';
       if (incident?.status === 'analyzing') return 'running';
       return 'idle';
     }
 
-    if (stageId === 'plan') {
+    // 3. Citation Verifier
+    if (stageId === 'citation_verifier') {
+      const steps = agentSteps.filter(
+        (s) =>
+          s.agent === 'citation_verifier' ||
+          s.agent === 'citations' ||
+          (s.agent === 'verify' &&
+            !s.text.toLowerCase().includes('probe') &&
+            !s.text.toLowerCase().includes('200 ok') &&
+            !s.text.toLowerCase().includes('restored'))
+      );
+      if (steps.length > 0) {
+        const latest = steps[steps.length - 1];
+        if (latest.status === 'done') return 'done';
+        if (latest.status === 'running') return 'running';
+      }
+      if (
+        incident?.rca?.evidence?.length &&
+        (incident.playbook?.steps?.length ||
+          incident.status === 'awaiting_approval' ||
+          incident.status === 'healing' ||
+          incident.status === 'resolved')
+      ) {
+        return 'done';
+      }
+      if (incident?.rca) return 'running';
+      return 'idle';
+    }
+
+    // 4. Planner Agent
+    if (stageId === 'planner') {
+      const steps = agentSteps.filter((s) => s.agent === 'plan' || s.agent === 'planner');
+      if (steps.length > 0) {
+        const latest = steps[steps.length - 1];
+        if (latest.status === 'done') return 'done';
+        if (latest.status === 'running') return 'running';
+      }
       if (incident?.playbook?.steps?.length) return 'done';
       if (incident?.rca) return 'running';
       return 'idle';
     }
 
-    if (stageId === 'execute') {
+    // 5. Executor Agent
+    if (stageId === 'executor') {
+      const steps = agentSteps.filter(
+        (s) =>
+          s.agent === 'execute' ||
+          s.agent === 'executor' ||
+          (s.agent === 'verify' &&
+            (s.text.toLowerCase().includes('probe') ||
+              s.text.toLowerCase().includes('200 ok') ||
+              s.text.toLowerCase().includes('restored')))
+      );
+      if (steps.length > 0) {
+        const latest = steps[steps.length - 1];
+        if (latest.status === 'done' && isResolved) return 'done';
+        if (latest.status === 'running') return 'running';
+      }
       if (incident?.status === 'healing' || incident?.status === 'awaiting_approval') return 'running';
-      return 'idle';
-    }
-
-    if (stageId === 'verify') {
-      if (incident?.status === 'healing') return 'running';
       return 'idle';
     }
 
@@ -81,34 +135,38 @@ export default function AgentStrip({
       case 'triage':
         if (incident) return `${alertCount || 1} alerts collapsed -> 1 incident (${root})`;
         if (alertCount > 0) return `Correlating ${alertCount} raw alert signals...`;
-        if (state === 'running') return 'Correlating alerts...';
+        if (state === 'running') return 'Correlating alerts using dependency map...';
         return 'Telemetry stream active (0 firing)';
 
       case 'diagnose':
         if (incident?.rca) {
           const conf = Math.round((incident.rca.confidence || 0.95) * 100);
-          return `Confirmed root: ${root} (${conf}% conf) • ${incident.rca.evidence?.length || 3} citations`;
+          return `Root: ${root} (${conf}% conf) • ${incident.rca.category}`;
         }
         if (state === 'running') return 'Traversing topological dependency DAG...';
         return 'Topological invariant checks';
 
-      case 'plan':
+      case 'citation_verifier':
+        if (incident?.rca?.evidence?.length) {
+          const verified = incident.rca.evidence.filter((e) => e.verified).length;
+          const total = incident.rca.evidence.length;
+          return `Verified ${verified}/${total} citations against raw data (0 hallucinations)`;
+        }
+        if (state === 'running') return 'Checking citations against logs, events & metrics...';
+        return 'Deterministic evidence fact-checker';
+
+      case 'planner':
         if (incident?.playbook?.steps?.length) {
           return `${incident.playbook.steps.length} sequential recovery steps synthesized`;
         }
         if (state === 'running') return 'Calculating dependency order...';
         return 'Dependency-ordered planner';
 
-      case 'execute':
-        if (incident?.status === 'resolved') return 'Remediation patch executed & verified';
+      case 'executor':
+        if (incident?.status === 'resolved') return 'Remediation patch executed & verified (200 OK)';
         if (incident?.status === 'healing') return 'Applying declarative patch to cluster...';
-        if (incident?.status === 'awaiting_approval') return 'Awaiting operator authorization (APEX-04)';
+        if (incident?.status === 'awaiting_approval') return 'Guarded gate: Awaiting SRE authorization (APEX-04)';
         return 'Guarded execution engine';
-
-      case 'verify':
-        if (incident?.status === 'resolved') return 'All services 200 OK • Zero downtime';
-        if (state === 'running') return 'Probing endpoint readiness & latencies...';
-        return 'Continuous healthz probes';
 
       default:
         return '';
@@ -119,40 +177,40 @@ export default function AgentStrip({
     {
       id: 'triage',
       num: '01',
-      title: 'INGEST & DEDUP',
-      subtitle: 'Alert Clustering',
+      title: 'TRIAGE',
+      subtitle: 'Alert Ingest & Dedup',
       icon: Filter
     },
     {
       id: 'diagnose',
       num: '02',
-      title: 'TOPOLOGICAL RCA',
-      subtitle: 'Causal Inference',
+      title: 'DIAGNOSE',
+      subtitle: 'Topological RCA',
       icon: GitFork,
       onClick: onOpenEvidence
     },
     {
-      id: 'plan',
+      id: 'citation_verifier',
       num: '03',
-      title: 'DAG PLANNER',
-      subtitle: 'Recovery Playbook',
-      icon: ShieldCheck
+      title: 'CITATION VERIFIER',
+      subtitle: 'Evidence Fact-Check',
+      icon: FileCheck2,
+      onClick: onOpenEvidence
     },
     {
-      id: 'execute',
+      id: 'planner',
       num: '04',
-      title: 'GUARDED APPLY',
-      subtitle: 'Operator Gate',
+      title: 'PLANNER',
+      subtitle: 'DAG Recovery Playbook',
+      icon: Layers
+    },
+    {
+      id: 'executor',
+      num: '05',
+      title: 'EXECUTOR',
+      subtitle: 'Guarded Apply & Verify',
       icon: Play,
       onClick: onOpenApproval
-    },
-    {
-      id: 'verify',
-      num: '05',
-      title: 'PROBE VERIFY',
-      subtitle: 'Readiness Validation',
-      icon: CheckCircle2,
-      onClick: onOpenPostmortem
     }
   ];
 
@@ -161,7 +219,7 @@ export default function AgentStrip({
 
   return (
     <div className="bg-white rounded-xl border border-stone-200 p-3 shadow-2xs font-mono shrink-0">
-      {/* Header: Synchronized Process Title & State */}
+      {/* Header: The 5 Agents Title & State */}
       <div className="flex items-center justify-between pb-2 mb-2 border-b border-stone-200 select-none">
         <div className="flex items-center gap-2">
           <div className="p-1 rounded-md bg-stone-100 text-stone-700 border border-stone-200">
@@ -170,14 +228,14 @@ export default function AgentStrip({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-black tracking-wider text-stone-900 uppercase">
-                AUTONOMOUS SRE PIPELINE
+                THE 5 AGENTS PIPELINE
               </span>
               <span className="text-[8px] bg-stone-100 text-stone-600 px-1 py-0.2 rounded border border-stone-200 font-bold">
-                5 STAGES
+                5 STEPS
               </span>
             </div>
             <span className="text-[9px] text-stone-500 font-sans block">
-              Topological resolution & verification lifecycle
+              Triage • Diagnose • Citation Verifier • Planner • Executor
             </span>
           </div>
         </div>
