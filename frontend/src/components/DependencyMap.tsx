@@ -1,4 +1,4 @@
-// D:\CoffeeOverflow\Agnitia\frontend\src\components\DependencyMap.tsx - Spacious Tree with Dead-Straight Arrows
+// frontend/src/components/DependencyMap.tsx - Dynamic Multi-Architecture Topological Dependency Tree
 import React, { useMemo, useCallback } from 'react';
 import {
   ReactFlow,
@@ -10,43 +10,21 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import ServiceNode from './ServiceNode';
-import { X } from 'lucide-react';
+import { X, Layers, Sparkles } from 'lucide-react';
+import { PresetId, PRESETS } from '../presets';
+import { setActivePreset } from '../store';
 
 const nodeTypes = {
   serviceNode: ServiceNode
 };
 
-// Spacious, Mathematically Symmetrical Layout:
-// Left Column Center: X = 195 (x: 80, w: 230)
-// Right Column Center: X = 555 (x: 440, w: 230)
-// Center Column Center: X = 375 (x: 260, w: 230) -> Exact midpoint: (195 + 555) / 2 = 375!
-// Generous 110px vertical gutters between tiers for an uncluttered, expansive feel.
-const VERTICAL_POSITIONS: Record<string, { x: number; y: number }> = {
-  'redis': { x: 80, y: 50 },
-  'postgres': { x: 440, y: 50 },
-  'auth-service': { x: 80, y: 290 },
-  'payment-service': { x: 440, y: 290 },
-  'api-gateway': { x: 260, y: 530 },
-  'web-ui': { x: 260, y: 770 }
-};
-
-// Adjacency mapping for downstream blast radius calculation
-const DOWNSTREAM_GRAPH: Record<string, string[]> = {
-  'postgres': ['auth-service', 'payment-service'],
-  'redis': ['auth-service'],
-  'auth-service': ['api-gateway'],
-  'payment-service': ['api-gateway'],
-  'api-gateway': ['web-ui'],
-  'web-ui': []
-};
-
-function getReachableDownstream(startNode: string): Set<string> {
+function getReachableDownstream(startNode: string, downstreamGraph: Record<string, string[]>): Set<string> {
   const visited = new Set<string>();
   const queue = [startNode];
 
   while (queue.length > 0) {
     const current = queue.shift()!;
-    const neighbors = DOWNSTREAM_GRAPH[current] || [];
+    const neighbors = downstreamGraph[current] || [];
     for (const neighbor of neighbors) {
       if (!visited.has(neighbor)) {
         visited.add(neighbor);
@@ -60,31 +38,43 @@ function getReachableDownstream(startNode: string): Set<string> {
 
 interface DependencyMapProps {
   services: Record<string, any>;
+  activePresetId?: PresetId;
   activeScenario?: string | null;
   whatIfNode?: string | null;
   onSelectWhatIf?: (nodeId: string | null) => void;
+  onOpenCatalog?: () => void;
 }
 
 export default function DependencyMap({
   services,
+  activePresetId = 'k8s-core',
   activeScenario,
   whatIfNode,
-  onSelectWhatIf
+  onSelectWhatIf,
+  onOpenCatalog
 }: DependencyMapProps) {
+  const currentPreset = PRESETS[activePresetId] || PRESETS['k8s-core'];
+  const downstreamGraph = currentPreset.downstreamGraph;
+  const positions = currentPreset.layoutPositions;
+  const rawPresetEdges = currentPreset.rawEdges;
+
   const whatIfDownstream = useMemo(() => {
     if (!whatIfNode) return new Set<string>();
-    return getReachableDownstream(whatIfNode);
-  }, [whatIfNode]);
+    return getReachableDownstream(whatIfNode, downstreamGraph);
+  }, [whatIfNode, downstreamGraph]);
 
-  const onNodeClick = useCallback((_: any, node: Node) => {
-    if (onSelectWhatIf) {
-      if (whatIfNode === node.id) {
-        onSelectWhatIf(null);
-      } else {
-        onSelectWhatIf(node.id);
+  const onNodeClick = useCallback(
+    (_: any, node: Node) => {
+      if (onSelectWhatIf) {
+        if (whatIfNode === node.id) {
+          onSelectWhatIf(null);
+        } else {
+          onSelectWhatIf(node.id);
+        }
       }
-    }
-  }, [whatIfNode, onSelectWhatIf]);
+    },
+    [whatIfNode, onSelectWhatIf]
+  );
 
   const nodes = useMemo<Node[]>(() => {
     return Object.values(services).map((srv: any) => {
@@ -95,80 +85,138 @@ export default function DependencyMap({
       return {
         id: srv.id,
         type: 'serviceNode',
-        position: VERTICAL_POSITIONS[srv.id] || { x: 260, y: 260 },
+        position: positions[srv.id] || { x: 260, y: 260 },
         data: {
           ...srv,
           _whatIfOrigin: isWhatIfOrigin,
           _whatIfImpacted: isWhatIfImpacted,
           _isDimmed: isDimmed
         } as Record<string, any>,
-        style: isDimmed ? { opacity: 0.32, transition: 'opacity 0.25s ease' } : { transition: 'opacity 0.25s ease' }
+        style: isDimmed ? { opacity: 0.28, transition: 'opacity 0.25s ease' } : { transition: 'opacity 0.25s ease' }
       };
     });
-  }, [services, whatIfNode, whatIfDownstream]);
+  }, [services, whatIfNode, whatIfDownstream, positions]);
 
   const edges = useMemo<Edge[]>(() => {
-    const rawEdges = [
-      { id: 'e-redis-auth', source: 'redis', target: 'auth-service' },
-      { id: 'e-pg-auth', source: 'postgres', target: 'auth-service' },
-      { id: 'e-pg-pay', source: 'postgres', target: 'payment-service' },
-      { id: 'e-auth-gw', source: 'auth-service', target: 'api-gateway' },
-      { id: 'e-pay-gw', source: 'payment-service', target: 'api-gateway' },
-      { id: 'e-gw-web', source: 'api-gateway', target: 'web-ui' }
-    ];
-
-    return rawEdges.map((edge) => {
+    return rawPresetEdges.map((edge) => {
       const srcStatus = services[edge.source]?.status;
       const tgtStatus = services[edge.target]?.status;
 
-      const isRootImpact = srcStatus === 'root_cause' || tgtStatus === 'root_cause';
-      const isVictimImpact = srcStatus === 'impacted' || tgtStatus === 'impacted';
+      const isWhatIfEdge =
+        !!whatIfNode &&
+        ((edge.source === whatIfNode && whatIfDownstream.has(edge.target)) ||
+          (whatIfDownstream.has(edge.source) && whatIfDownstream.has(edge.target)));
 
-      const isWhatIfEdge = !!whatIfNode && (
-        (edge.source === whatIfNode && whatIfDownstream.has(edge.target)) ||
-        (whatIfDownstream.has(edge.source) && whatIfDownstream.has(edge.target))
-      );
+      const isSourceRoot = srcStatus === 'root_cause';
+      const isSourceImpacted = srcStatus === 'impacted';
+      const isTargetFailed = tgtStatus === 'root_cause' || tgtStatus === 'impacted';
 
-      let strokeColor = '#94a3b8'; // slate-400
-      let strokeWidth = 2.0;
-      let isAnimated = false;
+      // High-visibility base styling
+      let strokeColor = '#047857'; // deep emerald for crystal-clear healthy flow
+      let strokeWidth = 2.6;
+      let isAnimated = true;
+      let edgeClass = 'edge-healthy';
+      let markerSize = 16;
+      let displayLabel = (edge as any).label || 'DEPENDENCY';
+      let labelTextColor = '#334155';
+      let labelBgColor = '#ffffff';
+      let labelBorderColor = '#cbd5e1';
 
       if (isWhatIfEdge) {
-        strokeColor = '#0284c7'; // sky-600
-        strokeWidth = 2.8;
+        strokeColor = '#0284c7'; // electric cyan
+        strokeWidth = 4.0;
         isAnimated = true;
-      } else if (isRootImpact) {
-        strokeColor = '#e11d48'; // rose-600
-        strokeWidth = 2.8;
+        edgeClass = 'edge-what-if';
+        markerSize = 20;
+        displayLabel = '⚡ BLAST RADIUS';
+        labelTextColor = '#0369a1';
+        labelBgColor = '#f0f9ff';
+        labelBorderColor = '#38bdf8';
+      } else if (isSourceRoot) {
+        // High-energy Crimson failure shockwave bursting from root cause
+        strokeColor = '#ef4444'; // intense crimson
+        strokeWidth = 5.2;
         isAnimated = true;
-      } else if (isVictimImpact) {
-        strokeColor = '#d97706'; // amber-600
-        strokeWidth = 2.2;
+        edgeClass = 'edge-root-cascade';
+        markerSize = 24;
+        displayLabel = '💥 BLAST WAVE (SATURATED)';
+        labelTextColor = '#991b1b';
+        labelBgColor = '#fef2f2';
+        labelBorderColor = '#ef4444';
+      } else if (isSourceImpacted) {
+        // Glowing Amber cascading degradation propagating downstream
+        strokeColor = '#f59e0b'; // amber-500
+        strokeWidth = 3.8;
         isAnimated = true;
+        edgeClass = 'edge-impact-cascade';
+        markerSize = 20;
+        displayLabel = '⚠️ CASCADE DEGRADED';
+        labelTextColor = '#92400e';
+        labelBgColor = '#fffbeb';
+        labelBorderColor = '#f59e0b';
+      } else if (isTargetFailed) {
+        // Upstream link under backpressure from degraded target
+        strokeColor = '#ea580c'; // orange-500
+        strokeWidth = 3.2;
+        isAnimated = true;
+        edgeClass = 'edge-impact-cascade';
+        markerSize = 18;
+        displayLabel = '⚠️ BACKPRESSURE';
+        labelTextColor = '#9a3412';
+        labelBgColor = '#fff7ed';
+        labelBorderColor = '#ea580c';
       } else if (srcStatus === 'healthy' && tgtStatus === 'healthy') {
-        strokeColor = '#10b981'; // emerald-500
-        strokeWidth = 1.8;
+        strokeColor = '#059669'; // emerald-600
+        strokeWidth = 2.6;
+        isAnimated = true;
+        edgeClass = 'edge-healthy';
+        markerSize = 16;
       }
+
+      const isDimmed = whatIfNode && !isWhatIfEdge && edge.source !== whatIfNode;
 
       return {
         ...edge,
-        type: 'straight', // DEAD-STRAIGHT ARROWS: Clean Euclidean vectors with 0 bends
+        type: 'bezier', // Smooth sweeping Bezier curves
+        pathOptions: {
+          curvature: 0.28
+        },
         animated: isAnimated,
+        className: edgeClass,
+        label: displayLabel,
+        labelStyle: {
+          fill: labelTextColor,
+          fontWeight: 700,
+          fontSize: 8.5,
+          fontFamily: 'monospace'
+        },
+        labelBgStyle: {
+          fill: labelBgColor,
+          fillOpacity: 0.96,
+          stroke: labelBorderColor,
+          strokeWidth: 1.2,
+          rx: 5,
+          ry: 5
+        },
+        labelBgPadding: [6, 2] as [number, number],
         style: {
           stroke: strokeColor,
           strokeWidth,
-          opacity: (whatIfNode && !isWhatIfEdge && edge.source !== whatIfNode) ? 0.3 : 1,
-          transition: 'stroke 0.3s ease, stroke-width 0.3s ease, opacity 0.3s ease'
+          opacity: isDimmed ? 0.2 : 1,
+          transition: 'stroke 0.35s ease, stroke-width 0.35s ease, opacity 0.3s ease'
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           color: strokeColor,
-          width: 14,
-          height: 14
+          width: markerSize,
+          height: markerSize
         }
       };
     });
-  }, [services, whatIfNode, whatIfDownstream]);
+  }, [services, whatIfNode, whatIfDownstream, rawPresetEdges]);
+
+  const totalOtherNodes = Math.max(currentPreset.nodeCount - 1, 1);
+  const whatIfPercentage = Math.round((whatIfDownstream.size / totalOtherNodes) * 100);
 
   return (
     <div className="w-full h-full relative rounded-xl overflow-hidden border border-stone-200/90 bg-[#faf8f5] shadow-sm min-h-[720px]">
@@ -176,18 +224,18 @@ export default function DependencyMap({
       <div className="absolute top-3.5 left-4 z-10 pointer-events-none flex items-center gap-2.5 flex-wrap">
         <div className="bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-lg border border-stone-200 shadow-xs flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-[11px] font-bold text-stone-800 tracking-wider font-mono uppercase">
-            Topological Architecture Tree
+          <span className="text-[11px] font-bold text-stone-900 tracking-wider font-mono uppercase">
+            {currentPreset.name}
           </span>
-          <span className="text-[10px] text-stone-400 font-mono">
-            Spacious Causal Waterfall
+          <span className="text-[9px] font-bold text-stone-700 bg-stone-100 px-2 py-0.5 rounded border border-stone-200 font-mono">
+            {currentPreset.nodeCount} NODES • {currentPreset.tierCount} TIERS
           </span>
         </div>
 
         {activeScenario && (
           <div className="bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 text-[10px] font-mono text-rose-800 font-semibold flex items-center gap-1.5 shadow-2xs">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
-            BLAST RADIUS ACTIVE
+            CASCADE ACTIVE
           </div>
         )}
       </div>
@@ -204,7 +252,7 @@ export default function DependencyMap({
                 WHAT-IF SIMULATION: IF <code className="bg-white px-1.5 py-0.5 rounded border border-sky-300 font-bold text-sky-900 uppercase">{whatIfNode}</code> FAILS
               </span>
               <span className="text-[10px] text-sky-700 font-sans">
-                Hypothetical Blast Radius: <strong>{whatIfDownstream.size}</strong> downstream services impacted ({Math.round((whatIfDownstream.size / 5) * 100)}% cluster traffic).
+                Hypothetical Blast Radius: <strong>{whatIfDownstream.size}</strong> downstream services impacted ({whatIfPercentage}% of dependent topology).
               </span>
             </div>
           </div>
@@ -223,15 +271,15 @@ export default function DependencyMap({
       <div className="absolute bottom-3.5 left-4 z-10 pointer-events-none bg-white/95 backdrop-blur-sm px-3.5 py-2 rounded-lg border border-stone-200 shadow-xs flex items-center gap-3.5 text-[10px] font-mono text-stone-600 flex-wrap">
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span>Healthy</span>
+          <span>Nominal Flow</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-rose-500" />
-          <span>Root Cause</span>
+          <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.8)]" />
+          <span>Root Failure Wave</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-amber-500" />
-          <span>Cascading Victim</span>
+          <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)]" />
+          <span>Cascading Wave</span>
         </div>
         <div className="flex items-center gap-1.5 text-stone-400 pl-1 border-l border-stone-200">
           <span>Click any node for What-If blast radius</span>
@@ -239,6 +287,7 @@ export default function DependencyMap({
       </div>
 
       <ReactFlow
+        key={activePresetId}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
@@ -246,8 +295,9 @@ export default function DependencyMap({
         fitView
         fitViewOptions={{ padding: 0.14 }}
         proOptions={{ hideAttribution: true }}
-        minZoom={0.35}
-        maxZoom={1.4}
+        defaultEdgeOptions={{ type: 'smoothstep' }}
+        minZoom={0.2}
+        maxZoom={1.6}
       >
         <Background color="#e2ded7" gap={24} size={1.2} />
         <Controls className="!bg-white !border-stone-200 !fill-stone-600 !shadow-xs" />

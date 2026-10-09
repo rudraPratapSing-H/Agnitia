@@ -1,48 +1,9 @@
-// D:\CoffeeOverflow\Agnitia\frontend\src\components\ChaosPanel.tsx - SRE Chaos Engine + Hotkey Badges
+// frontend/src/components/ChaosPanel.tsx - SRE Chaos Engine + Hotkey Badges
 import React from 'react';
 import { RotateCcw, Flame, AlertOctagon, Cpu, TrendingUp, Sliders } from 'lucide-react';
 import { playScenario, resetAll, setAutonomyBackend } from '../ws';
-import { resetStore, setAutonomyLevel } from '../store';
+import { setAutonomyLevel, useAgnitiaStore } from '../store';
 import { playClickTone } from '../lib/sounds';
-
-const SCENARIOS = [
-  {
-    id: 'db_oom',
-    key: '1',
-    title: 'DB Out of Memory',
-    badge: '56 ALERTS',
-    desc: 'OOMKilled exitCode 137',
-    icon: Flame,
-    color: 'hover:border-rose-300 hover:bg-rose-50 text-rose-700'
-  },
-  {
-    id: 'bad_config',
-    key: '2',
-    title: 'Bad Config Rollout',
-    badge: 'CRASH LOOP',
-    desc: 'Missing STRIPE_API_SECRET',
-    icon: AlertOctagon,
-    color: 'hover:border-amber-300 hover:bg-amber-50 text-amber-700'
-  },
-  {
-    id: 'cpu_spike',
-    key: '3',
-    title: 'CPU Saturation',
-    badge: 'AUTOSCALE',
-    desc: '100% Throttle spike',
-    icon: Cpu,
-    color: 'hover:border-purple-300 hover:bg-purple-50 text-purple-700'
-  },
-  {
-    id: 'slow_leak',
-    key: '4',
-    title: 'Slow Memory Leak',
-    badge: 'PREDICTIVE',
-    desc: 'Exhaustion in 2m 22s',
-    icon: TrendingUp,
-    color: 'hover:border-sky-300 hover:bg-sky-50 text-sky-700'
-  }
-];
 
 interface ChaosPanelProps {
   activeScenario: string | null;
@@ -57,6 +18,48 @@ export default function ChaosPanel({
   wsConnected,
   autonomyLevel = 2
 }: ChaosPanelProps) {
+  const { activePresetId } = useAgnitiaStore();
+  const isAmazon = activePresetId === 'amazon-scale';
+
+  const scenarios = [
+    {
+      id: 'db_oom',
+      key: '1',
+      title: 'DB Out of Memory',
+      badge: isAmazon ? '84 ALERTS' : '56 ALERTS',
+      desc: isAmazon ? 'Aurora OOMKilled 137' : 'OOMKilled exitCode 137',
+      icon: Flame,
+      color: 'hover:border-rose-300 hover:bg-rose-50 text-rose-700'
+    },
+    {
+      id: 'bad_config',
+      key: '2',
+      title: 'Bad Config Rollout',
+      badge: 'CRASH LOOP',
+      desc: isAmazon ? 'Missing Stripe & Pay keys' : 'Missing STRIPE_API_SECRET',
+      icon: AlertOctagon,
+      color: 'hover:border-amber-300 hover:bg-amber-50 text-amber-700'
+    },
+    {
+      id: 'cpu_spike',
+      key: '3',
+      title: 'CPU Saturation',
+      badge: 'AUTOSCALE',
+      desc: isAmazon ? 'Cognito 100% throttle' : '100% Throttle spike',
+      icon: Cpu,
+      color: 'hover:border-purple-300 hover:bg-purple-50 text-purple-700'
+    },
+    {
+      id: 'slow_leak',
+      key: '4',
+      title: 'Slow Memory Leak',
+      badge: 'PREDICTIVE',
+      desc: isAmazon ? 'Exhaustion in 2m 58s' : 'Exhaustion in 2m 22s',
+      icon: TrendingUp,
+      color: 'hover:border-sky-300 hover:bg-sky-50 text-sky-700'
+    }
+  ];
+
   const handleTrigger = (scenarioId: string) => {
     playClickTone();
     playScenario(scenarioId);
@@ -92,7 +95,7 @@ export default function ChaosPanel({
 
       {/* Middle: Scenario Trigger Buttons */}
       <div className="flex items-center gap-2 flex-wrap">
-        {SCENARIOS.map((sc) => {
+        {scenarios.map((sc) => {
           const Icon = sc.icon;
           const isActive = activeScenario === sc.id;
 

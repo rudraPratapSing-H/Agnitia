@@ -1,59 +1,12 @@
-// frontend/src/store.ts - Central State Store with Phase 3 Autonomy & What-If Mode
+// frontend/src/store.ts - Central State Store with Architecture Preset Switching
 import { useState, useEffect } from 'react';
+import { PresetId, PRESETS } from './presets';
 
-export const INITIAL_SERVICES = {
-  postgres: {
-    id: "postgres",
-    label: "PostgreSQL",
-    tier: "data",
-    depends_on: [],
-    status: "healthy",
-    metrics: { mem_mb: 42, mem_limit_mb: 64, cpu_pct: 12, restarts: 0 }
-  },
-  redis: {
-    id: "redis",
-    label: "Redis Cache",
-    tier: "data",
-    depends_on: [],
-    status: "healthy",
-    metrics: { mem_mb: 18, mem_limit_mb: 128, cpu_pct: 4, restarts: 0 }
-  },
-  "auth-service": {
-    id: "auth-service",
-    label: "Auth Service",
-    tier: "backend",
-    depends_on: ["postgres", "redis"],
-    status: "healthy",
-    metrics: { mem_mb: 38, mem_limit_mb: 128, cpu_pct: 8, restarts: 0 }
-  },
-  "payment-service": {
-    id: "payment-service",
-    label: "Payment Service",
-    tier: "backend",
-    depends_on: ["postgres"],
-    status: "healthy",
-    metrics: { mem_mb: 64, mem_limit_mb: 256, cpu_pct: 11, restarts: 0 }
-  },
-  "api-gateway": {
-    id: "api-gateway",
-    label: "API Gateway",
-    tier: "edge",
-    depends_on: ["auth-service", "payment-service"],
-    status: "healthy",
-    metrics: { mem_mb: 92, mem_limit_mb: 256, cpu_pct: 21, restarts: 0 }
-  },
-  "web-ui": {
-    id: "web-ui",
-    label: "Web Storefront",
-    tier: "frontend",
-    depends_on: ["api-gateway"],
-    status: "healthy",
-    metrics: { mem_mb: 55, mem_limit_mb: 128, cpu_pct: 15, restarts: 0 }
-  }
-};
+export const INITIAL_SERVICES = PRESETS['k8s-core'].initialServices;
 
 let globalState = {
-  services: { ...INITIAL_SERVICES },
+  activePresetId: 'k8s-core' as PresetId,
+  services: JSON.parse(JSON.stringify(PRESETS['k8s-core'].initialServices)) as Record<string, any>,
   alerts: [] as any[],
   incident: null as any,
   agentSteps: [] as any[],
@@ -71,7 +24,7 @@ let globalState = {
 const listeners = new Set<(state: any) => void>();
 
 function emitChange() {
-  listeners.forEach(listener => listener(globalState));
+  listeners.forEach((listener) => listener(globalState));
 }
 
 export function getState() {
@@ -83,7 +36,9 @@ export function useAgnitiaStore() {
 
   useEffect(() => {
     listeners.add(setState);
-    return () => { listeners.delete(setState); };
+    return () => {
+      listeners.delete(setState);
+    };
   }, []);
 
   return state;
@@ -98,15 +53,29 @@ export function applyWsEvent(event: any) {
   switch (type) {
     case 'service_update': {
       if (globalState.services[payload.id]) {
+        const currentService = globalState.services[payload.id];
+        let nextStatus = payload.status !== undefined ? payload.status : currentService.status;
+
+        // Protection: do not allow routine telemetry healthy pings to wipe out active root_cause or impacted state
+        if (
+          (currentService.status === 'root_cause' || currentService.status === 'impacted') &&
+          nextStatus === 'healthy' &&
+          (globalState.isSimulating || (globalState.incident && globalState.incident.status !== 'resolved')) &&
+          payload.status !== 'recovering'
+        ) {
+          nextStatus = currentService.status;
+        }
+
         globalState = {
           ...globalState,
           services: {
             ...globalState.services,
             [payload.id]: {
-              ...globalState.services[payload.id],
+              ...currentService,
               ...payload,
+              status: nextStatus,
               metrics: {
-                ...globalState.services[payload.id].metrics,
+                ...currentService.metrics,
                 ...(payload.metrics || {})
               }
             }
@@ -135,18 +104,20 @@ export function applyWsEvent(event: any) {
           ...globalState.metrics,
           [payload.service]: updatedPoints
         },
-        services: targetService ? {
-          ...globalState.services,
-          [payload.service]: {
-            ...targetService,
-            metrics: {
-              ...targetService.metrics,
-              mem_mb: payload.mem_mb ?? targetService.metrics.mem_mb,
-              mem_limit_mb: payload.mem_limit_mb ?? targetService.metrics.mem_limit_mb,
-              cpu_pct: payload.cpu_pct ?? targetService.metrics.cpu_pct
+        services: targetService
+          ? {
+              ...globalState.services,
+              [payload.service]: {
+                ...targetService,
+                metrics: {
+                  ...targetService.metrics,
+                  mem_mb: payload.mem_mb ?? targetService.metrics.mem_mb,
+                  mem_limit_mb: payload.mem_limit_mb ?? targetService.metrics.mem_limit_mb,
+                  cpu_pct: payload.cpu_pct ?? targetService.metrics.cpu_pct
+                }
+              }
             }
-          }
-        } : globalState.services
+          : globalState.services
       };
       break;
     }
@@ -168,7 +139,10 @@ export function applyWsEvent(event: any) {
     case 'agent_step': {
       globalState = {
         ...globalState,
-        agentSteps: [...globalState.agentSteps, { ...payload, id: Date.now() + Math.random(), ts: payload.ts || new Date().toISOString() }]
+        agentSteps: [
+          ...globalState.agentSteps,
+          { ...payload, id: Date.now() + Math.random(), ts: payload.ts || new Date().toISOString() }
+        ]
       };
       break;
     }
@@ -198,15 +172,25 @@ export function applyWsEvent(event: any) {
     }
 
     default:
-      console.warn("Unhandled event type:", type, payload);
+      console.warn('Unhandled event type:', type, payload);
   }
 
   emitChange();
 }
 
-export function resetStore() {
+export function setActivePreset(presetId: PresetId) {
+  if (globalState.activePresetId === presetId) return;
+  globalState.activePresetId = presetId;
+  resetStore(presetId);
+}
+
+export function resetStore(presetIdOverride?: PresetId) {
+  const presetId = presetIdOverride || globalState.activePresetId || 'k8s-core';
+  const targetPreset = PRESETS[presetId] || PRESETS['k8s-core'];
+
   globalState = {
-    services: JSON.parse(JSON.stringify(INITIAL_SERVICES)),
+    activePresetId: presetId,
+    services: JSON.parse(JSON.stringify(targetPreset.initialServices)),
     alerts: [],
     incident: null,
     agentSteps: [],
