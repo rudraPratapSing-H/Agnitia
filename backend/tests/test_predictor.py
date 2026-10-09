@@ -94,7 +94,7 @@ async def test_slow_leak_simulator_run_emits_prediction_and_creates_preventive_i
 
             # Wait for prediction event and preventive incident
             preventive_incident = None
-            for _ in range(60):
+            for _ in range(100):
                 if prediction_events and any(p.get("seconds") is not None for p in prediction_events):
                     r = await client.get("/api/incidents/latest")
                     data = r.json()

@@ -36,11 +36,12 @@ class MockWebSocket:
 @pytest.fixture(autouse=True)
 def clean_bus():
     """Ensure bus state is reset between tests."""
+    orig_listeners = list(bus._listeners)
     bus.active_connections.clear()
     bus._listeners.clear()
     yield
     bus.active_connections.clear()
-    bus._listeners.clear()
+    bus._listeners = orig_listeners
 
 
 @pytest.mark.asyncio

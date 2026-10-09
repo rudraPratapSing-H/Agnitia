@@ -227,7 +227,7 @@ export default function DependencyMap({
 
       return {
         ...edge,
-        type: 'bezier', // Smooth sweeping Bezier curves
+        type: 'default', // Smooth sweeping default Bezier curves
         pathOptions: {
           curvature: 0.28
         },

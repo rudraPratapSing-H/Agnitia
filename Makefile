@@ -1,9 +1,11 @@
+SHELL := sh
+
 .PHONY: setup dev test reset demo
 
 setup:
 	pip install -r backend/requirements.txt
 	@if [ -f frontend/package.json ]; then \
-		npm install --prefix frontend; \
+		npm install --prefix frontend || (cd frontend && npm install); \
 	else \
 		echo "Warning: frontend/package.json missing, skipping npm install"; \
 	fi
@@ -27,5 +29,4 @@ reset:
 
 # run only from a frozen git tag
 demo:
-	@python scripts/warmup.py || true
 	DEMO_MODE=cache $(MAKE) dev
