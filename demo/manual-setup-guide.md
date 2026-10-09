@@ -6,6 +6,30 @@ unblock the rest.
 
 ---
 
+## 0. Voice briefing quota — read this before rehearsing
+
+Rehearsed the voice briefing end to end today. The mechanism works correctly in both
+directions:
+
+- **Real Google TTS path:** confirmed live — a real call to `gemini-3.8-flash-tts` returns
+  genuine WAV audio and plays via the browser's `<audio>` element.
+- **Fallback path:** also confirmed live, because it actually triggered — `gemini-3.8-flash-tts`'s
+  **free tier is capped at 10 requests per day** (`429 RESOURCE_EXHAUSTED`, ~12-hour retry
+  window). Once that quota was hit, every subsequent briefing correctly fell back to the
+  browser's own `speechSynthesis`, with the right text, no hang, no silent failure.
+
+**What this means for you:** if your `LLM_API_KEY` is on the free tier, casual testing during
+rehearsals will burn through the day's 10 TTS calls fast, and the actual stage demo will run
+on the browser fallback voice instead of the nicer Google voice — functionally fine (the
+briefing still plays), but not what you rehearsed sounding like. Before the Final:
+- Check whether your key is on a paid tier (Google AI Studio → your project's billing), or
+- Budget TTS calls deliberately during rehearsal (don't trigger `awaiting_approval` more than
+  necessary), or
+- Accept the browser-voice fallback as the real stage behavior and rehearse with sound off
+  for the Google voice specifically, relying on the fallback intentionally.
+
+---
+
 ## 1. Telegram bot — get it talking for real
 
 **Why first:** everything else (rehearsals, the Final script's phone-approval beat) assumes
