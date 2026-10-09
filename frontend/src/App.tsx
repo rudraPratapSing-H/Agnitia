@@ -1,5 +1,4 @@
-// D:\CoffeeOverflow\Agnitia\frontend\src\App.tsx - Clean SRE Mission Control
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAgnitiaStore } from './store';
 import { connectWebSocket } from './ws';
 import DependencyMap from './components/DependencyMap';
@@ -8,11 +7,17 @@ import IncidentCard from './components/IncidentCard';
 import AgentStrip from './components/AgentStrip';
 import ChaosPanel from './components/ChaosPanel';
 import ReasoningPanel from './components/extras/ReasoningPanel';
-import { Shield, AlertTriangle } from 'lucide-react';
+import { Shield, AlertTriangle, Volume2, VolumeX } from 'lucide-react';
 import TimerDemo from './components/extras/dev/TimerDemo';
 import ReasoningDemo from './components/extras/dev/ReasoningDemo';
+import { isMuted, toggleMute, playSuccessChime } from './lib/sounds';
+import { speakIncidentBriefing } from './lib/voice';
 
 export default function App() {
+  const [muted, setMutedState] = useState(() => isMuted());
+  const lastSpokenRef = useRef<string | null>(null);
+  const lastChimeRef = useRef<string | null>(null);
+
   const demoParam =
     typeof window !== 'undefined'
       ? new URLSearchParams(window.location.search).get('demo')
@@ -40,6 +45,29 @@ export default function App() {
   useEffect(() => {
     connectWebSocket();
   }, []);
+
+  // Voice briefing when incident reaches awaiting_approval
+  useEffect(() => {
+    if (incident?.status === 'awaiting_approval' && incident.id) {
+      if (lastSpokenRef.current !== incident.id) {
+        lastSpokenRef.current = incident.id;
+        speakIncidentBriefing(incident);
+      }
+    } else if (!incident) {
+      lastSpokenRef.current = null;
+      lastChimeRef.current = null;
+    }
+  }, [incident]);
+
+  // Harmonic success chime on recovery
+  useEffect(() => {
+    if (incident?.status === 'resolved' && incident.id) {
+      if (lastChimeRef.current !== incident.id) {
+        lastChimeRef.current = incident.id;
+        playSuccessChime();
+      }
+    }
+  }, [incident?.status, incident?.id]);
 
   return (
     <div className="min-h-screen bg-[#f7f5f0] text-stone-900 flex flex-col p-3 md:p-4 gap-2.5 select-none font-sans">
@@ -81,6 +109,24 @@ export default function App() {
               {wsConnected ? 'LIVE WS' : 'SIMULATOR'}
             </span>
           </div>
+
+          <button
+            onClick={() => {
+              const next = toggleMute();
+              setMutedState(next);
+            }}
+            className="bg-stone-50 hover:bg-stone-100 border border-stone-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+            title={muted ? 'Unmute Audio Briefing & Siren' : 'Mute Audio'}
+          >
+            {muted ? (
+              <VolumeX size={13} className="text-rose-500" />
+            ) : (
+              <Volume2 size={13} className="text-emerald-500" />
+            )}
+            <span className="text-stone-700 font-bold text-[10px]">
+              {muted ? 'MUTED' : 'AUDIO'}
+            </span>
+          </button>
         </div>
       </header>
 

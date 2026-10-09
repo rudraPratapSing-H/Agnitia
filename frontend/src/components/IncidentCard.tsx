@@ -1,4 +1,3 @@
-// D:\CoffeeOverflow\Agnitia\frontend\src\components\IncidentCard.tsx
 import React, { useState } from 'react';
 import {
   Flame,
@@ -6,10 +5,12 @@ import {
   FileCheck2,
   GitCommit,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  FileText
 } from 'lucide-react';
 import { Incident } from '../types';
 import { executeFullHealFlow } from '../ws';
+import PostmortemView from './extras/PostmortemView';
 
 interface IncidentCardProps {
   incident: Incident | null;
@@ -18,6 +19,7 @@ interface IncidentCardProps {
 
 export default function IncidentCard({ incident, stepStatus }: IncidentCardProps) {
   const [authorizing, setAuthorizing] = useState(false);
+  const [showPostmortem, setShowPostmortem] = useState(false);
 
   if (!incident) {
     return (
@@ -173,11 +175,27 @@ export default function IncidentCard({ incident, stepStatus }: IncidentCardProps
       )}
 
       {isResolved && (
-        <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-center text-xs text-emerald-800 font-bold flex items-center justify-center gap-1.5">
-          <CheckCircle2 size={15} className="text-emerald-600" />
-          SYSTEM HEALED & ALL PROBES NOMINAL
+        <div className="space-y-2">
+          <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-center text-xs text-emerald-800 font-bold flex items-center justify-center gap-1.5">
+            <CheckCircle2 size={15} className="text-emerald-600" />
+            SYSTEM HEALED & ALL PROBES NOMINAL
+          </div>
+
+          <button
+            onClick={() => setShowPostmortem(true)}
+            className="w-full py-2 px-3 rounded-lg border border-stone-300 bg-stone-50 hover:bg-stone-100 text-stone-800 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
+          >
+            <FileText size={14} className="text-stone-700" />
+            <span>VIEW POSTMORTEM REPORT</span>
+          </button>
         </div>
       )}
+
+      <PostmortemView
+        incident={incident}
+        isOpen={showPostmortem}
+        onClose={() => setShowPostmortem(false)}
+      />
     </div>
   );
 }

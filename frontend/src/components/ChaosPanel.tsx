@@ -38,6 +38,9 @@ const SCENARIOS = [
   }
 ];
 
+import { playSiren } from '../lib/sounds';
+import { cancelSpeech } from '../lib/voice';
+
 interface ChaosPanelProps {
   activeScenario: string | null;
   isSimulating: boolean;
@@ -46,10 +49,12 @@ interface ChaosPanelProps {
 
 export default function ChaosPanel({ activeScenario, isSimulating, wsConnected }: ChaosPanelProps) {
   const handleTrigger = (scenarioId: string) => {
+    playSiren();
     playScenario(scenarioId);
   };
 
   const handleReset = () => {
+    cancelSpeech();
     // resetBackend() calls POST /api/reset when live, then resets local store.
     // This clears the adapter's _scenario guard so Inject works again.
     void resetBackend();

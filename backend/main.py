@@ -15,6 +15,7 @@ load_dotenv()
 from backend.bus import bus, emit
 import backend.graph as graph
 from backend.models import Incident, ServiceNode, TimelineItem
+import backend.predictor  # registers prediction listener on bus
 
 logger = logging.getLogger(__name__)
 
