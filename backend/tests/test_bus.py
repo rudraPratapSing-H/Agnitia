@@ -158,3 +158,35 @@ async def test_websocket_broadcast_and_failing_socket_dropped():
     assert ws_bad not in bus.active_connections
     assert ws_good in bus.active_connections
     assert len(bus.active_connections) == 1
+
+
+def test_allowed_actions_and_cluster_adapter_protocol():
+    from backend.adapters.base import ALLOWED_ACTIONS, ClusterAdapter
+    from backend.models import LogLine, MetricPoint, K8sEvent, ActionResult
+
+    expected_actions = {
+        "patch_memory_limit",
+        "patch_cpu_limit",
+        "rollout_restart",
+        "rollback_deployment",
+        "scale_replicas",
+        "wait_for_ready",
+        "verify_health",
+    }
+    assert ALLOWED_ACTIONS == expected_actions
+
+    # Verify Protocol methods
+    protocol_methods = {"list_services", "get_logs", "get_metrics", "get_events", "apply_action", "probe"}
+    for method in protocol_methods:
+        assert hasattr(ClusterAdapter, method)
+
+    # Verify models can be instantiated with minimal fields
+    log = LogLine(line=42, t_s=6.0, text="FATAL: out of memory")
+    assert log.line == 42
+    metric = MetricPoint(t_s=0.5, mem_mb=40.0, cpu_pct=12.0)
+    assert metric.mem_mb == 40.0
+    ev = K8sEvent(t_s=6.0, service="postgres", text="Reason: OOMKilled, Exit Code: 137")
+    assert ev.service == "postgres"
+    res = ActionResult(ok=True, message="restarted")
+    assert res.ok is True
+
