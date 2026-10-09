@@ -209,8 +209,20 @@ export default function App() {
     <div className="min-h-screen bg-[#f7f5f0] text-stone-900 flex flex-col p-3 md:p-4 gap-2.5 select-none font-sans">
       {/* Simulation Navbar */}
       <header className="bg-white border border-stone-200 rounded-xl px-4 py-2.5 shadow-2xs flex flex-wrap items-center justify-between gap-2 font-mono">
-        {/* Left: Brand + Back to Architecture Selection */}
-        <div className="flex items-center gap-3">
+        {/* Left: Switch Architecture Arrow Button + Brand */}
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => {
+              playClickTone();
+              navigateTo('selection');
+            }}
+            className="p-1.5 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 hover:text-stone-950 transition-all shadow-2xs active:scale-95 cursor-pointer hover:border-stone-300"
+            title="Switch Architecture"
+            aria-label="Switch Architecture"
+          >
+            <ArrowLeft size={16} />
+          </button>
+
           <div className="w-7 h-7 rounded-lg bg-stone-900 text-white flex items-center justify-center shadow-xs">
             <Shield size={16} />
           </div>
@@ -225,43 +237,6 @@ export default function App() {
               Topological Root Cause Analysis & Autonomous Self-Healing
             </p>
           </div>
-        </div>
-
-        {/* Center: Switch Architecture Button */}
-        <div>
-          <button
-            onClick={() => {
-              playClickTone();
-              navigateTo('selection');
-            }}
-            className="bg-stone-50 hover:bg-stone-100 text-stone-800 border border-stone-200 px-3.5 py-1.5 rounded-lg text-xs font-bold font-mono tracking-wider flex items-center gap-2 transition-all shadow-2xs active:scale-98"
-          >
-            <ArrowLeft size={13} />
-            <span>SWITCH ARCHITECTURE</span>
-          </button>
-        </div>
-
-        {/* Global Hotkeys Legend for Judges */}
-        <div className="hidden xl:flex items-center gap-2 text-[11px] font-mono text-stone-500 bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg">
-          <span className="font-extrabold text-stone-400 flex items-center gap-1">
-            <Keyboard size={11} />
-            HOTKEYS:
-          </span>
-          <span>
-            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">1..4</kbd> Inject
-          </span>
-          <span>
-            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">A</kbd> Authorize
-          </span>
-          <span>
-            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">E</kbd> Logs
-          </span>
-          <span>
-            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">P</kbd> Postmortem
-          </span>
-          <span>
-            <kbd className="px-1 py-0.2 bg-white border border-stone-300 rounded font-bold text-stone-800">R</kbd> Reset
-          </span>
         </div>
 
         {/* Right: Active Topology Badge + Telemetry Controls */}
@@ -317,9 +292,6 @@ export default function App() {
       {/* Early Predictive Capacity Alert Banner */}
       {prediction && <PredictionBanner prediction={prediction} />}
 
-      {/* 5-Stage Pipeline Progress Strip */}
-      <AgentStrip agentSteps={agentSteps} incident={incident} alerts={alerts} />
-
       {/* Main Grid: Left 58% Vertical Topology Map, Right 42% Incident Dossier */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2.5 min-h-[580px]">
         {/* Left: Vertical Architecture Map with What-If Mode */}
@@ -334,8 +306,16 @@ export default function App() {
         </section>
 
         {/* Right: Alert Stream, Incident Dossier & Log */}
-        <section className="lg:col-span-5 flex flex-col gap-2.5 overflow-y-auto max-h-[760px] custom-scrollbar pr-1">
+        <section className="lg:col-span-5 h-[740px] max-h-[740px] flex flex-col gap-2.5 overflow-y-auto custom-scrollbar pr-1.5">
           <AlertFunnel alerts={alerts} incident={incident} />
+          <AgentStrip
+            agentSteps={agentSteps}
+            incident={incident}
+            alerts={alerts}
+            onOpenEvidence={() => setIsEvidenceOpen(true)}
+            onOpenApproval={() => setIsApprovalOpen(true)}
+            onOpenPostmortem={() => setIsPostmortemOpen(true)}
+          />
           <IncidentCard
             incident={incident}
             stepStatus={stepStatus}
@@ -348,7 +328,7 @@ export default function App() {
       </main>
 
       {/* Bottom Chaos Action Bar + Autonomy Control */}
-      <footer className="mt-auto">
+      <footer className="mt-auto shrink-0">
         <ChaosPanel
           activeScenario={activeScenario}
           isSimulating={isSimulating}

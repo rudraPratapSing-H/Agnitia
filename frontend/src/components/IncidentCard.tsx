@@ -32,7 +32,7 @@ export default function IncidentCard({
 
   if (!incident) {
     return (
-      <div className="bg-white rounded-xl border border-stone-200 p-4 text-center text-stone-400 font-mono text-xs flex flex-col items-center justify-center gap-1.5 shadow-2xs">
+      <div className="bg-white rounded-xl border border-stone-200 p-4 text-center text-stone-400 font-mono text-xs flex flex-col items-center justify-center gap-1.5 shadow-2xs shrink-0 min-h-[90px]">
         <ShieldCheck size={18} className="text-stone-400" />
         <span className="font-bold text-stone-600">CLUSTER STATUS NOMINAL</span>
         <span className="text-[10px] text-stone-400">0 active firing alerts • Probes passing</span>
@@ -64,7 +64,7 @@ export default function IncidentCard({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-stone-200 p-3.5 shadow-2xs font-mono space-y-3">
+    <div className="bg-white rounded-xl border border-stone-200 p-3.5 shadow-2xs font-mono space-y-3 shrink-0 min-h-[320px]">
       {/* Incident Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

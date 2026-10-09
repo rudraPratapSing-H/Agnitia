@@ -1,5 +1,5 @@
 // frontend/src/components/DependencyMap.tsx - Dynamic Multi-Architecture Topological Dependency Tree
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -10,7 +10,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import ServiceNode from './ServiceNode';
-import { X, Layers, Sparkles } from 'lucide-react';
+import { X, Layers, Sparkles, Maximize2, Minimize2 } from 'lucide-react';
 import { PresetId, PRESETS } from '../presets';
 import { setActivePreset } from '../store';
 
@@ -57,6 +57,56 @@ export default function DependencyMap({
   const downstreamGraph = currentPreset.downstreamGraph;
   const positions = currentPreset.layoutPositions;
   const rawPresetEdges = currentPreset.rawEdges;
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen((prev) => {
+      const next = !prev;
+      if (next) {
+        try {
+          if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          }
+        } catch (e) {}
+      } else {
+        try {
+          if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          }
+        } catch (e) {}
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      if (!document.fullscreenElement && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+      } else if (e.key === 'Escape' && isFullscreen) {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen, toggleFullscreen]);
 
   const whatIfDownstream = useMemo(() => {
     if (!whatIfNode) return new Set<string>();
@@ -219,7 +269,13 @@ export default function DependencyMap({
   const whatIfPercentage = Math.round((whatIfDownstream.size / totalOtherNodes) * 100);
 
   return (
-    <div className="w-full h-full relative rounded-xl overflow-hidden border border-stone-200/90 bg-[#faf8f5] shadow-sm min-h-[720px]">
+    <div
+      className={
+        isFullscreen
+          ? 'fixed inset-0 z-40 w-screen h-screen bg-[#faf8f5] flex flex-col p-3 overflow-hidden shadow-2xl transition-all duration-200'
+          : 'w-full h-full relative rounded-xl overflow-hidden border border-stone-200/90 bg-[#faf8f5] shadow-sm min-h-[720px] transition-all duration-200'
+      }
+    >
       {/* Top Header Overlay */}
       <div className="absolute top-3.5 left-4 z-10 pointer-events-none flex items-center gap-2.5 flex-wrap">
         <div className="bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-lg border border-stone-200 shadow-xs flex items-center gap-2">
@@ -232,12 +288,53 @@ export default function DependencyMap({
           </span>
         </div>
 
+        {isFullscreen && (
+          <div className="bg-stone-900/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-stone-800 text-[10px] font-mono text-stone-100 font-bold flex items-center gap-2 shadow-xs animate-fadeIn">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>FULLSCREEN TOPOLOGY MODE</span>
+            <span className="text-[9px] text-stone-400 border-l border-stone-700 pl-2">
+              EXPANDED POD READABILITY
+            </span>
+          </div>
+        )}
+
         {activeScenario && (
           <div className="bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 text-[10px] font-mono text-rose-800 font-semibold flex items-center gap-1.5 shadow-2xs">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
             CASCADE ACTIVE
           </div>
         )}
+      </div>
+
+      {/* Top-Right Corner: Fullscreen Toggle Button */}
+      <div className="absolute top-3.5 right-4 z-30 flex items-center gap-2">
+        <button
+          onClick={toggleFullscreen}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg border font-mono text-xs font-bold shadow-xs transition-all duration-150 active:scale-95 cursor-pointer ${
+            isFullscreen
+              ? 'bg-rose-50 hover:bg-rose-100 text-rose-900 border-rose-300 ring-2 ring-rose-200 shadow-sm'
+              : 'bg-white/95 backdrop-blur-sm hover:bg-stone-50 text-stone-800 border-stone-300 hover:border-stone-400'
+          }`}
+          title={isFullscreen ? 'Exit Fullscreen (ESC or F)' : 'Make Graph Fullscreen so pod details become readable (F)'}
+        >
+          {isFullscreen ? (
+            <>
+              <Minimize2 size={14} className="text-rose-600 shrink-0" />
+              <span>EXIT FULLSCREEN</span>
+              <kbd className="text-[9px] font-sans font-bold bg-rose-200/80 px-1.5 py-0.5 rounded text-rose-900 border border-rose-300">
+                ESC
+              </kbd>
+            </>
+          ) : (
+            <>
+              <Maximize2 size={14} className="text-stone-700 shrink-0" />
+              <span>FULLSCREEN</span>
+              <kbd className="text-[9px] font-sans font-bold bg-stone-100 px-1.5 py-0.5 rounded text-stone-600 border border-stone-200">
+                F
+              </kbd>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Floating What-If Analysis HUD */}
@@ -287,19 +384,19 @@ export default function DependencyMap({
       </div>
 
       <ReactFlow
-        key={activePresetId}
+        key={`${activePresetId}-${isFullscreen ? 'fullscreen' : 'windowed'}`}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}
         fitView
-        fitViewOptions={{ padding: 0.14 }}
+        fitViewOptions={{ padding: isFullscreen ? 0.08 : 0.14 }}
         proOptions={{ hideAttribution: true }}
         defaultEdgeOptions={{ type: 'smoothstep' }}
         minZoom={0.2}
-        maxZoom={1.6}
+        maxZoom={2.4}
       >
-        <Background color="#e2ded7" gap={24} size={1.2} />
+        <Background color="#e2ded7" gap={isFullscreen ? 28 : 24} size={1.2} />
         <Controls className="!bg-white !border-stone-200 !fill-stone-600 !shadow-xs" />
       </ReactFlow>
     </div>
