@@ -1,9 +1,12 @@
 """FastAPI Main Application for Agnitia."""
 
 import asyncio
+from collections import defaultdict, deque
 from datetime import datetime, timezone
 import logging
 import os
+from pathlib import Path
+import time
 from typing import Any, Dict, Optional, Set
 
 from dotenv import load_dotenv
@@ -13,12 +16,16 @@ from fastapi.responses import JSONResponse
 
 load_dotenv()
 
-from collections import deque
 from backend.bus import bus, emit
 import backend.executor as executor
 import backend.graph as graph
 from backend.models import Incident, MetricPoint, ServiceNode, TimelineItem
 from backend.predictor import seconds_to_limit
+
+# Policy and Auto imports (PRD Task P6.4)
+from backend.ml import policy as P
+from backend.ml import auto
+from backend.ml.config import THRESHOLD
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +35,78 @@ try:
 except ImportError:
     run_pipeline = None
 
-# Valid chaos scenarios per PRD
-VALID_SCENARIOS: Set[str] = {"db_oom", "bad_config", "cpu_spike", "slow_leak"}
+# Valid chaos scenarios per PRD (db_oom, bad_config, cpu_spike, slow_leak, healthy_spike, sawtooth)
+VALID_SCENARIOS: Set[str] = {
+    "db_oom",
+    "bad_config",
+    "cpu_spike",
+    "slow_leak",
+    "healthy_spike",
+    "sawtooth",
+}
+
+# Policy state: AUTONOMY_LEVEL clamped to 1..3, default 2 (PRD Task P6.4)
+def _get_autonomy_level() -> int:
+    raw = os.getenv("AUTONOMY_LEVEL", "2")
+    try:
+        return max(1, min(3, int(raw)))
+    except (TypeError, ValueError):
+        return 2
+
+policy_state = P.PolicyState(level=_get_autonomy_level())
+
+
+class _StubPredictor:
+    """Stub predictor used when model.joblib is missing and DEBUG=1 (PRD Task P6.4)."""
+
+    def __init__(self) -> None:
+        self.hist: Dict[str, deque] = defaultdict(lambda: deque(maxlen=60))
+        self.latest: Dict[str, float] = {}
+
+    def ingest(self, p: dict) -> Optional[float]:
+        s = p.get("service")
+        if s:
+            self.hist[s].append(p)
+        return None
+
+    def reset(self) -> None:
+        self.hist.clear()
+        self.latest.clear()
+
+
+RealPredictor = None
+predictor = None
+
+
+def init_predictor() -> Any:
+    """Lazy predictor loader per PRD Task P6.4."""
+    global RealPredictor
+    RealPredictor = None
+
+    if os.getenv("PREDICTIVE_HEAL") == "on":
+        model_path = Path(__file__).resolve().parent / "ml" / "model.joblib"
+        try:
+            from backend.ml.predict import Predictor as _LoadedPredictor
+            RealPredictor = _LoadedPredictor
+            if model_path.exists():
+                try:
+                    return RealPredictor(str(model_path))
+                except Exception as exc:
+                    logger.error("Failed to load model from %s: %s", model_path, exc)
+                    return None
+            elif os.getenv("DEBUG") == "1":
+                return _StubPredictor()
+            else:
+                return None
+        except Exception as exc:
+            logger.error("Failed to import backend.ml.predict: %s", exc)
+            if os.getenv("DEBUG") == "1":
+                return _StubPredictor()
+            return None
+    return None
+
+
+predictor = init_predictor()
 
 app = FastAPI(title="Agnitia API", version="1.0.0")
 
@@ -67,24 +144,12 @@ async def _execute_pipeline_for_incident(incident: Incident) -> None:
                     updated_incident.playbook = await plan_recovery(updated_incident)
                 except Exception:
                     pass
-            # Autonomy policy check
+            # Autonomy policy check - take level from policy_state.level (PRD Task P6.4)
             try:
                 from backend.agents.autonomy import needs_approval
-                try:
-                    from backend.agents.autonomy import get_level
-                    level = get_level()
-                except (ImportError, AttributeError):
-                    try:
-                        from backend.agents.autonomy import get_autonomy_level
-                        level = get_autonomy_level()
-                    except (ImportError, AttributeError):
-                        level = int(os.getenv("AUTONOMY_LEVEL", "1"))
             except (ImportError, Exception):
                 needs_approval = lambda step, lvl: True
-                try:
-                    level = int(os.getenv("AUTONOMY_LEVEL", "1"))
-                except (TypeError, ValueError):
-                    level = 1
+            level = policy_state.level
 
             if (
                 updated_incident.playbook is not None
@@ -340,6 +405,72 @@ def init_adapter(adapter_type: Optional[str] = None) -> Any:
 adapter = init_adapter()
 
 
+# ── Predictive Auto-Heal Bus Hook (PRD Section 6 / P4 / P6.4) ────────────────
+
+async def on_bus(type: str, payload: dict) -> None:
+    if type == "reset":
+        if predictor is not None:
+            predictor.reset()
+        policy_state.reset()
+        auto.reset_state()
+        return
+
+    if predictor is None:
+        return
+    if type != "metric_point":
+        return
+
+    prob = predictor.ingest(payload)
+    if prob is None:
+        return
+
+    svc = payload.get("service")
+    if not svc:
+        return
+
+    P.observe(policy_state, svc, prob)
+    streak = P.streak_of(policy_state, svc)
+    hist_points = list(predictor.hist[svc])
+    ttl = seconds_to_limit(hist_points, float(payload.get("mem_limit_mb", 64.0)))
+
+    await emit(
+        "prediction",
+        {
+            "service": svc,
+            "probability": round(prob, 3),
+            "threshold": THRESHOLD,
+            "streak": streak,
+            "seconds_to_limit": ttl,
+        },
+    )
+
+    heal_task = asyncio.create_task(
+        auto.maybe_heal(
+            svc,
+            prob,
+            payload,
+            adapter,
+            policy_state,
+            time.monotonic(),
+            emit,
+            predictor.latest,
+            lambda s: seconds_to_limit(
+                list(predictor.hist[s]),
+                float(predictor.hist[s][-1].get("mem_limit_mb", 64.0))
+                if predictor.hist.get(s) and isinstance(predictor.hist[s][-1], dict) and "mem_limit_mb" in predictor.hist[s][-1]
+                else 64.0,
+            )
+            if predictor.hist.get(s)
+            else None,
+        )
+    )
+    BACKGROUND_TASKS.add(heal_task)
+    heal_task.add_done_callback(BACKGROUND_TASKS.discard)
+
+
+bus.subscribe(on_bus)
+
+
 # ── REST Endpoints ───────────────────────────────────────────────────────────
 
 @app.post("/api/chaos/{scenario}")
@@ -502,11 +633,113 @@ async def get_incident_audit(id: str):
     return executor.get_audit(id)
 
 
+# ── Predictive Auto-Heal & Policy Endpoints (PRD Section 4, 6, 8 / P6.4) ──────
+
+@app.post("/api/killswitch")
+async def killswitch(body: dict):
+    policy_state.kill_switch = bool(body.get("on", False))
+    await emit(
+        "agent_step",
+        {
+            "agent": "policy",
+            "status": "done",
+            "text": f"Kill switch {'ON' if policy_state.kill_switch else 'off'}",
+        },
+    )
+    return {"kill_switch": policy_state.kill_switch}
+
+
+@app.post("/api/autonomy")
+async def autonomy(body: dict):
+    policy_state.level = max(1, min(3, int(body.get("level", 2))))
+    return {"level": policy_state.level}
+
+
 @app.get("/api/audit")
-async def get_audit():
-    if LATEST_ID and LATEST_ID in INCIDENTS:
-        return executor.get_audit(LATEST_ID)
-    return []
+def audit(since: str = ""):
+    ids = [e["id"] for e in auto.AUDIT]
+    return auto.AUDIT[ids.index(since) + 1:] if since in ids else auto.AUDIT
+
+
+@app.get("/api/ml/status")
+def ml_status():
+    return {
+        "enabled": os.getenv("PREDICTIVE_HEAL") == "on",
+        "threshold": THRESHOLD,
+        "model_loaded": bool(RealPredictor is not None and isinstance(predictor, RealPredictor)),
+        "kill_switch": policy_state.kill_switch,
+        "level": policy_state.level,
+    }
+
+
+@app.post("/api/debug/prediction")
+async def debug_prediction(body: dict):
+    if os.getenv("DEBUG") != "1":
+        raise HTTPException(status_code=404, detail="Debug endpoint disabled")
+    if predictor is None:
+        raise HTTPException(status_code=409, detail="Predictor is None")
+
+    s = body.get("service")
+    if not s:
+        raise HTTPException(status_code=400, detail="Missing service")
+    p = float(body.get("p", 0.0))
+
+    predictor.latest[s] = p
+    P.observe(policy_state, s, p)
+    await emit(
+        "prediction",
+        {
+            "service": s,
+            "probability": p,
+            "threshold": THRESHOLD,
+            "streak": P.streak_of(policy_state, s),
+            "seconds_to_limit": None,
+        },
+    )
+
+    if s in predictor.hist and len(predictor.hist[s]) > 0:
+        point = list(predictor.hist[s])[-1]
+    else:
+        services = await adapter.list_services()
+        svc_node = next((svc for svc in services if svc.id == s), None)
+        if svc_node is not None:
+            point = {
+                "service": s,
+                "t_s": 0.0,
+                "mem_mb": svc_node.metrics.mem_mb,
+                "mem_limit_mb": svc_node.metrics.mem_limit_mb,
+                "cpu_pct": svc_node.metrics.cpu_pct,
+                "restarts": svc_node.metrics.restarts,
+                "err_pct": 0.0,
+            }
+        else:
+            point = {
+                "service": s,
+                "t_s": 0.0,
+                "mem_mb": 40.0,
+                "mem_limit_mb": 64.0,
+                "cpu_pct": 12.0,
+                "restarts": 0,
+                "err_pct": 0.0,
+            }
+
+    heal_task = asyncio.create_task(
+        auto.maybe_heal(
+            s,
+            p,
+            point,
+            adapter,
+            policy_state,
+            time.monotonic(),
+            emit,
+            predictor.latest,
+            lambda s: None,
+        )
+    )
+    BACKGROUND_TASKS.add(heal_task)
+    heal_task.add_done_callback(BACKGROUND_TASKS.discard)
+
+    return {"ok": True}
 
 
 # Postmortem route: owned by Member 3. Include router if present, fallback to 501.
@@ -546,19 +779,6 @@ async def get_blast_radius(service: str):
         "note": "illustrative simulator figure",
     }
 
-
-_autonomy_router_included = False
-try:
-    from backend.agents.autonomy import router as autonomy_router
-    app.include_router(autonomy_router)
-    _autonomy_router_included = True
-except (ImportError, AttributeError):
-    pass
-
-if not _autonomy_router_included:
-    @app.post("/api/autonomy")
-    async def update_autonomy():
-        raise HTTPException(status_code=501, detail="not implemented yet")
 
 
 # Voice briefing: POST /api/tts {text} -> audio/wav (task 3.10, Google/Gemini TTS)

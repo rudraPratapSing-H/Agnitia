@@ -19,6 +19,8 @@ VALID_EVENT_TYPES: Set[str] = {
     "metric_point",
     "prediction",
     "reset",
+    "healed_auto",
+    "auto_blocked",
 }
 
 

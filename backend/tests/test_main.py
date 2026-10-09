@@ -150,16 +150,22 @@ async def test_postmortem_endpoint_404_for_unknown_incident():
         assert resp.status_code == 404
 
 
+@pytest.mark.asyncio
 async def test_autonomy_endpoint_sets_and_returns_level():
-    """POST /api/autonomy {level} is wired (task 3.3); CONTRACT.md: returns {"level": n}."""
+    """POST /api/autonomy {level} clamps to 1..3 (PRD P6.4); returns {"level": n}."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         resp = await client.post("/api/autonomy", json={"level": 3})
         assert resp.status_code == 200
         assert resp.json() == {"level": 3}
 
-        bad = await client.post("/api/autonomy", json={"level": 9})
-        assert bad.status_code == 422
+        clamped = await client.post("/api/autonomy", json={"level": 9})
+        assert clamped.status_code == 200
+        assert clamped.json() == {"level": 3}
+
+        clamped_low = await client.post("/api/autonomy", json={"level": 0})
+        assert clamped_low.status_code == 200
+        assert clamped_low.json() == {"level": 1}
 
         # restore the default so this test doesn't leak state into others
         await client.post("/api/autonomy", json={"level": 2})
@@ -433,6 +439,7 @@ async def test_autonomy_auto_resolves_when_no_step_needs_approval(monkeypatch):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         await client.post("/api/reset")
+        await client.post("/api/autonomy", json={"level": 3})
         try:
             inject_resp = await client.post("/api/chaos/db_oom")
             assert inject_resp.status_code == 200

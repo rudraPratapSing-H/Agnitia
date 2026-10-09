@@ -325,3 +325,131 @@ async def test_disallowed_action_returns_not_ok():
     assert result.ok is False
     assert "ALLOWED_ACTIONS" in result.message
     await adapter.reset()
+
+
+@pytest.mark.asyncio
+async def test_metric_point_carries_seven_keys():
+    """metric_point payload for every scenario carries:
+
+    service, t_s, mem_mb, mem_limit_mb, cpu_pct, restarts, err_pct.
+    """
+    adapter = _make_adapter()
+    events, listener = _collector()
+    bus.add_listener(listener)
+
+    try:
+        await _inject_and_wait(adapter)
+
+        metric_events = [e for e in events if e["type"] == "metric_point"]
+        assert len(metric_events) > 0, "Expected metric_point events"
+
+        expected_keys = {
+            "service",
+            "t_s",
+            "mem_mb",
+            "mem_limit_mb",
+            "cpu_pct",
+            "restarts",
+            "err_pct",
+        }
+        for me in metric_events:
+            payload = me["payload"]
+            assert set(payload.keys()) == expected_keys
+            assert isinstance(payload["service"], str)
+            assert isinstance(payload["t_s"], (int, float))
+            assert isinstance(payload["mem_mb"], (int, float))
+            assert isinstance(payload["mem_limit_mb"], (int, float))
+            assert isinstance(payload["cpu_pct"], (int, float))
+            assert isinstance(payload["restarts"], int)
+            assert isinstance(payload["err_pct"], (int, float))
+
+        # Check postgres specific metrics
+        pg_events = [e["payload"] for e in metric_events if e["payload"]["service"] == "postgres"]
+        assert len(pg_events) > 0
+        assert pg_events[0]["mem_limit_mb"] == 64.0
+        assert pg_events[0]["restarts"] == 0
+        assert pg_events[0]["err_pct"] == 0.0
+
+        # Check stored metrics also have all fields
+        pg_metrics = await adapter.get_metrics("postgres")
+        assert len(pg_metrics) > 0
+        assert pg_metrics[0].mem_limit_mb == 64.0
+        assert pg_metrics[0].restarts == 0
+        assert pg_metrics[0].err_pct == 0.0
+    finally:
+        bus.remove_listener(listener)
+        await adapter.reset()
+
+
+@pytest.mark.asyncio
+async def test_patch_memory_limit_both_param_shapes():
+    """patch_memory_limit accepts both {'from':'64Mi','to':'256Mi'} and {'from_mb':64,'to_mb':128}
+
+    and both shapes raise the postgres limit.
+    Also tests patch_cpu_limit and scale_replicas are accepted and stored.
+    """
+    adapter = _make_adapter()
+
+    try:
+        assert adapter.services["postgres"].metrics.mem_limit_mb == 64.0
+
+        # Shape 1: Mi string format
+        step1 = PlaybookStep(
+            order=1,
+            service="postgres",
+            action="patch_memory_limit",
+            params={"from": "64Mi", "to": "256Mi"},
+            risk="medium",
+            requires_approval=False,
+        )
+        res1 = await adapter.apply_action(step1)
+        assert res1.ok is True
+        assert adapter.services["postgres"].metrics.mem_limit_mb == 256.0
+
+        # Shape 2: Integer MB format
+        step2 = PlaybookStep(
+            order=2,
+            service="postgres",
+            action="patch_memory_limit",
+            params={"from_mb": 64, "to_mb": 128},
+            risk="medium",
+            requires_approval=False,
+        )
+        res2 = await adapter.apply_action(step2)
+        assert res2.ok is True
+        assert adapter.services["postgres"].metrics.mem_limit_mb == 128.0
+
+        # patch_cpu_limit is accepted and stored with no visible effect
+        step_cpu = PlaybookStep(
+            order=3,
+            service="postgres",
+            action="patch_cpu_limit",
+            params={"from_m": 500, "to_m": 1000},
+            risk="medium",
+            requires_approval=False,
+        )
+        res_cpu = await adapter.apply_action(step_cpu)
+        assert res_cpu.ok is True
+        assert adapter._cpu_limits["postgres"] == {"from_m": 500, "to_m": 1000}
+
+        # scale_replicas is accepted and stored with no visible effect
+        step_scale = PlaybookStep(
+            order=4,
+            service="auth-service",
+            action="scale_replicas",
+            params={"from": 1, "to": 2},
+            risk="medium",
+            requires_approval=False,
+        )
+        res_scale = await adapter.apply_action(step_scale)
+        assert res_scale.ok is True
+        assert adapter._replica_scales["auth-service"] == {"from": 1, "to": 2}
+
+        # reset clears stored cpu limits and replica scales
+        await adapter.reset()
+        assert len(adapter._cpu_limits) == 0
+        assert len(adapter._replica_scales) == 0
+        assert adapter.services["postgres"].metrics.mem_limit_mb == 64.0
+    finally:
+        await adapter.reset()
+

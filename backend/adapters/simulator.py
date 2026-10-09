@@ -53,6 +53,22 @@ _DEFAULT_METRICS: Dict[str, Dict[str, float]] = {
 }
 
 
+def _parse_mb(val: Any) -> float:
+    """Parses memory limit values like '64Mi', '256MB', '128', 128, 64.0 into float MB."""
+    if isinstance(val, (int, float)):
+        return float(val)
+    if isinstance(val, str):
+        v = val.strip()
+        for suffix in ("Mi", "MB", "M", "Gi", "GB", "G"):
+            if v.endswith(suffix):
+                num = float(v[:-len(suffix)])
+                if suffix.startswith("G"):
+                    return num * 1024.0
+                return num
+        return float(v)
+    raise ValueError(f"Cannot parse memory limit: {val!r}")
+
+
 def _build_default_services() -> Dict[str, ServiceNode]:
     """Builds fresh healthy ServiceNodes from graph constants."""
     services: Dict[str, ServiceNode] = {}
@@ -93,6 +109,8 @@ class SimulatorAdapter:
         self._logs: Dict[str, List[LogLine]] = {s: [] for s in DEPENDS_ON}
         self._metrics: Dict[str, List[MetricPoint]] = {s: [] for s in DEPENDS_ON}
         self._events: Dict[str, List[K8sEvent]] = {s: [] for s in DEPENDS_ON}
+        self._cpu_limits: Dict[str, dict] = {}
+        self._replica_scales: Dict[str, dict] = {}
 
         self._scenario: Optional[Dict[str, Any]] = None
         self._incident_counter: int = 104
@@ -152,21 +170,60 @@ class SimulatorAdapter:
 
         scenario = self._scenario
 
-        # --- Fix action: clear the fault ---
-        if (
-            scenario
-            and step.action == scenario["fix"]["action"]
-            and step.service == scenario["root_service"]
-        ):
-            self._fault_fixed = True
-            # Apply the fix (e.g. patch_memory_limit sets mem_limit_mb)
-            if step.action == "patch_memory_limit":
-                to_val = step.params.get("to", scenario["fix"]["to"])
-                mb = float(to_val.replace("Mi", ""))
-                svc.metrics.mem_limit_mb = mb
+        # --- patch_memory_limit: accepts both {"from":"64Mi","to":"256Mi"} and {"from_mb":64,"to_mb":128} ---
+        if step.action == "patch_memory_limit":
+            to_val = None
+            if step.params:
+                if "to_mb" in step.params:
+                    to_val = step.params["to_mb"]
+                elif "to" in step.params:
+                    to_val = step.params["to"]
+            if to_val is None and scenario and "fix" in scenario and "to" in scenario["fix"]:
+                to_val = scenario["fix"]["to"]
+            target_mb = _parse_mb(to_val) if to_val is not None else svc.metrics.mem_limit_mb
+            svc.metrics.mem_limit_mb = target_mb
+
+            # If it matches the scenario's fix action on the root service
+            if (
+                scenario
+                and step.service == scenario.get("root_service")
+                and scenario.get("fix", {}).get("action") == "patch_memory_limit"
+            ):
+                self._fault_fixed = True
                 # Stabilise memory at ~45 MB
                 svc.metrics.mem_mb = 45.0
+                svc.status = "recovering"
+                await emit("service_update", svc.model_dump(mode="json"))
+                await self._sleep(self.step_delay_s)
+                svc.status = "healthy"
+                await emit("service_update", svc.model_dump(mode="json"))
+                self._recompute()
+                await self._emit_changed_services()
 
+                return ActionResult(
+                    ok=True,
+                    message=f"Fix applied: {step.action} on {step.service}",
+                    step_order=step.order,
+                    service=step.service,
+                    action=step.action,
+                )
+            else:
+                await emit("service_update", svc.model_dump(mode="json"))
+                return ActionResult(
+                    ok=True,
+                    message=f"Patched memory limit on {step.service} to {target_mb}MB",
+                    step_order=step.order,
+                    service=step.service,
+                    action=step.action,
+                )
+
+        # --- General fix action: clear the fault for non-memory fixes ---
+        if (
+            scenario
+            and step.action == scenario.get("fix", {}).get("action")
+            and step.service == scenario.get("root_service")
+        ):
+            self._fault_fixed = True
             svc.status = "recovering"
             await emit("service_update", svc.model_dump(mode="json"))
             await self._sleep(self.step_delay_s)
@@ -178,6 +235,28 @@ class SimulatorAdapter:
             return ActionResult(
                 ok=True,
                 message=f"Fix applied: {step.action} on {step.service}",
+                step_order=step.order,
+                service=step.service,
+                action=step.action,
+            )
+
+        # --- patch_cpu_limit: accepted and stored with no visible effect ---
+        if step.action == "patch_cpu_limit":
+            self._cpu_limits[step.service] = step.params or {}
+            return ActionResult(
+                ok=True,
+                message=f"patch_cpu_limit on {step.service} accepted (stored)",
+                step_order=step.order,
+                service=step.service,
+                action=step.action,
+            )
+
+        # --- scale_replicas: accepted and stored with no visible effect ---
+        if step.action == "scale_replicas":
+            self._replica_scales[step.service] = step.params or {}
+            return ActionResult(
+                ok=True,
+                message=f"scale_replicas on {step.service} accepted (stored)",
                 step_order=step.order,
                 service=step.service,
                 action=step.action,
@@ -231,6 +310,8 @@ class SimulatorAdapter:
 
     async def probe(self, service: str) -> bool:
         """Returns True only when derived status is healthy."""
+        if os.getenv("SIM_FORCE_PROBE_FAIL") == "1":
+            return False
         svc = self.services.get(service)
         if not svc:
             return False
@@ -240,22 +321,40 @@ class SimulatorAdapter:
 
     async def inject(self, scenario_id: str) -> str:
         """Starts playback of the named scenario. Returns the incident id."""
-        # Load from scenarios dir first, fall back to test fixtures
+        if self._scenario is not None:
+            raise RuntimeError("A scenario is already running; call reset() first")
+
+        # Load from scenarios dir first, fall back to test fixtures or synth generator
         scenario_path = SCENARIOS_DIR / f"{scenario_id}.json"
-        if not scenario_path.exists():
+        if scenario_path.exists():
+            with open(scenario_path, "r", encoding="utf-8") as f:
+                self._scenario = json.load(f)
+        elif scenario_id in ("healthy_spike", "sawtooth"):
+            import numpy as np
+            from backend.ml.synth import generate_run
+            from backend.ml.config import DEMO_SEED
+            kind = "spike" if scenario_id == "healthy_spike" else "sawtooth"
+            points, _ = generate_run(kind, np.random.default_rng(DEMO_SEED))
+            self._scenario = {
+                "id": scenario_id,
+                "title": f"Synthetic {scenario_id}",
+                "root_service": "postgres",
+                "duration_s": 300,
+                "metrics": {"postgres": points},
+                "events": [],
+                "logs": {},
+                "alerts": [],
+                "fix": {},
+            }
+        else:
             fixture_path = (
                 Path(__file__).resolve().parent.parent / "tests" / "fixtures" / f"{scenario_id}_fixture.json"
             )
             if fixture_path.exists():
-                scenario_path = fixture_path
+                with open(fixture_path, "r", encoding="utf-8") as f:
+                    self._scenario = json.load(f)
             else:
                 raise ValueError(f"Unknown scenario: {scenario_id}")
-
-        if self._scenario is not None:
-            raise RuntimeError("A scenario is already running; call reset() first")
-
-        with open(scenario_path, "r", encoding="utf-8") as f:
-            self._scenario = json.load(f)
 
         # Reserve the incident id
         incident_id = f"INC-{self._incident_counter}"
@@ -295,6 +394,8 @@ class SimulatorAdapter:
         self._logs = {s: [] for s in DEPENDS_ON}
         self._metrics = {s: [] for s in DEPENDS_ON}
         self._events = {s: [] for s in DEPENDS_ON}
+        self._cpu_limits.clear()
+        self._replica_scales.clear()
         self._scenario = None
         self._current_incident_id = None
         self._incident_counter = 104
@@ -352,25 +453,39 @@ class SimulatorAdapter:
             prev_t = t_s
 
             if kind == "metric":
-                mem = data.get("mem_mb", 0.0)
-                cpu = data.get("cpu_pct", 0.0)
+                svc = self.services[svc_id]
+                mem = float(data.get("mem_mb", 0.0))
+                cpu = float(data.get("cpu_pct", 0.0))
+                mem_limit_mb = float(data.get("mem_limit_mb", svc.metrics.mem_limit_mb))
+                restarts = int(data.get("restarts", svc.metrics.restarts))
+                err_pct = float(data.get("err_pct", 0.0))
 
-                # Emit metric_point
+                # Emit metric_point (7 keys)
                 await emit("metric_point", {
                     "service": svc_id,
                     "t_s": t_s,
                     "mem_mb": mem,
+                    "mem_limit_mb": mem_limit_mb,
                     "cpu_pct": cpu,
+                    "restarts": restarts,
+                    "err_pct": err_pct,
                 })
 
                 # Update ServiceNode metrics
-                svc = self.services[svc_id]
                 svc.metrics.mem_mb = mem
                 svc.metrics.cpu_pct = cpu
 
                 # Store metric
                 self._metrics[svc_id].append(
-                    MetricPoint(t_s=t_s, mem_mb=mem, cpu_pct=cpu, service=svc_id)
+                    MetricPoint(
+                        t_s=t_s,
+                        mem_mb=mem,
+                        cpu_pct=cpu,
+                        service=svc_id,
+                        mem_limit_mb=mem_limit_mb,
+                        restarts=restarts,
+                        err_pct=err_pct,
+                    )
                 )
 
                 await emit("service_update", svc.model_dump(mode="json"))
