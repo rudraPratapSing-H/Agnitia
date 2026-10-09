@@ -1,4 +1,4 @@
-// D:\CoffeeOverflow\Agnitia\frontend\src\components\DependencyMap.tsx - Vertical Causal DAG + Interactive What-If Mode
+// D:\CoffeeOverflow\Agnitia\frontend\src\components\DependencyMap.tsx - Spacious Tree with Dead-Straight Arrows
 import React, { useMemo, useCallback } from 'react';
 import {
   ReactFlow,
@@ -10,24 +10,24 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import ServiceNode from './ServiceNode';
-import { X, HelpCircle, AlertTriangle } from 'lucide-react';
+import { X } from 'lucide-react';
 
 const nodeTypes = {
   serviceNode: ServiceNode
 };
 
-// Causal Waterfall Layout:
-// Tier 1 (Top / Root Sources): PostgreSQL & Redis
-// Tier 2 (Backend Services): Auth & Payment
-// Tier 3 (Edge Routing): API Gateway
-// Tier 4 (Bottom / End User): Web Storefront
+// Spacious, Mathematically Symmetrical Layout:
+// Left Column Center: X = 195 (x: 80, w: 230)
+// Right Column Center: X = 555 (x: 440, w: 230)
+// Center Column Center: X = 375 (x: 260, w: 230) -> Exact midpoint: (195 + 555) / 2 = 375!
+// Generous 110px vertical gutters between tiers for an uncluttered, expansive feel.
 const VERTICAL_POSITIONS: Record<string, { x: number; y: number }> = {
-  'redis': { x: 50, y: 30 },
-  'postgres': { x: 410, y: 30 },
-  'auth-service': { x: 50, y: 230 },
-  'payment-service': { x: 410, y: 230 },
-  'api-gateway': { x: 230, y: 430 },
-  'web-ui': { x: 230, y: 630 }
+  'redis': { x: 80, y: 50 },
+  'postgres': { x: 440, y: 50 },
+  'auth-service': { x: 80, y: 290 },
+  'payment-service': { x: 440, y: 290 },
+  'api-gateway': { x: 260, y: 530 },
+  'web-ui': { x: 260, y: 770 }
 };
 
 // Adjacency mapping for downstream blast radius calculation
@@ -40,7 +40,6 @@ const DOWNSTREAM_GRAPH: Record<string, string[]> = {
   'web-ui': []
 };
 
-// Calculates full reachable blast radius for a given root node
 function getReachableDownstream(startNode: string): Set<string> {
   const visited = new Set<string>();
   const queue = [startNode];
@@ -72,7 +71,6 @@ export default function DependencyMap({
   whatIfNode,
   onSelectWhatIf
 }: DependencyMapProps) {
-  // Downstream set when what-if is active
   const whatIfDownstream = useMemo(() => {
     if (!whatIfNode) return new Set<string>();
     return getReachableDownstream(whatIfNode);
@@ -81,7 +79,7 @@ export default function DependencyMap({
   const onNodeClick = useCallback((_: any, node: Node) => {
     if (onSelectWhatIf) {
       if (whatIfNode === node.id) {
-        onSelectWhatIf(null); // Deselect on repeat click
+        onSelectWhatIf(null);
       } else {
         onSelectWhatIf(node.id);
       }
@@ -97,14 +95,14 @@ export default function DependencyMap({
       return {
         id: srv.id,
         type: 'serviceNode',
-        position: VERTICAL_POSITIONS[srv.id] || { x: 200, y: 200 },
+        position: VERTICAL_POSITIONS[srv.id] || { x: 260, y: 260 },
         data: {
           ...srv,
           _whatIfOrigin: isWhatIfOrigin,
           _whatIfImpacted: isWhatIfImpacted,
           _isDimmed: isDimmed
         } as Record<string, any>,
-        style: isDimmed ? { opacity: 0.38, transition: 'opacity 0.25s ease' } : { transition: 'opacity 0.25s ease' }
+        style: isDimmed ? { opacity: 0.32, transition: 'opacity 0.25s ease' } : { transition: 'opacity 0.25s ease' }
       };
     });
   }, [services, whatIfNode, whatIfDownstream]);
@@ -126,74 +124,70 @@ export default function DependencyMap({
       const isRootImpact = srcStatus === 'root_cause' || tgtStatus === 'root_cause';
       const isVictimImpact = srcStatus === 'impacted' || tgtStatus === 'impacted';
 
-      // What-If path highlighting
       const isWhatIfEdge = !!whatIfNode && (
         (edge.source === whatIfNode && whatIfDownstream.has(edge.target)) ||
         (whatIfDownstream.has(edge.source) && whatIfDownstream.has(edge.target))
       );
 
       let strokeColor = '#94a3b8'; // slate-400
-      let strokeWidth = 1.8;
+      let strokeWidth = 2.0;
       let isAnimated = false;
 
       if (isWhatIfEdge) {
         strokeColor = '#0284c7'; // sky-600
-        strokeWidth = 2.6;
+        strokeWidth = 2.8;
         isAnimated = true;
       } else if (isRootImpact) {
         strokeColor = '#e11d48'; // rose-600
-        strokeWidth = 2.5;
+        strokeWidth = 2.8;
         isAnimated = true;
       } else if (isVictimImpact) {
         strokeColor = '#d97706'; // amber-600
-        strokeWidth = 2;
+        strokeWidth = 2.2;
         isAnimated = true;
       } else if (srcStatus === 'healthy' && tgtStatus === 'healthy') {
         strokeColor = '#10b981'; // emerald-500
-        strokeWidth = 1.6;
+        strokeWidth = 1.8;
       }
 
       return {
         ...edge,
-        type: 'smoothstep',
+        type: 'straight', // DEAD-STRAIGHT ARROWS: Clean Euclidean vectors with 0 bends
         animated: isAnimated,
-        pathOptions: {
-          borderRadius: 14
-        },
         style: {
           stroke: strokeColor,
           strokeWidth,
-          opacity: (whatIfNode && !isWhatIfEdge && edge.source !== whatIfNode) ? 0.35 : 1,
+          opacity: (whatIfNode && !isWhatIfEdge && edge.source !== whatIfNode) ? 0.3 : 1,
           transition: 'stroke 0.3s ease, stroke-width 0.3s ease, opacity 0.3s ease'
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           color: strokeColor,
-          width: 12,
-          height: 12
+          width: 14,
+          height: 14
         }
       };
     });
   }, [services, whatIfNode, whatIfDownstream]);
 
   return (
-    <div className="w-full h-full relative rounded-xl overflow-hidden border border-stone-200/90 bg-[#faf8f5] shadow-sm">
+    <div className="w-full h-full relative rounded-xl overflow-hidden border border-stone-200/90 bg-[#faf8f5] shadow-sm min-h-[720px]">
       {/* Top Header Overlay */}
       <div className="absolute top-3.5 left-4 z-10 pointer-events-none flex items-center gap-2.5 flex-wrap">
         <div className="bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-lg border border-stone-200 shadow-xs flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           <span className="text-[11px] font-bold text-stone-800 tracking-wider font-mono uppercase">
-            Causal Blast Radius Flow
+            Topological Architecture Tree
           </span>
           <span className="text-[10px] text-stone-400 font-mono">
-            Root (Top) &rarr; Consumers (Bottom)
+            Spacious Causal Waterfall
           </span>
         </div>
 
         {activeScenario && (
           <div className="bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 text-[10px] font-mono text-rose-800 font-semibold flex items-center gap-1.5 shadow-2xs">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
-            DOWNSTREAM CASCADE ACTIVE
+            BLAST RADIUS ACTIVE
           </div>
         )}
       </div>
@@ -210,7 +204,7 @@ export default function DependencyMap({
                 WHAT-IF SIMULATION: IF <code className="bg-white px-1.5 py-0.5 rounded border border-sky-300 font-bold text-sky-900 uppercase">{whatIfNode}</code> FAILS
               </span>
               <span className="text-[10px] text-sky-700 font-sans">
-                Hypothetical Blast Radius: <strong>{whatIfDownstream.size}</strong> downstream services impacted ({Math.round((whatIfDownstream.size / 5) * 100)}% cluster traffic impact).
+                Hypothetical Blast Radius: <strong>{whatIfDownstream.size}</strong> downstream services impacted ({Math.round((whatIfDownstream.size / 5) * 100)}% cluster traffic).
               </span>
             </div>
           </div>
@@ -226,7 +220,7 @@ export default function DependencyMap({
       )}
 
       {/* Legend & What-If Prompt */}
-      <div className="absolute bottom-3.5 left-4 z-10 pointer-events-none bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-stone-200 shadow-xs flex items-center gap-3.5 text-[10px] font-mono text-stone-600 flex-wrap">
+      <div className="absolute bottom-3.5 left-4 z-10 pointer-events-none bg-white/95 backdrop-blur-sm px-3.5 py-2 rounded-lg border border-stone-200 shadow-xs flex items-center gap-3.5 text-[10px] font-mono text-stone-600 flex-wrap">
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           <span>Healthy</span>
@@ -250,12 +244,12 @@ export default function DependencyMap({
         nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
+        fitViewOptions={{ padding: 0.14 }}
         proOptions={{ hideAttribution: true }}
-        minZoom={0.4}
-        maxZoom={1.5}
+        minZoom={0.35}
+        maxZoom={1.4}
       >
-        <Background color="#e2ded7" gap={22} size={1.2} />
+        <Background color="#e2ded7" gap={24} size={1.2} />
         <Controls className="!bg-white !border-stone-200 !fill-stone-600 !shadow-xs" />
       </ReactFlow>
     </div>

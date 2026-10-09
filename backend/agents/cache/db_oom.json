@@ -1,8 +1,8 @@
 {
   "rca": {
-    "root_cause": "The postgres-0 pod exceeded its memory limit and was terminated with exit code 137 (OOMKilled).",
+    "root_cause": "PostgreSQL was killed for exceeding its 64Mi memory limit",
     "category": "OOMKilled",
-    "confidence": 1.0,
+    "confidence": 0.97,
     "evidence": [
       {
         "type": "log",
@@ -40,7 +40,7 @@
     "warning": null
   },
   "playbook": {
-    "diff": "resources.limits.memory: 64Mi -> 128Mi",
+    "diff": "resources.limits.memory: 64Mi -> 256Mi",
     "steps": [
       {
         "order": 1,
@@ -48,11 +48,11 @@
         "action": "patch_memory_limit",
         "params": {
           "from": "64Mi",
-          "to": "128Mi"
+          "to": "256Mi"
         },
         "risk": "high",
         "requires_approval": true,
-        "verify": "Verify postgres memory limit is updated to 128Mi"
+        "verify": "Verify postgres memory limit is updated to 256Mi"
       },
       {
         "order": 2,
