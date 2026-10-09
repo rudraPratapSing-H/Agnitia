@@ -133,6 +133,70 @@ async def call_json(
         raise LLMError(f"LLM call failed: {e}") from e
 
 
+async def call_text(
+    system_prompt: str,
+    payload: dict | str,
+    *,
+    timeout_s: float = 8.0,
+) -> str:
+    """
+    Invokes the Gemini model with plain text output mode, temperature 0.0,
+    and returns the raw text response.
+    """
+    api_key = os.getenv("LLM_API_KEY", "").strip()
+    if not api_key or api_key == "your_llm_api_key_here":
+        raise LLMError("LLM_API_KEY is not configured or invalid in environment.")
+
+    model_name = os.getenv("LLM_MODEL", "gemini-2.0-flash").strip()
+
+    try:
+        from google import genai
+        from google.genai import types
+    except ImportError as e:
+        raise LLMError(f"google-genai SDK not installed: {e}") from e
+
+    client = genai.Client(api_key=api_key)
+
+    payload_str = payload if isinstance(payload, str) else json.dumps(payload, indent=2)
+
+    config = types.GenerateContentConfig(
+        system_instruction=system_prompt,
+        temperature=0.0,
+        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+    )
+
+    async def _execute_generate(prompt_text: str) -> str:
+        t0 = time.perf_counter()
+        response = await client.aio.models.generate_content(
+            model=model_name,
+            contents=prompt_text,
+            config=config,
+        )
+        latency_ms = (time.perf_counter() - t0) * 1000.0
+
+        prompt_tokens = 0
+        completion_tokens = 0
+        if response.usage_metadata:
+            prompt_tokens = response.usage_metadata.prompt_token_count or 0
+            completion_tokens = response.usage_metadata.candidates_token_count or 0
+
+        logger.info(
+            f"model={model_name} latency_ms={latency_ms:.1f} "
+            f"prompt_tokens={prompt_tokens} completion_tokens={completion_tokens}"
+        )
+        return response.text or ""
+
+    try:
+        async with asyncio.timeout(timeout_s):
+            return await _execute_generate(payload_str)
+    except TimeoutError as e:
+        raise LLMTimeout(f"LLM call timed out after {timeout_s}s") from e
+    except LLMError:
+        raise
+    except Exception as e:
+        raise LLMError(f"LLM call failed: {e}") from e
+
+
 if __name__ == "__main__":
     from backend.models import RCA
 
