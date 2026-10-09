@@ -254,9 +254,6 @@ export default function App() {
       {/* Early Predictive Capacity Alert Banner */}
       {prediction && <PredictionBanner prediction={prediction} />}
 
-      {/* 5-Stage Pipeline Progress Strip */}
-      <AgentStrip agentSteps={agentSteps} incident={incident} alerts={alerts} />
-
       {/* Main Grid: Left 58% Vertical Topology Map, Right 42% Incident Dossier */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2.5 min-h-[580px]">
         {/* Left: Vertical Architecture Map with What-If Mode */}
@@ -273,6 +270,14 @@ export default function App() {
         {/* Right: Alert Stream, Incident Dossier & Log */}
         <section className="lg:col-span-5 h-[740px] max-h-[740px] flex flex-col gap-2.5 overflow-y-auto custom-scrollbar pr-1.5">
           <AlertFunnel alerts={alerts} incident={incident} />
+          <AgentStrip
+            agentSteps={agentSteps}
+            incident={incident}
+            alerts={alerts}
+            onOpenEvidence={() => setIsEvidenceOpen(true)}
+            onOpenApproval={() => setIsApprovalOpen(true)}
+            onOpenPostmortem={() => setIsPostmortemOpen(true)}
+          />
           <IncidentCard
             incident={incident}
             stepStatus={stepStatus}
