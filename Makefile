@@ -25,6 +25,12 @@ test:
 reset:
 	curl -s -X POST http://localhost:8000/api/reset
 
+.PHONY: setup dev test reset demo warmup
+
+warmup:
+	python scripts/warmup.py
+
 # run only from a frozen git tag
 demo:
+	python scripts/warmup.py
 	DEMO_MODE=cache $(MAKE) dev
