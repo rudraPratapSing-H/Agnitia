@@ -561,6 +561,16 @@ if not _autonomy_router_included:
         raise HTTPException(status_code=501, detail="not implemented yet")
 
 
+# Voice briefing: POST /api/tts {text} -> audio/wav (task 3.10, Google/Gemini TTS)
+try:
+    from backend.agents.tts import router as tts_router
+    app.include_router(tts_router)
+except (ImportError, AttributeError):
+    @app.post("/api/tts")
+    async def post_tts():
+        raise HTTPException(status_code=501, detail="not implemented yet")
+
+
 # ── WebSocket Stream ─────────────────────────────────────────────────────────
 
 @app.websocket("/ws")

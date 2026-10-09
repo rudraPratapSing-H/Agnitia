@@ -93,6 +93,7 @@ Save this as `CONTRACT.md` in the repo root before anyone writes code. Frontend,
 | GET | `/api/incidents/{id}/postmortem` | Generated postmortem as markdown |
 | GET | `/api/blast-radius/{service}` | Services and users affected if this one fails |
 | POST | `/api/autonomy` | (added, M3) body {"level": 1-3}, returns {"level": n} |
+| POST | `/api/tts` | (added, M3) body {"text": string}, returns `audio/wav` -- Gemini TTS for the voice briefing |
 | WS | `/ws` | Live event stream |
 
 Plus `GET /api/incidents/latest`, which the Telegram bot polls.
@@ -198,6 +199,7 @@ export function setMuted(muted: boolean): void
 | Variable | Example | Used by |
 | --- | --- | --- |
 | `LLM_API_KEY`, `LLM_MODEL` | your key and chosen model | Member 3 |
+| `TTS_MODEL` | `gemini-3.8-flash-tts` (default) -- reuses `LLM_API_KEY` | Member 3 |
 | `DEMO_MODE` | `auto` (live, cache on failure), `cache`, `live` | Member 3 |
 | `AUTONOMY_LEVEL` | `2` | Member 3 |
 | `ADAPTER` | `simulator` or `k8s` | Member 2 |
