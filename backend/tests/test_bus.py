@@ -1,5 +1,7 @@
 """Unit tests for backend/bus.py (WebSocket Event Bus)."""
 
+import asyncio
+
 import pytest
 from pydantic import BaseModel
 from backend.bus import (
@@ -9,6 +11,7 @@ from backend.bus import (
     disconnect,
     add_listener,
     remove_listener,
+    subscribe,
     VALID_EVENT_TYPES,
 )
 
@@ -36,11 +39,15 @@ class MockWebSocket:
 @pytest.fixture(autouse=True)
 def clean_bus():
     """Ensure bus state is reset between tests."""
+    saved_listeners = list(bus._listeners)
+    saved_sub_listeners = list(bus._sub_listeners)
     bus.active_connections.clear()
     bus._listeners.clear()
+    bus._sub_listeners.clear()
     yield
     bus.active_connections.clear()
-    bus._listeners.clear()
+    bus._listeners[:] = saved_listeners
+    bus._sub_listeners[:] = saved_sub_listeners
 
 
 @pytest.mark.asyncio
@@ -157,3 +164,79 @@ async def test_websocket_broadcast_and_failing_socket_dropped():
     assert ws_bad not in bus.active_connections
     assert ws_good in bus.active_connections
     assert len(bus.active_connections) == 1
+
+
+# ---------------------------------------------------------------------------
+# New tests for PRD subscribe(fn) hook
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_subscribe_receives_type_and_payload():
+    """A subscriber receives (type, payload) — not the envelope."""
+    received = []
+
+    async def on_event(typ, payload):
+        received.append((typ, payload))
+
+    subscribe(on_event)
+
+    await emit("metric_point", {"service": "postgres", "t_s": 1.0, "mem_mb": 50.0})
+
+    # create_task schedules the coroutine; yield control so it runs
+    await asyncio.sleep(0)
+
+    assert len(received) == 1
+    typ, payload = received[0]
+    assert typ == "metric_point"
+    assert payload["service"] == "postgres"
+    # payload is the plain dict, NOT wrapped in {type, ts, payload}
+    assert "ts" not in payload
+    assert "type" not in payload
+
+
+@pytest.mark.asyncio
+async def test_subscribe_exception_does_not_stop_second_subscriber_or_broadcast():
+    """A subscriber that raises must not prevent other subscribers or socket broadcast."""
+    ws = MockWebSocket(should_fail=False)
+    await connect(ws)
+
+    second_received = []
+
+    async def bad_subscriber(typ, payload):
+        raise RuntimeError("intentional failure")
+
+    async def good_subscriber(typ, payload):
+        second_received.append(typ)
+
+    subscribe(bad_subscriber)
+    subscribe(good_subscriber)
+
+    await emit("alert", {"id": "alt-99", "service": "postgres"})
+    await asyncio.sleep(0)
+
+    # The socket still got the message
+    assert len(ws.sent_messages) == 1
+    # The second subscriber still ran
+    assert second_received == ["alert"]
+
+
+@pytest.mark.asyncio
+async def test_subscribe_zero_subscribers_zero_sockets():
+    """emit() works cleanly with no subscribers and no sockets."""
+    assert len(bus._sub_listeners) == 0
+    assert len(bus.active_connections) == 0
+    # Must not raise
+    await emit("reset", {})
+    await asyncio.sleep(0)
+
+
+@pytest.mark.asyncio
+async def test_cleanup_resets_sub_listeners():
+    """The clean_bus fixture clears _sub_listeners; subscribing populates it."""
+    async def fn(typ, payload):
+        pass
+
+    subscribe(fn)
+    assert len(bus._sub_listeners) == 1
+    assert bus._sub_listeners[0] is fn
+    # Teardown by the autouse fixture will clear bus._sub_listeners

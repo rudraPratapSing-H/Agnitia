@@ -3,9 +3,12 @@
 import asyncio
 import inspect
 import json
+import logging
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Set, Union
+from typing import Any, Callable, Coroutine, Dict, List, Set, Union
 from pydantic import BaseModel
+
+_log = logging.getLogger(__name__)
 
 VALID_EVENT_TYPES: Set[str] = {
     "alert",
@@ -38,6 +41,14 @@ class EventBus:
     def __init__(self) -> None:
         self.active_connections: Set[Any] = set()
         self._listeners: List[Callable[[Dict[str, Any]], Any]] = []
+        # PRD subscribe() hook: async fn(type, payload) callbacks
+        self._sub_listeners: List[Callable[..., Coroutine]] = []
+        # Strong references to in-flight tasks so they are not GC'd mid-flight
+        self._tasks: Set[asyncio.Task] = set()
+
+    def subscribe(self, fn: Callable[..., Coroutine]) -> None:
+        """Register an async callback fn(type, payload) fired via create_task on every emit."""
+        self._sub_listeners.append(fn)
 
     async def connect(self, websocket: Any) -> None:
         """Accepts and stores an active WebSocket connection."""
@@ -112,6 +123,21 @@ class EventBus:
             for dead_ws in dead_sockets:
                 self.disconnect(dead_ws)
 
+        # 3. Fire PRD subscribe() listeners via create_task (type, payload)
+        for fn in list(self._sub_listeners):
+            task = asyncio.create_task(
+                _run_listener(fn, type, serialized_payload)
+            )
+            self._tasks.add(task)
+            task.add_done_callback(self._tasks.discard)
+
+async def _run_listener(fn: Callable, type: str, payload: Dict[str, Any]) -> None:
+    """Await an async subscribe() listener and log (never re-raise) exceptions."""
+    try:
+        await fn(type, payload)
+    except Exception:
+        _log.exception("subscribe() listener %r raised an exception", fn)
+
 
 bus = EventBus()
 manager = bus  # Convenience alias
@@ -135,3 +161,8 @@ def remove_listener(cb: Callable[[Dict[str, Any]], Any]) -> None:
 
 async def emit(type: str, payload: Union[Dict[str, Any], BaseModel]) -> None:
     await bus.emit(type, payload)
+
+
+def subscribe(fn: Callable[..., Coroutine]) -> None:
+    """Register an async fn(type, payload) listener (PRD subscribe hook)."""
+    bus.subscribe(fn)

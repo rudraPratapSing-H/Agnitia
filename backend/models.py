@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, ConfigDict
 NodeStatus = Literal["healthy", "root_cause", "impacted", "recovering"]
 Tier = Literal["data", "backend", "edge", "frontend"]
 Severity = Literal["info", "warning", "error", "critical"]
-Risk = Literal["low", "high"]
+Risk = Literal["low", "medium", "high"]
 EvidenceType = Literal["log", "k8s_event", "metric"]
 IncidentStatus = Literal["detected", "analyzing", "awaiting_approval", "healing", "resolved"]
 WsEventType = Literal[
@@ -144,6 +144,9 @@ class MetricPoint(BaseModel):
     mem_mb: float
     cpu_pct: float
     service: Optional[str] = None
+    mem_limit_mb: Optional[float] = None
+    restarts: int = 0
+    err_pct: float = 0.0
 
 
 class K8sEvent(BaseModel):
@@ -197,4 +200,28 @@ class Scenario(BaseModel):
     logs: dict[str, list[LogLine]]
     alerts: list[ScenarioAlert]
     fix: ScenarioFix
+
+
+# --- Predictive Auto-Heal models (P6) ---
+
+class Prediction(BaseModel):
+    service: str
+    probability: float
+    streak: int
+    seconds_to_limit: Optional[float] = None
+
+
+class AuditEntry(BaseModel):
+    id: str
+    ts: str
+    policy: str = "auto-v1"
+    service: str
+    action: str
+    params: dict
+    probability: float
+    result: str            # healed | rolled_back | blocked
+    reasons: list[str] = []
+
+    def __getitem__(self, item: str) -> Any:
+        return getattr(self, item)
 

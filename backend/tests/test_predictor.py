@@ -13,6 +13,7 @@ from backend.main import (
     LATEST_ID,
     METRIC_HISTORY,
     LAST_PREDICTION_TS,
+    _bus_event_listener,
 )
 from backend.models import MetricPoint
 from backend.predictor import seconds_to_limit
@@ -78,6 +79,7 @@ async def test_slow_leak_simulator_run_emits_prediction_and_creates_preventive_i
         if envelope.get("type") == "prediction":
             prediction_events.append(envelope["payload"])
 
+    bus.add_listener(_bus_event_listener)
     bus.add_listener(capture_predictions)
 
     transport = ASGITransport(app=app)
