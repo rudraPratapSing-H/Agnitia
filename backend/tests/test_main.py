@@ -7,8 +7,9 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from starlette.testclient import TestClient
 
-# Ensure SIM_SPEED=200 for fast deterministic simulation
+# Ensure SIM_SPEED=200 and DEMO_MODE=cache for fast deterministic simulation
 os.environ["SIM_SPEED"] = "200"
+os.environ["DEMO_MODE"] = "cache"
 
 import backend.main as main_module
 from backend.main import (
@@ -412,4 +413,76 @@ async def test_blast_radius_endpoint():
         # 4. unknown -> 404
         resp_unknown = await client.get("/api/blast-radius/unknown-service")
         assert resp_unknown.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_autonomy_auto_resolves_when_no_step_needs_approval(monkeypatch):
+    """With a fake needs_approval returning False for all steps, an incident auto-resolves without calling approve."""
+    import backend.agents.autonomy as autonomy_mod
+    monkeypatch.setattr(autonomy_mod, "needs_approval", lambda step, lvl: False)
+    monkeypatch.setattr(autonomy_mod, "get_autonomy_level", lambda: 3)
+
+    adapter.speed = 100.0
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/api/reset")
+        try:
+            inject_resp = await client.post("/api/chaos/db_oom")
+            assert inject_resp.status_code == 200
+
+            resolved_incident = None
+            for _ in range(100):
+                resp = await client.get("/api/incidents/latest")
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data and data.get("status") == "resolved":
+                        resolved_incident = data
+                        break
+                await asyncio.sleep(0.05)
+
+            assert resolved_incident is not None, "Expected incident to auto-resolve"
+            assert resolved_incident["status"] == "resolved"
+            assert resolved_incident["resolved_at"] is not None
+            timeline_events = [t["event"] for t in resolved_incident["timeline"]]
+            assert any("Approved by autonomy-level-3" in ev for ev in timeline_events)
+        finally:
+            adapter.speed = 1.0
+            await client.post("/api/reset")
+
+
+@pytest.mark.asyncio
+async def test_autonomy_waits_when_steps_need_approval(monkeypatch):
+    """With a fake needs_approval returning True for all steps, an incident waits at awaiting_approval."""
+    import backend.agents.autonomy as autonomy_mod
+    monkeypatch.setattr(autonomy_mod, "needs_approval", lambda step, lvl: True)
+    monkeypatch.setattr(autonomy_mod, "get_autonomy_level", lambda: 1)
+
+    adapter.speed = 100.0
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/api/reset")
+        try:
+            inject_resp = await client.post("/api/chaos/db_oom")
+            assert inject_resp.status_code == 200
+
+            incident_data = None
+            for _ in range(100):
+                resp = await client.get("/api/incidents/latest")
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data and data.get("status") == "awaiting_approval":
+                        incident_data = data
+                        break
+                await asyncio.sleep(0.05)
+
+            assert incident_data is not None
+            assert incident_data["status"] == "awaiting_approval"
+            # Verify it does not auto-resolve and stays awaiting approval
+            await asyncio.sleep(0.2)
+            check = (await client.get("/api/incidents/latest")).json()
+            assert check["status"] == "awaiting_approval"
+        finally:
+            adapter.speed = 1.0
+            await client.post("/api/reset")
+
 
