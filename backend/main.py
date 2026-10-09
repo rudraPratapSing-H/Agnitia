@@ -1,10 +1,11 @@
 """Agnitia Backend - FastAPI Application and Event Stream Routes (Member 2, TASK 1.3)."""
 
 import asyncio
+from collections import deque
 from datetime import datetime, timezone
 import logging
 import os
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -12,7 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.bus import bus, emit
 import backend.graph as graph
-from backend.models import Alert, Incident, TimelineEntry
+from backend.models import Alert, Incident, MetricPoint, TimelineEntry
+from backend.predictor import seconds_to_limit
 
 # Load environment variables
 load_dotenv()
@@ -39,6 +41,10 @@ app.add_middleware(
 INCIDENTS: Dict[str, Incident] = {}
 LATEST_ID: Optional[str] = None
 background_tasks: Set[asyncio.Task] = set()
+
+# Metric buffer per service: deque(maxlen=20) for crash prediction
+METRIC_HISTORY: Dict[str, deque] = {}
+LAST_PREDICTION_TS: Dict[str, float] = {}
 
 # Valid chaos scenarios per PRD
 VALID_SCENARIOS: Set[str] = {"db_oom", "bad_config", "cpu_spike", "slow_leak"}
@@ -144,6 +150,79 @@ if adapter is not None:
     adapter.on_alerts_complete = _on_alerts_complete
 
 
+# ── Predictor & Metrics Listener ─────────────────────────────────────────────
+async def _handle_metric_point(payload: dict) -> None:
+    svc = payload.get("service")
+    if not svc:
+        return
+
+    t_s = float(payload.get("t_s", 0.0))
+    mem_mb = float(payload.get("mem_mb", 0.0))
+    cpu_pct = float(payload.get("cpu_pct", 0.0))
+
+    if svc not in METRIC_HISTORY:
+        METRIC_HISTORY[svc] = deque(maxlen=20)
+    METRIC_HISTORY[svc].append(
+        MetricPoint(t_s=t_s, mem_mb=mem_mb, cpu_pct=cpu_pct, service=svc)
+    )
+
+    limit_mb = 64.0
+    try:
+        if adapter is not None:
+            services = await adapter.list_services()
+            for s in services:
+                if s.id == svc:
+                    limit_mb = s.metrics.mem_limit_mb
+                    break
+    except Exception:
+        pass
+
+    sec = seconds_to_limit(list(METRIC_HISTORY[svc]), limit_mb)
+    if sec is not None and sec < 300.0:
+        last_t = LAST_PREDICTION_TS.get(svc)
+        if last_t is None or (t_s - last_t >= 1.0):
+            LAST_PREDICTION_TS[svc] = t_s
+            await emit("prediction", {"service": svc, "seconds": round(sec, 1)})
+
+        scenario_name = getattr(adapter, "_scenario", {}).get("id") if hasattr(adapter, "_scenario") and adapter._scenario else None
+        if scenario_name == "slow_leak":
+            if not INCIDENTS:
+                preventive_incident = Incident(
+                    id="INC-104",
+                    status="awaiting_approval",
+                    scenario="slow_leak",
+                    root_service=svc,
+                    impacted_services=[],
+                    raw_alert_count=0,
+                    started_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    resolved_at=None,
+                    rca=None,
+                    playbook=None,
+                    timeline=[
+                        TimelineEntry(
+                            t_s=0.0,
+                            event=f"Preventive incident opened: {svc} memory trend projects OOM in {round(sec, 1)}s",
+                        ),
+                    ],
+                )
+                INCIDENTS[preventive_incident.id] = preventive_incident
+                global LATEST_ID
+                LATEST_ID = preventive_incident.id
+                await emit("incident_update", preventive_incident.model_dump(mode="json"))
+
+
+async def _bus_event_listener(envelope: Dict[str, Any]) -> None:
+    event_type = envelope.get("type")
+    if event_type == "metric_point":
+        await _handle_metric_point(envelope.get("payload", {}))
+    elif event_type == "reset":
+        METRIC_HISTORY.clear()
+        LAST_PREDICTION_TS.clear()
+
+bus.add_listener(_bus_event_listener)
+
+
+
 # ── REST Endpoints ───────────────────────────────────────────────────────────
 
 @app.get("/api/health")
@@ -196,6 +275,13 @@ async def reset_cluster():
     INCIDENTS.clear()
     LATEST_ID = None
 
+    # Clear predictions on reset: emit prediction {service, seconds: None}
+    services_to_clear = set(LAST_PREDICTION_TS.keys()) | set(METRIC_HISTORY.keys()) | set(graph.DEPENDS_ON.keys())
+    for s in services_to_clear:
+        await emit("prediction", {"service": s, "seconds": None})
+    METRIC_HISTORY.clear()
+    LAST_PREDICTION_TS.clear()
+
     # Emit reset event
     await emit("reset", {})
 
@@ -241,6 +327,14 @@ async def get_blast_radius(service: str):
 @app.get("/api/incidents/{id}/audit")
 async def get_incident_audit(id: str):
     raise HTTPException(status_code=501, detail="not implemented yet")
+
+
+# ── TTS Endpoint Mount ───────────────────────────────────────────────────────
+try:
+    from backend.agents.tts import router as tts_router
+    app.include_router(tts_router)
+except (ImportError, AttributeError):
+    pass
 
 
 # ── WebSocket Stream ─────────────────────────────────────────────────────────

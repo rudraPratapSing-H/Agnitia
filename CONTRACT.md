@@ -81,6 +81,72 @@ Save this as `CONTRACT.md` in the repo root before anyone writes code. Frontend,
 // type: alert | service_update | incident_update | agent_step | playbook_step | metric_point | prediction | reset
 ```
 
+**Authoritative captured live payload examples (from `db_oom` live run):**
+
+*Metric Point (the ramp):*
+```json
+{
+  "type": "metric_point",
+  "ts": "2026-10-09T21:08:08Z",
+  "payload": {
+    "service": "postgres",
+    "t_s": 6.0,
+    "mem_mb": 64.0,
+    "cpu_pct": 42.0
+  }
+}
+```
+
+*Alert (root cause):*
+```json
+{
+  "type": "alert",
+  "ts": "2026-10-09T21:08:11Z",
+  "payload": {
+    "id": "a-001",
+    "ts": "2026-10-09T21:08:11Z",
+    "service": "postgres",
+    "severity": "critical",
+    "message": "container terminated with exit code 137 (OOMKilled)",
+    "incident_id": "INC-104"
+  }
+}
+```
+
+*Incident Update (topological correlation of 56 alerts):*
+```json
+{
+  "type": "incident_update",
+  "ts": "2026-10-09T21:08:14Z",
+  "payload": {
+    "id": "INC-104",
+    "status": "analyzing",
+    "scenario": "db_oom",
+    "root_service": "postgres",
+    "impacted_services": ["auth-service", "payment-service", "api-gateway", "web-ui"],
+    "raw_alert_count": 56,
+    "started_at": "2026-10-09T21:08:11Z",
+    "resolved_at": null,
+    "rca": null,
+    "playbook": null,
+    "timeline": [
+      { "t_s": 0.0, "event": "First alert received" },
+      { "t_s": 0.5, "event": "Alerts correlated into INC-104 (root: postgres)" }
+    ]
+  }
+}
+```
+
+*Reset:*
+```json
+{
+  "type": "reset",
+  "ts": "2026-10-09T21:08:16Z",
+  "payload": {}
+}
+```
+
+
 **REST endpoints**
 
 | Method | Path | Purpose |
