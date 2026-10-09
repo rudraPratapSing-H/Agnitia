@@ -89,11 +89,11 @@ export default function ReasoningPanel({ steps, isSimulating }: ReasoningPanelPr
   };
 
   return (
-    <div className="rounded-xl overflow-hidden border border-stone-800 shadow-md font-mono bg-[#0a0a0a] flex flex-col h-[240px] min-h-[220px] shrink-0">
+    <div className="rounded-xl overflow-hidden border border-ink-700 font-mono bg-ink-950 flex flex-col h-[240px] min-h-[220px] shrink-0">
       {/* Simple CMD Header Bar */}
-      <div className="bg-[#141414] px-3 py-1.5 border-b border-[#252525] flex items-center justify-between select-none">
+      <div className="bg-ink-900 px-3 py-1.5 border-b border-ink-700 flex items-center justify-between select-none">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-stone-300 flex items-center gap-1.5">
+          <span className="text-[11px] font-bold text-ink-200 flex items-center gap-1.5">
             <span className="text-emerald-400 font-black">&gt;_</span>
             POD LOGS (CMD)
           </span>
@@ -103,14 +103,14 @@ export default function ReasoningPanel({ steps, isSimulating }: ReasoningPanelPr
               STREAMING
             </span>
           ) : (
-            <span className="text-[9.5px] text-stone-500">• LIVE</span>
+            <span className="text-[9.5px] text-ink-500">• LIVE</span>
           )}
         </div>
 
         {/* Copy Button */}
         <button
           onClick={handleCopyLogs}
-          className="text-stone-400 hover:text-white px-2 py-0.5 rounded text-[10.5px] hover:bg-stone-800 transition-colors flex items-center gap-1 cursor-pointer border border-stone-700/60"
+          className="text-ink-400 hover:text-ink-50 px-2 py-0.5 rounded text-[10.5px] hover:bg-ink-800 transition-colors flex items-center gap-1 cursor-pointer border border-ink-600"
           title="Copy log lines"
         >
           {copied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
@@ -119,7 +119,7 @@ export default function ReasoningPanel({ steps, isSimulating }: ReasoningPanelPr
       </div>
 
       {/* Terminal Body: Black Background, Increased Font Size, Pod-Only Paths */}
-      <div className="flex-1 p-3 overflow-y-auto space-y-1.5 text-[12px] leading-relaxed custom-scrollbar bg-[#0a0a0a] text-stone-200">
+      <div className="flex-1 p-3 overflow-y-auto space-y-1.5 text-[12px] leading-relaxed custom-scrollbar bg-ink-950 text-ink-200">
         {logsToDisplay.map((st, idx) => {
           const pod = derivePodName(st);
           const timestamp = st.ts || `15:32:${String(idx * 2 + 10).padStart(2, '0')}`;
@@ -129,7 +129,7 @@ export default function ReasoningPanel({ steps, isSimulating }: ReasoningPanelPr
           const isWarn = /patch|rollout|rollback|scale|throttl|gradient/i.test(text);
           const isSuccess = /200 ok|healthy|restored|validated/i.test(text);
 
-          let messageClass = 'text-stone-200';
+          let messageClass = 'text-ink-200';
           if (isError) messageClass = 'text-rose-400 font-semibold';
           else if (isWarn) messageClass = 'text-amber-300';
           else if (isSuccess) messageClass = 'text-emerald-400 font-semibold';
@@ -139,7 +139,7 @@ export default function ReasoningPanel({ steps, isSimulating }: ReasoningPanelPr
               {/* Pod Prompt Prefix */}
               <span className="text-emerald-400 font-bold select-none">{pod}&gt; </span>
               {/* Timestamp */}
-              <span className="text-stone-500 select-none text-[11px]">[{timestamp}] </span>
+              <span className="text-ink-500 select-none text-[11px]">[{timestamp}] </span>
               {/* Log Message */}
               <span className={messageClass}>{text}</span>
             </div>
@@ -149,7 +149,7 @@ export default function ReasoningPanel({ steps, isSimulating }: ReasoningPanelPr
         {/* Terminal Blinking Prompt */}
         <div className="pt-1 font-mono text-[12px] flex items-center select-none">
           <span className="text-emerald-400 font-bold">{activePromptPod}&gt;</span>
-          <span className="inline-block w-2 h-4 bg-stone-200 ml-1.5 animate-pulse" />
+          <span className="inline-block w-2 h-4 bg-ink-200 ml-1.5 animate-pulse" />
         </div>
 
         <div ref={terminalEndRef} />

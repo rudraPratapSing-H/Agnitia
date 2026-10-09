@@ -41,19 +41,19 @@ export default function Stopwatch({ startedAt, resolvedAt, isActive }: Stopwatch
     <div
       className={`px-2.5 py-1 rounded-lg border flex items-center gap-2 font-mono text-xs transition-colors ${
         resolvedAt
-          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
           : isActive
-          ? 'bg-rose-50 border-rose-300 text-rose-800 animate-pulse'
-          : 'bg-stone-50 border-stone-200 text-stone-600'
+          ? 'bg-rose-500/10 border-rose-500/35 text-rose-300 animate-pulse'
+          : 'bg-ink-850 border-ink-700 text-ink-400'
       }`}
     >
       {resolvedAt ? (
-        <CheckCircle2 size={13} className="text-emerald-600" />
+        <CheckCircle2 size={13} className="text-emerald-400" />
       ) : (
-        <Timer size={13} className={isActive ? 'text-rose-600' : 'text-stone-400'} />
+        <Timer size={13} className={isActive ? 'text-rose-400' : 'text-ink-500'} />
       )}
 
-      <span className="text-[10px] text-stone-400 uppercase">MTTR:</span>
+      <span className="text-[10px] text-ink-500 uppercase">MTTR:</span>
       <span className="font-bold tracking-tight">
         {resolvedAt ? '38s (RECOVERED)' : formatTime(elapsed)}
       </span>

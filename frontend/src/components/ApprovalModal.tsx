@@ -107,25 +107,25 @@ export default function ApprovalModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-xs p-4 animate-fadeIn font-mono">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-stone-300 overflow-hidden flex flex-col max-h-[92vh]">
-        
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/65 backdrop-blur-xs p-4 animate-fadeIn font-mono">
+      <div className="w-full max-w-2xl bg-ink-900 rounded-2xl shadow-2xl border border-ink-700 overflow-hidden flex flex-col max-h-[92vh]">
+
         {/* Header */}
-        <div className="p-4 border-b border-stone-200 bg-stone-50/80 flex items-center justify-between shrink-0">
+        <div className="p-4 border-b border-ink-700 bg-ink-850 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center border border-amber-200 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-300 flex items-center justify-center border border-amber-500/35 shrink-0">
               <ShieldAlert size={18} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-extrabold text-stone-900 tracking-tight">
+                <h2 className="text-sm font-extrabold text-ink-50 tracking-tight">
                   SRE AUTHORIZATION GATE
                 </h2>
-                <span className="bg-amber-100 text-amber-900 text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-300">
+                <span className="bg-amber-500/15 text-amber-200 text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-500/35">
                   OPERATOR APPROVAL REQUIRED
                 </span>
               </div>
-              <p className="text-[10px] text-stone-500 font-sans">
+              <p className="text-[10px] text-ink-500 font-sans">
                 Agnitia Policy APEX-04: Mutation of production specs requires operator authorization
               </p>
             </div>
@@ -133,7 +133,7 @@ export default function ApprovalModal({
 
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-lg hover:bg-stone-200 text-stone-400 hover:text-stone-700 flex items-center justify-center transition-colors"
+            className="w-7 h-7 rounded-lg hover:bg-ink-800 text-ink-500 hover:text-ink-200 flex items-center justify-center transition-colors"
             title="Close (Esc)"
           >
             <X size={16} />
@@ -142,20 +142,20 @@ export default function ApprovalModal({
 
         {/* Scrollable Body */}
         <div className="p-4 space-y-3.5 overflow-y-auto custom-scrollbar flex-1">
-          
+
           {/* Workload Target & Dry-run Banner */}
-          <div className="bg-stone-50 rounded-xl p-3 border border-stone-200 space-y-2">
+          <div className="bg-ink-850 rounded-xl p-3 border border-ink-700 space-y-2">
             <div className="flex items-center justify-between text-[10px]">
-              <span className="text-stone-500 font-bold">TARGET WORKLOAD:</span>
-              <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-bold flex items-center gap-1">
-                <CheckCircle2 size={11} className="text-emerald-600" />
+              <span className="text-ink-500 font-bold">TARGET WORKLOAD:</span>
+              <span className="bg-emerald-500/12 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-bold flex items-center gap-1">
+                <CheckCircle2 size={11} className="text-emerald-400" />
                 DRY-RUN VALIDATED (0 ERRORS)
               </span>
             </div>
-            <div className="font-bold text-xs text-stone-900">
+            <div className="font-bold text-xs text-ink-50">
               {targetWorkload}
             </div>
-            <div className="text-[10px] text-stone-600 font-sans leading-relaxed">
+            <div className="text-[10px] text-ink-400 font-sans leading-relaxed">
               {actionDesc}
             </div>
           </div>
@@ -163,32 +163,32 @@ export default function ApprovalModal({
           {/* Unified GitOps YAML Diff */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-stone-800 flex items-center gap-1.5">
-                <GitCommit size={14} className="text-stone-600" />
+              <span className="font-bold text-ink-200 flex items-center gap-1.5">
+                <GitCommit size={14} className="text-ink-300" />
                 DECLARATIVE GITOPS DIFF
               </span>
-              <span className="text-[9px] text-stone-500 font-mono">
+              <span className="text-[9px] text-ink-500 font-mono">
                 {diffFile}
               </span>
             </div>
 
-            <div className="bg-stone-950 text-stone-200 rounded-lg p-3 text-[11px] font-mono border border-stone-800 overflow-x-auto shadow-inner">
-              <div className="text-stone-500 text-[10px] pb-1 border-b border-stone-800 mb-1.5">
+            <div className="bg-ink-950 text-ink-300 rounded-lg p-3 text-[11px] font-mono border border-ink-700 overflow-x-auto">
+              <div className="text-ink-500 text-[10px] pb-1 border-b border-ink-700 mb-1.5">
                 {diffHeader}
               </div>
-              <div className="text-rose-400 bg-rose-950/40 px-1.5 py-0.5 rounded my-0.5">
+              <div className="text-rose-400 bg-rose-500/12 px-1.5 py-0.5 rounded my-0.5">
                 {diffOld}
               </div>
-              <div className="text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded my-0.5 font-bold">
+              <div className="text-emerald-400 bg-emerald-500/12 px-1.5 py-0.5 rounded my-0.5 font-bold">
                 {diffNew}
               </div>
               {diffOldSub && (
-                <div className="text-rose-400 bg-rose-950/40 px-1.5 py-0.5 rounded my-0.5">
+                <div className="text-rose-400 bg-rose-500/12 px-1.5 py-0.5 rounded my-0.5">
                   {diffOldSub}
                 </div>
               )}
               {diffNewSub && (
-                <div className="text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded my-0.5 font-bold">
+                <div className="text-emerald-400 bg-emerald-500/12 px-1.5 py-0.5 rounded my-0.5 font-bold">
                   {diffNewSub}
                 </div>
               )}
@@ -198,19 +198,19 @@ export default function ApprovalModal({
           {/* Equivalent Kubectl Command with Copy */}
           <div className="space-y-1">
             <div className="flex items-center justify-between text-[10px]">
-              <span className="text-stone-600 font-bold flex items-center gap-1">
+              <span className="text-ink-400 font-bold flex items-center gap-1">
                 <Terminal size={11} />
                 EQUIVALENT KUBECTL COMMAND:
               </span>
               <button
                 onClick={handleCopyCmd}
-                className="text-[9px] text-stone-600 hover:text-stone-900 flex items-center gap-1 bg-stone-100 hover:bg-stone-200 px-1.5 py-0.5 rounded border border-stone-300 transition-colors"
+                className="text-[9px] text-ink-300 hover:text-ink-50 flex items-center gap-1 bg-ink-800 hover:bg-ink-700 px-1.5 py-0.5 rounded border border-ink-600 transition-colors"
               >
-                {copiedCmd ? <Check size={10} className="text-emerald-600" /> : <Copy size={10} />}
+                {copiedCmd ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
                 <span>{copiedCmd ? 'COPIED' : 'COPY'}</span>
               </button>
             </div>
-            <pre className="p-2 bg-stone-100 text-stone-800 rounded border border-stone-200 text-[9.5px] overflow-x-auto whitespace-pre-wrap leading-tight font-mono select-all">
+            <pre className="p-2 bg-ink-850 text-ink-200 rounded border border-ink-700 text-[9.5px] overflow-x-auto whitespace-pre-wrap leading-tight font-mono select-all">
               {kubectlCmd}
             </pre>
           </div>
@@ -219,11 +219,11 @@ export default function ApprovalModal({
           {playbook?.steps && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-stone-800 flex items-center gap-1.5">
-                  <Layers size={14} className="text-stone-600" />
+                <span className="font-bold text-ink-200 flex items-center gap-1.5">
+                  <Layers size={14} className="text-ink-300" />
                   TOPOLOGICAL RESTART SEQUENCE
                 </span>
-                <span className="text-[9px] text-stone-500 font-bold">
+                <span className="text-[9px] text-ink-500 font-bold">
                   {playbook.steps.length} STAGES
                 </span>
               </div>
@@ -232,21 +232,21 @@ export default function ApprovalModal({
                 {playbook.steps.map((st) => (
                   <div
                     key={st.order}
-                    className="flex items-center justify-between text-[10px] p-2 rounded-lg bg-stone-50 border border-stone-200/80"
+                    className="flex items-center justify-between text-[10px] p-2 rounded-lg bg-ink-850 border border-ink-700"
                   >
                     <div className="flex items-center gap-2 truncate">
-                      <span className="w-4 h-4 rounded bg-stone-200 text-stone-800 font-bold flex items-center justify-center text-[9px]">
+                      <span className="w-4 h-4 rounded bg-ink-700 text-ink-200 font-bold flex items-center justify-center text-[9px]">
                         {st.order}
                       </span>
-                      <span className="font-bold text-stone-900">{st.service}:</span>
-                      <span className="truncate text-stone-600 font-mono">{st.action}</span>
+                      <span className="font-bold text-ink-100">{st.service}:</span>
+                      <span className="truncate text-ink-400 font-mono">{st.action}</span>
                     </div>
 
                     <span
                       className={`text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase ${
                         st.risk === 'high'
-                          ? 'bg-rose-50 text-rose-800 border-rose-200'
-                          : 'bg-stone-100 text-stone-600 border-stone-200'
+                          ? 'bg-rose-500/12 text-rose-300 border-rose-500/30'
+                          : 'bg-ink-800 text-ink-400 border-ink-600'
                       }`}
                     >
                       {st.risk} RISK
@@ -258,8 +258,8 @@ export default function ApprovalModal({
           )}
 
           {/* Audit & Rollback Guarantee */}
-          <div className="bg-stone-50 rounded-xl p-2.5 border border-stone-200 flex items-center gap-2 text-[10px] text-stone-600 font-sans">
-            <Lock size={13} className="text-stone-500 shrink-0" />
+          <div className="bg-ink-850 rounded-xl p-2.5 border border-ink-700 flex items-center gap-2 text-[10px] text-ink-400 font-sans">
+            <Lock size={13} className="text-ink-400 shrink-0" />
             <span>
               All remediation steps are bounded by APEX safety invariants. An immutable audit snapshot is archived in cluster configmap before execution.
             </span>
@@ -268,16 +268,16 @@ export default function ApprovalModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-3.5 border-t border-stone-200 bg-stone-50/80 flex items-center justify-between gap-2.5 shrink-0">
-          <div className="text-[10px] text-stone-500 font-mono">
-            Press <kbd className="px-1 py-0.2 bg-stone-200 border border-stone-300 rounded font-bold text-stone-700">A</kbd> to authorize • <kbd className="px-1 py-0.2 bg-stone-200 border border-stone-300 rounded font-bold text-stone-700">Esc</kbd> to hold
+        <div className="p-3.5 border-t border-ink-700 bg-ink-850 flex items-center justify-between gap-2.5 shrink-0">
+          <div className="text-[10px] text-ink-500 font-mono">
+            Press <kbd className="px-1 py-0.2 bg-ink-800 border border-ink-600 rounded font-bold text-ink-300">A</kbd> to authorize • <kbd className="px-1 py-0.2 bg-ink-800 border border-ink-600 rounded font-bold text-ink-300">Esc</kbd> to hold
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
               disabled={authorizing}
-              className="px-3.5 py-2 rounded-lg border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-bold uppercase transition-colors"
+              className="px-3.5 py-2 rounded-lg border border-ink-600 hover:bg-ink-800 text-ink-200 text-xs font-bold uppercase transition-colors"
             >
               ABORT / HOLD
             </button>
@@ -285,16 +285,16 @@ export default function ApprovalModal({
             <button
               onClick={onAuthorize}
               disabled={authorizing}
-              className="px-4 py-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-xs active:scale-[0.99]"
+              className="px-4 py-2 rounded-lg bg-copper-500 hover:bg-copper-400 text-ink-950 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all active:scale-[0.99]"
             >
-              <kbd className="px-1.5 py-0.2 text-[9px] bg-stone-800 text-stone-200 border border-stone-700 rounded font-mono">
+              <kbd className="px-1.5 py-0.2 text-[9px] bg-ink-950/25 text-ink-950 border border-ink-950/30 rounded font-mono">
                 A
               </kbd>
               {authorizing ? (
                 <span>APPLYING REMEDIATION...</span>
               ) : (
                 <>
-                  <span>AUTHORIZE & APPLY</span>
+                  <span>AUTHORIZE &amp; APPLY</span>
                   <ArrowRight size={13} />
                 </>
               )}

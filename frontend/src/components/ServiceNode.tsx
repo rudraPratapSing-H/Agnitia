@@ -32,44 +32,44 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
 
   const statusStyles = {
     healthy: {
-      border: 'border-stone-200/90 hover:border-stone-400',
-      badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      border: 'border-ink-600 hover:border-ink-400',
+      badgeBg: 'bg-emerald-500/12 text-emerald-300 border-emerald-500/30',
       badgeText: 'NOMINAL',
-      barColor: 'bg-emerald-600',
-      iconBg: 'bg-stone-100 text-stone-600',
-      accent: 'bg-white'
+      barColor: 'bg-emerald-500',
+      iconBg: 'bg-ink-700 text-ink-300',
+      accent: 'bg-ink-850'
     },
     root_cause: {
-      border: 'border-rose-600 ring-4 ring-rose-400/80 shadow-2xl',
-      badgeBg: 'bg-rose-100 text-rose-900 border-rose-400 font-bold',
+      border: 'border-rose-500 ring-4 ring-rose-500/40 shadow-2xl shadow-rose-950/60',
+      badgeBg: 'bg-rose-500/18 text-rose-300 border-rose-500/50 font-bold',
       badgeText: 'ROOT FAILURE',
-      barColor: 'bg-rose-600',
-      iconBg: 'bg-rose-600 text-white',
-      accent: 'bg-rose-50/95'
+      barColor: 'bg-rose-500',
+      iconBg: 'bg-rose-500 text-ink-950',
+      accent: 'bg-rose-950/40'
     },
     impacted: {
-      border: 'border-amber-500 ring-2 ring-amber-300/80 shadow-md',
-      badgeBg: 'bg-amber-100 text-amber-900 border-amber-300 font-semibold',
+      border: 'border-amber-500 ring-2 ring-amber-500/35 shadow-lg shadow-amber-950/40',
+      badgeBg: 'bg-amber-500/15 text-amber-300 border-amber-500/40 font-semibold',
       badgeText: 'DEGRADED',
       barColor: 'bg-amber-500',
-      iconBg: 'bg-amber-100 text-amber-800',
-      accent: 'bg-amber-50/50'
+      iconBg: 'bg-amber-500/20 text-amber-300',
+      accent: 'bg-amber-950/25'
     },
     recovering: {
-      border: 'border-sky-400 ring-2 ring-sky-200 shadow-sm',
-      badgeBg: 'bg-sky-50 text-sky-800 border-sky-300',
+      border: 'border-sky-500 ring-2 ring-sky-500/25',
+      badgeBg: 'bg-sky-500/12 text-sky-300 border-sky-500/35',
       badgeText: 'RECOVERING',
       barColor: 'bg-sky-500',
-      iconBg: 'bg-sky-100 text-sky-700',
-      accent: 'bg-sky-50/40'
+      iconBg: 'bg-sky-500/18 text-sky-300',
+      accent: 'bg-sky-950/20'
     }
   }[status] || {
-    border: 'border-stone-200',
-    badgeBg: 'bg-stone-100 text-stone-700 border-stone-200',
+    border: 'border-ink-600',
+    badgeBg: 'bg-ink-700 text-ink-300 border-ink-600',
     badgeText: status.toUpperCase(),
-    barColor: 'bg-stone-400',
-    iconBg: 'bg-stone-100 text-stone-600',
-    accent: 'bg-white'
+    barColor: 'bg-ink-500',
+    iconBg: 'bg-ink-700 text-ink-300',
+    accent: 'bg-ink-850'
   };
 
   // What-If highlights
@@ -83,25 +83,25 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
   const pulseClass = status === 'root_cause' ? 'animate-grow-red' : status === 'impacted' ? 'animate-pulse-impacted' : '';
   const effectiveMemPercent = status === 'root_cause' ? 100 : memPercent;
 
-  const handleColor = status === 'root_cause' 
-    ? '!bg-rose-500 !border-rose-100' 
-    : status === 'impacted' 
-    ? '!bg-amber-500 !border-amber-100' 
-    : status === 'recovering' 
-    ? '!bg-sky-500 !border-sky-100' 
-    : '!bg-slate-400 !border-white';
+  const handleColor = status === 'root_cause'
+    ? '!bg-rose-500 !border-ink-900'
+    : status === 'impacted'
+    ? '!bg-amber-500 !border-ink-900'
+    : status === 'recovering'
+    ? '!bg-sky-500 !border-ink-900'
+    : '!bg-ink-400 !border-ink-900';
 
   return (
     <div
-      className={`relative w-[240px] rounded-xl border ${statusStyles.border} ${statusStyles.accent} ${whatIfRing} ${pulseClass} shadow-2xs hover:shadow-md p-3.5 transition-all duration-300 cursor-pointer ${
-        selected ? 'ring-2 ring-stone-900 scale-[1.01]' : ''
+      className={`relative w-[240px] rounded-xl border ${statusStyles.border} ${statusStyles.accent} ${whatIfRing} ${pulseClass} shadow-lg shadow-black/30 hover:shadow-xl p-3.5 transition-all duration-300 cursor-pointer ${
+        selected ? 'ring-2 ring-copper-400 scale-[1.01]' : ''
       }`}
     >
       {/* Root Cause High-Alert Ping Beacon */}
       {status === 'root_cause' && (
         <span className="absolute -top-2.5 -right-2.5 flex h-6 w-6 z-30 pointer-events-none">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-80" />
-          <span className="relative inline-flex rounded-full h-6 w-6 bg-rose-600 text-white text-[10px] font-black items-center justify-center shadow-lg border-2 border-white font-mono">
+          <span className="relative inline-flex rounded-full h-6 w-6 bg-rose-500 text-ink-950 text-[10px] font-black items-center justify-center shadow-lg border-2 border-ink-950 font-mono">
             !
           </span>
         </span>
@@ -126,7 +126,7 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
           <div className={`p-1 rounded-md ${statusStyles.iconBg}`}>
             <Icon size={13} />
           </div>
-          <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider text-stone-600">
+          <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider text-ink-400">
             {tier}
           </span>
         </div>
@@ -134,20 +134,20 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
         <span
           className={`text-[8.5px] font-bold tracking-wider px-1.5 py-0.5 rounded border ${statusStyles.badgeBg} flex items-center gap-1 font-mono`}
         >
-          {status === 'root_cause' && <Flame size={9} className="text-white animate-pulse" />}
-          {status === 'impacted' && <AlertTriangle size={9} className="text-amber-600" />}
-          {status === 'recovering' && <RotateCw size={9} className="text-sky-600 animate-spin" />}
-          {status === 'healthy' && <CheckCircle2 size={9} className="text-emerald-600" />}
+          {status === 'root_cause' && <Flame size={9} className="text-rose-300 animate-pulse" />}
+          {status === 'impacted' && <AlertTriangle size={9} className="text-amber-400" />}
+          {status === 'recovering' && <RotateCw size={9} className="text-sky-400 animate-spin" />}
+          {status === 'healthy' && <CheckCircle2 size={9} className="text-emerald-400" />}
           {_whatIfOrigin ? 'SIMULATED ROOT' : _whatIfImpacted ? 'DOWNSTREAM VICTIM' : statusStyles.badgeText}
         </span>
       </div>
 
       {/* Service Name & Pod Identifier */}
       <div className="mb-2">
-        <div className="font-mono font-black text-[12.5px] text-stone-900 tracking-tight truncate">
+        <div className="font-mono font-black text-[12.5px] text-ink-50 tracking-tight truncate">
           {label || id}
         </div>
-        <div className="text-[9.5px] text-stone-500 font-mono truncate">
+        <div className="text-[9.5px] text-ink-500 font-mono truncate">
           pod/{id}-0 • ns:prod
         </div>
       </div>
@@ -156,36 +156,36 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
       <div className="space-y-1.5 font-mono text-[9.5px]">
         {/* Memory Bar */}
         <div>
-          <div className="flex justify-between text-stone-600 mb-0.5 text-[9px]">
+          <div className="flex justify-between text-ink-400 mb-0.5 text-[9px]">
             <span className="font-semibold">MEM: {status === 'root_cause' ? memLimit : memMb}MiB / {memLimit}MiB</span>
-            <span className={effectiveMemPercent >= 90 ? 'text-rose-600 font-bold' : 'font-bold text-stone-700'}>
+            <span className={effectiveMemPercent >= 90 ? 'text-rose-400 font-bold' : 'font-bold text-ink-300'}>
               {effectiveMemPercent}%
             </span>
           </div>
-          <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden border border-stone-200">
+          <div className="h-2 w-full bg-ink-700 rounded-full overflow-hidden border border-ink-600">
             <div
-              className={`h-full transition-all duration-300 ${status === 'root_cause' ? 'bg-rose-600 animate-pulse' : statusStyles.barColor}`}
+              className={`h-full transition-all duration-300 ${status === 'root_cause' ? 'bg-rose-500 animate-pulse' : statusStyles.barColor}`}
               style={{ width: `${effectiveMemPercent}%` }}
             />
           </div>
         </div>
 
         {/* CPU & K8s State Indicator */}
-        <div className="flex items-center justify-between text-[9px] text-stone-600 pt-1 border-t border-stone-100 font-medium">
+        <div className="flex items-center justify-between text-[9px] text-ink-400 pt-1 border-t border-ink-700 font-medium">
           <span className="flex items-center gap-1">
-            <Cpu size={11} className="text-stone-500" />
+            <Cpu size={11} className="text-ink-500" />
             <span>CPU: {cpuPct}%</span>
           </span>
           {status === 'root_cause' ? (
-            <span className="text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-300 animate-pulse">
+            <span className="text-rose-300 font-bold bg-rose-500/15 px-1.5 py-0.5 rounded border border-rose-500/40 animate-pulse">
               exitCode: 137
             </span>
           ) : restarts > 0 ? (
-            <span className="text-rose-600 font-bold bg-rose-50 px-1 rounded border border-rose-200">
+            <span className="text-rose-300 font-bold bg-rose-500/12 px-1 rounded border border-rose-500/30">
               restarts: {restarts}
             </span>
           ) : (
-            <span className="text-emerald-700 font-bold bg-emerald-50 px-1 rounded border border-emerald-200">
+            <span className="text-emerald-300 font-bold bg-emerald-500/12 px-1 rounded border border-emerald-500/30">
               ready: 1/1
             </span>
           )}
@@ -193,13 +193,13 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
 
         {/* Explicit Dependency Connectivity Footer */}
         {data.depends_on && data.depends_on.length > 0 ? (
-          <div className="flex items-center gap-1.5 text-[8.5px] font-mono text-stone-700 pt-1.5 border-t border-stone-200/80 flex-wrap">
-            <span className="text-stone-500 font-bold uppercase tracking-wider shrink-0 text-[8px]">Depends on:</span>
+          <div className="flex items-center gap-1.5 text-[8.5px] font-mono text-ink-300 pt-1.5 border-t border-ink-700/80 flex-wrap">
+            <span className="text-ink-500 font-bold uppercase tracking-wider shrink-0 text-[8px]">Depends on:</span>
             <div className="flex flex-wrap gap-1">
               {data.depends_on.map((dep: string) => (
                 <span
                   key={dep}
-                  className="bg-stone-100 text-stone-800 font-bold px-1.5 py-0.5 rounded border border-stone-300/90 text-[8px]"
+                  className="bg-ink-700 text-ink-200 font-bold px-1.5 py-0.5 rounded border border-ink-600 text-[8px]"
                 >
                   {dep}
                 </span>
@@ -207,11 +207,11 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 text-[8.5px] font-mono text-stone-500 pt-1.5 border-t border-stone-200/80">
-            <span className="text-emerald-800 font-bold uppercase tracking-wider bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-300 shrink-0 text-[8px]">
+          <div className="flex items-center gap-1.5 text-[8.5px] font-mono text-ink-500 pt-1.5 border-t border-ink-700/80">
+            <span className="text-emerald-300 font-bold uppercase tracking-wider bg-emerald-500/12 px-1.5 py-0.5 rounded border border-emerald-500/30 shrink-0 text-[8px]">
               Root Source
             </span>
-            <span className="text-stone-600 text-[8px] font-medium">Data Tier • 0 Upstream</span>
+            <span className="text-ink-400 text-[8px] font-medium">Data Tier • 0 Upstream</span>
           </div>
         )}
       </div>

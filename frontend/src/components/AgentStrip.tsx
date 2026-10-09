@@ -160,23 +160,23 @@ export default function AgentStrip({
   const isPipelineActive = Boolean(activeStage || (alerts.length > 0 && !isResolved));
 
   return (
-    <div className="bg-white rounded-xl border border-stone-200 p-3 shadow-2xs font-mono shrink-0">
+    <div className="bg-ink-900 rounded-xl border border-ink-700 p-3 font-mono shrink-0">
       {/* Header: Synchronized Process Title & State */}
-      <div className="flex items-center justify-between pb-2 mb-2 border-b border-stone-200 select-none">
+      <div className="flex items-center justify-between pb-2 mb-2 border-b border-ink-700 select-none">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded-md bg-stone-100 text-stone-700 border border-stone-200">
+          <div className="p-1 rounded-md bg-copper-500/12 text-copper-400 border border-copper-500/25">
             <GitFork size={13} />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-black tracking-wider text-stone-900 uppercase">
-                AUTONOMOUS SRE PIPELINE
+              <span className="text-[11px] font-bold tracking-wider text-ink-50 uppercase">
+                Autonomous SRE Pipeline
               </span>
-              <span className="text-[8px] bg-stone-100 text-stone-600 px-1 py-0.2 rounded border border-stone-200 font-bold">
+              <span className="text-[8px] bg-ink-700 text-ink-300 px-1 py-0.2 rounded border border-ink-600 font-bold">
                 5 STAGES
               </span>
             </div>
-            <span className="text-[9px] text-stone-500 font-sans block">
+            <span className="text-[9px] text-ink-500 font-sans block">
               Topological resolution & verification lifecycle
             </span>
           </div>
@@ -185,17 +185,17 @@ export default function AgentStrip({
         {/* Live Process Pill */}
         <div>
           {isPipelineActive ? (
-            <span className="bg-amber-50 text-amber-900 border border-amber-300 px-2 py-0.5 rounded text-[8.5px] font-bold flex items-center gap-1.5 shadow-2xs">
-              <Loader2 size={10} className="animate-spin text-amber-600" />
+            <span className="bg-amber-500/12 text-amber-300 border border-amber-500/35 px-2 py-0.5 rounded text-[8.5px] font-bold flex items-center gap-1.5">
+              <Loader2 size={10} className="animate-spin text-amber-400" />
               <span>STAGE {activeStage?.num || '01'} ACTIVE</span>
             </span>
           ) : isResolved ? (
-            <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded text-[8.5px] font-bold flex items-center gap-1 shadow-2xs">
-              <CheckCircle2 size={10} className="text-emerald-600" />
+            <span className="bg-emerald-500/12 text-emerald-300 border border-emerald-500/35 px-2 py-0.5 rounded text-[8.5px] font-bold flex items-center gap-1">
+              <CheckCircle2 size={10} className="text-emerald-400" />
               <span>PIPELINE VERIFIED</span>
             </span>
           ) : (
-            <span className="bg-stone-50 text-stone-600 border border-stone-200 px-2 py-0.5 rounded text-[8.5px] font-bold flex items-center gap-1">
+            <span className="bg-ink-800 text-ink-400 border border-ink-600 px-2 py-0.5 rounded text-[8.5px] font-bold flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span>STANDBY</span>
             </span>
@@ -210,18 +210,18 @@ export default function AgentStrip({
           const Icon = stage.icon;
           const desc = getStageDesc(stage.id, state);
 
-          let rowBg = 'bg-stone-50/60 border-stone-200/80 text-stone-500';
-          let iconBoxBg = 'bg-stone-100 text-stone-400 border-stone-200';
-          let titleColor = 'text-stone-700';
+          let rowBg = 'bg-ink-850 border-ink-700 text-ink-500';
+          let iconBoxBg = 'bg-ink-700 text-ink-500 border-ink-600';
+          let titleColor = 'text-ink-300';
 
           if (state === 'running') {
-            rowBg = 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-200 shadow-2xs';
-            iconBoxBg = 'bg-amber-100 text-amber-800 border-amber-300';
-            titleColor = 'text-amber-950 font-black';
+            rowBg = 'bg-amber-500/8 border-amber-500/35 ring-1 ring-amber-500/20';
+            iconBoxBg = 'bg-amber-500/15 text-amber-300 border-amber-500/40';
+            titleColor = 'text-amber-200 font-black';
           } else if (state === 'done') {
-            rowBg = 'bg-emerald-50/40 border-emerald-200/90';
-            iconBoxBg = 'bg-emerald-100 text-emerald-800 border-emerald-300';
-            titleColor = 'text-emerald-950 font-bold';
+            rowBg = 'bg-emerald-500/6 border-emerald-500/25';
+            iconBoxBg = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35';
+            titleColor = 'text-emerald-200 font-bold';
           }
 
           return (
@@ -229,7 +229,7 @@ export default function AgentStrip({
               <div
                 onClick={stage.onClick}
                 className={`p-2 rounded-lg border transition-all duration-200 ${rowBg} ${
-                  stage.onClick ? 'cursor-pointer hover:border-stone-400' : ''
+                  stage.onClick ? 'cursor-pointer hover:border-ink-400' : ''
                 }`}
                 title={stage.onClick ? `Click to inspect ${stage.title}` : undefined}
               >
@@ -240,9 +240,9 @@ export default function AgentStrip({
                       className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 border ${iconBoxBg}`}
                     >
                       {state === 'running' ? (
-                        <Loader2 size={12} className="animate-spin text-amber-600" />
+                        <Loader2 size={12} className="animate-spin text-amber-400" />
                       ) : state === 'done' ? (
-                        <Check size={12} className="text-emerald-700" />
+                        <Check size={12} className="text-emerald-300" />
                       ) : (
                         <Icon size={12} />
                       )}
@@ -253,11 +253,11 @@ export default function AgentStrip({
                         <span className={`text-[10px] font-mono tracking-tight ${titleColor}`}>
                           {stage.num} {stage.title}
                         </span>
-                        <span className="text-[8px] text-stone-400 font-sans hidden sm:inline">
+                        <span className="text-[8px] text-ink-500 font-sans hidden sm:inline">
                           • {stage.subtitle}
                         </span>
                       </div>
-                      <div className="text-[9px] text-stone-600 font-sans truncate mt-0.5">
+                      <div className="text-[9px] text-ink-400 font-sans truncate mt-0.5">
                         {desc}
                       </div>
                     </div>
@@ -266,16 +266,16 @@ export default function AgentStrip({
                   {/* Right: State Pill Badge */}
                   <div className="shrink-0">
                     {state === 'done' ? (
-                      <span className="bg-emerald-100 text-emerald-800 text-[8px] font-bold font-mono px-1.5 py-0.5 rounded border border-emerald-300 flex items-center gap-0.5">
-                        <Check size={8} className="text-emerald-700" />
+                      <span className="bg-emerald-500/15 text-emerald-300 text-[8px] font-bold font-mono px-1.5 py-0.5 rounded border border-emerald-500/35 flex items-center gap-0.5">
+                        <Check size={8} className="text-emerald-300" />
                         DONE
                       </span>
                     ) : state === 'running' ? (
-                      <span className="bg-amber-100 text-amber-900 text-[8px] font-bold font-mono px-1.5 py-0.5 rounded border border-amber-300 flex items-center gap-0.5 animate-pulse">
+                      <span className="bg-amber-500/15 text-amber-300 text-[8px] font-bold font-mono px-1.5 py-0.5 rounded border border-amber-500/40 flex items-center gap-0.5 animate-pulse">
                         ACTIVE
                       </span>
                     ) : (
-                      <span className="bg-stone-100 text-stone-400 text-[8px] font-bold font-mono px-1.5 py-0.5 rounded border border-stone-200">
+                      <span className="bg-ink-700 text-ink-500 text-[8px] font-bold font-mono px-1.5 py-0.5 rounded border border-ink-600">
                         IDLE
                       </span>
                     )}
@@ -285,8 +285,8 @@ export default function AgentStrip({
 
               {/* Connecting Vertical Process Arrow */}
               {idx < STAGES.length - 1 && (
-                <div className="flex items-center justify-center -my-0.5 text-stone-300 select-none">
-                  <div className={`w-0.5 h-1.5 ${state === 'done' ? 'bg-emerald-300' : 'bg-stone-200'}`} />
+                <div className="flex items-center justify-center -my-0.5 text-ink-600 select-none">
+                  <div className={`w-0.5 h-1.5 ${state === 'done' ? 'bg-emerald-500/40' : 'bg-ink-700'}`} />
                 </div>
               )}
             </React.Fragment>

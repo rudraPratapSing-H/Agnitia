@@ -211,9 +211,9 @@ export default function App() {
   // PAGE 2: SRE MISSION CONTROL SIMULATION PAGE
   // ───────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#f7f5f0] text-stone-900 flex flex-col p-3 md:p-4 gap-2.5 select-none font-sans">
+    <div className="min-h-screen bg-transparent text-ink-100 flex flex-col p-3 md:p-4 gap-2.5 select-none font-sans">
       {/* Simulation Navbar */}
-      <header className="bg-white border border-stone-200 rounded-xl px-4 py-2.5 shadow-2xs flex flex-wrap items-center justify-between gap-2 font-mono">
+      <header className="bg-ink-900/90 backdrop-blur-sm border border-ink-700 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 font-mono">
         {/* Left: Switch Architecture Arrow Button + Brand */}
         <div className="flex items-center gap-2.5">
           <button
@@ -221,25 +221,25 @@ export default function App() {
               playClickTone();
               navigateTo('selection');
             }}
-            className="p-1.5 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 hover:text-stone-950 transition-all shadow-2xs active:scale-95 cursor-pointer hover:border-stone-300"
+            className="p-1.5 rounded-lg border border-ink-600 bg-ink-800 hover:bg-ink-700 text-ink-300 hover:text-ink-50 transition-all active:scale-95 cursor-pointer"
             title="Switch Architecture"
             aria-label="Switch Architecture"
           >
             <ArrowLeft size={16} />
           </button>
 
-          <div className="w-7 h-7 rounded-lg bg-stone-900 text-white flex items-center justify-center shadow-xs">
-            <Shield size={16} />
+          <div className="w-7 h-7 rounded-lg bg-copper-500 text-ink-950 flex items-center justify-center">
+            <Shield size={16} strokeWidth={2.25} />
           </div>
           <div>
-            <h1 className="text-sm font-black tracking-tight text-stone-900 flex items-center gap-2">
+            <h1 className="text-sm font-bold tracking-tight text-ink-50 flex items-center gap-2">
               AGNITIA
-              <span className="text-[11px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+              <span className="text-[11px] font-semibold text-copper-300 bg-copper-500/10 px-2 py-0.5 rounded border border-copper-500/25">
                 SRE MISSION CONTROL
               </span>
             </h1>
-            <p className="text-[11px] text-stone-500 font-sans">
-              Topological Root Cause Analysis & Autonomous Self-Healing
+            <p className="text-[11px] text-ink-400 font-sans">
+              Topological Root Cause Analysis &amp; Autonomous Self-Healing
             </p>
           </div>
         </div>
@@ -247,15 +247,15 @@ export default function App() {
         {/* Right: Active Topology Badge + Telemetry Controls */}
         <div className="flex items-center gap-2 text-xs flex-wrap">
           {/* Active Topology Badge */}
-          <div className="bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg text-[10px] font-mono text-stone-800 font-bold flex items-center gap-1.5">
+          <div className="bg-ink-800 border border-ink-600 px-2.5 py-1 rounded-lg text-[11px] font-mono text-ink-200 font-semibold flex items-center gap-1.5">
             {activePresetId === 'amazon-scale' ? (
-              <Sparkles size={12} className="text-amber-600" />
+              <Sparkles size={12} className="text-copper-400" />
             ) : (
-              <Server size={12} className="text-stone-600" />
+              <Server size={12} className="text-ink-400" />
             )}
-            <span className="text-stone-400 font-normal">SIMULATING:</span>
+            <span className="text-ink-500 font-normal">SIMULATING:</span>
             <span>{currentPreset.name}</span>
-            <span className="text-[9px] bg-stone-200/80 px-1.5 py-0.2 rounded font-mono font-bold text-stone-700">
+            <span className="text-[10px] bg-ink-700 px-1.5 py-0.2 rounded font-mono font-semibold text-ink-300">
               {currentPreset.nodeCount} PODS
             </span>
           </div>
@@ -271,23 +271,23 @@ export default function App() {
             onClick={toggleSound}
             className={`p-1.5 rounded-lg border transition-colors flex items-center gap-1 ${
               soundMuted
-                ? 'bg-stone-100 text-stone-400 border-stone-200'
-                : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                ? 'bg-ink-800 text-ink-500 border-ink-600'
+                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
             }`}
             title={soundMuted ? 'Audio muted (M)' : 'Audio alerts enabled (M)'}
           >
             {soundMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            <span className="text-[11px] font-bold">{soundMuted ? 'MUTED' : 'AUDIO'}</span>
+            <span className="text-[11px] font-semibold">{soundMuted ? 'MUTED' : 'AUDIO'}</span>
           </button>
 
-          <div className="bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+          <div className="bg-ink-800 border border-ink-600 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full ${
-                wsConnected ? 'bg-emerald-500' : 'bg-stone-400'
+                wsConnected ? 'bg-emerald-500' : 'bg-ink-500'
               }`}
             />
-            <span className="text-stone-500 text-[11px]">TELEMETRY:</span>
-            <span className="font-bold text-[11px] text-stone-700">
+            <span className="text-ink-500 text-[11px]">TELEMETRY:</span>
+            <span className="font-semibold text-[11px] text-ink-200">
               {wsConnected ? 'LIVE WS' : 'STANDALONE'}
             </span>
           </div>
