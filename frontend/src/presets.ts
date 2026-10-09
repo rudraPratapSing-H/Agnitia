@@ -26,7 +26,7 @@ export interface ArchitecturePreset {
   initialServices: Record<string, ServiceNode>;
   serviceMeta: Record<string, PresetServiceMeta>;
   layoutPositions: Record<string, { x: number; y: number }>;
-  rawEdges: Array<{ id: string; source: string; target: string }>;
+  rawEdges: Array<{ id: string; source: string; target: string; label?: string }>;
   downstreamGraph: Record<string, string[]>;
   alertBadgeCounts: {
     db_oom: string;
@@ -147,20 +147,20 @@ export const K8S_CORE_PRESET: ArchitecturePreset = {
     }
   },
   layoutPositions: {
-    redis: { x: 80, y: 50 },
-    postgres: { x: 440, y: 50 },
-    'auth-service': { x: 80, y: 290 },
-    'payment-service': { x: 440, y: 290 },
-    'api-gateway': { x: 260, y: 530 },
-    'web-ui': { x: 260, y: 770 }
+    redis: { x: 140, y: 80 },
+    postgres: { x: 560, y: 80 },
+    'auth-service': { x: 140, y: 380 },
+    'payment-service': { x: 560, y: 380 },
+    'api-gateway': { x: 350, y: 680 },
+    'web-ui': { x: 350, y: 980 }
   },
   rawEdges: [
-    { id: 'e-redis-auth', source: 'redis', target: 'auth-service' },
-    { id: 'e-pg-auth', source: 'postgres', target: 'auth-service' },
-    { id: 'e-pg-pay', source: 'postgres', target: 'payment-service' },
-    { id: 'e-auth-gw', source: 'auth-service', target: 'api-gateway' },
-    { id: 'e-pay-gw', source: 'payment-service', target: 'api-gateway' },
-    { id: 'e-gw-web', source: 'api-gateway', target: 'web-ui' }
+    { id: 'e-redis-auth', source: 'redis', target: 'auth-service', label: 'TCP :6379' },
+    { id: 'e-pg-auth', source: 'postgres', target: 'auth-service', label: 'TCP :5432' },
+    { id: 'e-pg-pay', source: 'postgres', target: 'payment-service', label: 'TCP :5432' },
+    { id: 'e-auth-gw', source: 'auth-service', target: 'api-gateway', label: 'gRPC /auth' },
+    { id: 'e-pay-gw', source: 'payment-service', target: 'api-gateway', label: 'HTTP :8080' },
+    { id: 'e-gw-web', source: 'api-gateway', target: 'web-ui', label: 'HTTPS :443' }
   ],
   downstreamGraph: {
     postgres: ['auth-service', 'payment-service'],
@@ -490,77 +490,77 @@ export const AMAZON_SCALE_PRESET: ArchitecturePreset = {
     }
   },
   layoutPositions: {
-    // Tier 1: Data Persistence (y: 50)
-    'aurora-orders-db': { x: 50, y: 50 },
-    'dynamodb-cart': { x: 330, y: 50 },
-    'redis-cache': { x: 610, y: 50 },
-    'opensearch-cluster': { x: 890, y: 50 },
-    'warehouse-db': { x: 1170, y: 50 },
+    // ── Tier 1: Data Persistence (y: 80) ───────────────────────────────────
+    'aurora-orders-db': { x: 60, y: 80 },
+    'dynamodb-cart': { x: 460, y: 80 },
+    'redis-cache': { x: 860, y: 80 },
+    'opensearch-cluster': { x: 1260, y: 80 },
+    'warehouse-db': { x: 1660, y: 80 },
 
-    // Tier 2: Direct DB Consumers (y: 280)
-    'payment-service': { x: 50, y: 280 },
-    'cart-service': { x: 330, y: 280 },
-    'product-catalog': { x: 610, y: 280 },
-    'search-service': { x: 890, y: 280 },
-    'inventory-service': { x: 1170, y: 280 },
+    // ── Tier 2: Core Domain Services (y: 400) ──────────────────────────────
+    'payment-service': { x: 60, y: 400 },
+    'product-catalog': { x: 460, y: 400 },
+    'auth-service': { x: 860, y: 400 },
+    'search-service': { x: 1260, y: 400 },
+    'inventory-service': { x: 1660, y: 400 },
 
-    // Tier 3: Domain Orchestration & Secondary Services (y: 510)
-    'order-service': { x: 50, y: 510 },
-    'auth-service': { x: 330, y: 510 },
-    'recommendation-engine': { x: 610, y: 510 },
-    'sqs-event-bus': { x: 890, y: 510 },
-    'notification-service': { x: 1170, y: 510 },
+    // ── Tier 3: Domain Orchestration & Aggregation (y: 720) ────────────────
+    'order-service': { x: 260, y: 720 },
+    'cart-service': { x: 660, y: 720 },
+    'recommendation-engine': { x: 1060, y: 720 },
 
-    // Tier 4: Fulfillment & Gateway Hub (y: 740)
-    'api-gateway': { x: 330, y: 740 },
-    'shipping-service': { x: 890, y: 740 },
+    // ── Tier 4: Async Messaging & API Gateway (y: 1040) ────────────────────
+    'sqs-event-bus': { x: 160, y: 1040 },
+    'api-gateway': { x: 660, y: 1040 },
 
-    // Tier 5: Frontends & Client Aggregation (y: 970)
-    'web-storefront': { x: 190, y: 970 },
-    'mobile-bff': { x: 470, y: 970 },
+    // ── Tier 5: Logistics & Frontends (y: 1360) ───────────────────────────
+    'shipping-service': { x: 60, y: 1360 },
+    'notification-service': { x: 360, y: 1360 },
+    'web-storefront': { x: 760, y: 1360 },
+    'mobile-bff': { x: 1160, y: 1360 },
 
-    // Tier 6: Edge CDN & Ingress (y: 1200)
-    'cloud-front': { x: 330, y: 1200 }
+    // ── Tier 6: Edge CDN & WAF (y: 1680) ──────────────────────────────────
+    'cloud-front': { x: 960, y: 1680 }
   },
   rawEdges: [
     // Data Tier -> Microservices
-    { id: 'e-aurora-pay', source: 'aurora-orders-db', target: 'payment-service' },
-    { id: 'e-aurora-order', source: 'aurora-orders-db', target: 'order-service' },
-    { id: 'e-dynamo-cart', source: 'dynamodb-cart', target: 'cart-service' },
-    { id: 'e-redis-catalog', source: 'redis-cache', target: 'product-catalog' },
-    { id: 'e-redis-auth', source: 'redis-cache', target: 'auth-service' },
-    { id: 'e-redis-recs', source: 'redis-cache', target: 'recommendation-engine' },
-    { id: 'e-opensearch-search', source: 'opensearch-cluster', target: 'search-service' },
-    { id: 'e-warehouse-inv', source: 'warehouse-db', target: 'inventory-service' },
+    { id: 'e-aurora-pay', source: 'aurora-orders-db', target: 'payment-service', label: 'pg:5432' },
+    { id: 'e-aurora-order', source: 'aurora-orders-db', target: 'order-service', label: 'pg:5432 (Saga)' },
+    { id: 'e-dynamo-cart', source: 'dynamodb-cart', target: 'cart-service', label: 'DynamoDB API' },
+    { id: 'e-redis-catalog', source: 'redis-cache', target: 'product-catalog', label: 'TCP :6379' },
+    { id: 'e-redis-auth', source: 'redis-cache', target: 'auth-service', label: 'TCP :6379' },
+    { id: 'e-redis-recs', source: 'redis-cache', target: 'recommendation-engine', label: 'TCP :6379' },
+    { id: 'e-opensearch-search', source: 'opensearch-cluster', target: 'search-service', label: 'REST :9200' },
+    { id: 'e-warehouse-inv', source: 'warehouse-db', target: 'inventory-service', label: 'MySQL :3306' },
 
     // Microservices Cross-Dependencies
-    { id: 'e-pay-order', source: 'payment-service', target: 'order-service' },
-    { id: 'e-inv-order', source: 'inventory-service', target: 'order-service' },
-    { id: 'e-catalog-cart', source: 'product-catalog', target: 'cart-service' },
-    { id: 'e-order-sqs', source: 'order-service', target: 'sqs-event-bus' },
+    { id: 'e-pay-order', source: 'payment-service', target: 'order-service', label: '1-Click API' },
+    { id: 'e-inv-order', source: 'inventory-service', target: 'order-service', label: 'Stock Lock' },
+    { id: 'e-catalog-cart', source: 'product-catalog', target: 'cart-service', label: 'SKU Pricing' },
+    { id: 'e-order-sqs', source: 'order-service', target: 'sqs-event-bus', label: 'SQS Producer' },
 
     // Async Event Bus Consumers
-    { id: 'e-sqs-ship', source: 'sqs-event-bus', target: 'shipping-service' },
-    { id: 'e-sqs-notif', source: 'sqs-event-bus', target: 'notification-service' },
+    { id: 'e-sqs-ship', source: 'sqs-event-bus', target: 'shipping-service', label: 'Dispatch Queue' },
+    { id: 'e-sqs-notif', source: 'sqs-event-bus', target: 'notification-service', label: 'SES / SNS Push' },
 
     // Ingress to API Gateway
-    { id: 'e-order-gw', source: 'order-service', target: 'api-gateway' },
-    { id: 'e-cart-gw', source: 'cart-service', target: 'api-gateway' },
-    { id: 'e-catalog-gw', source: 'product-catalog', target: 'api-gateway' },
-    { id: 'e-auth-gw', source: 'auth-service', target: 'api-gateway' },
+    { id: 'e-order-gw', source: 'order-service', target: 'api-gateway', label: 'HTTP /v2/orders' },
+    { id: 'e-cart-gw', source: 'cart-service', target: 'api-gateway', label: 'HTTP /v2/cart' },
+    { id: 'e-catalog-gw', source: 'product-catalog', target: 'api-gateway', label: 'HTTP /v2/items' },
+    { id: 'e-auth-gw', source: 'auth-service', target: 'api-gateway', label: 'OAuth2 /auth' },
 
     // Direct search & recs to frontends
-    { id: 'e-search-web', source: 'search-service', target: 'web-storefront' },
-    { id: 'e-search-mob', source: 'search-service', target: 'mobile-bff' },
-    { id: 'e-recs-web', source: 'recommendation-engine', target: 'web-storefront' },
+    { id: 'e-search-web', source: 'search-service', target: 'web-storefront', label: 'Search API' },
+    { id: 'e-search-mob', source: 'search-service', target: 'mobile-bff', label: 'Search API' },
+    { id: 'e-recs-web', source: 'recommendation-engine', target: 'web-storefront', label: 'Recs AI' },
 
     // Gateway to Frontends
-    { id: 'e-gw-web', source: 'api-gateway', target: 'web-storefront' },
-    { id: 'e-gw-mob', source: 'api-gateway', target: 'mobile-bff' },
+    { id: 'e-gw-web', source: 'api-gateway', target: 'web-storefront', label: 'HTTPS Proxy' },
+    { id: 'e-gw-mob', source: 'api-gateway', target: 'mobile-bff', label: 'GraphQL API' },
 
     // Frontends to CloudFront Edge
-    { id: 'e-web-cf', source: 'web-storefront', target: 'cloud-front' },
-    { id: 'e-mob-cf', source: 'mobile-bff', target: 'cloud-front' }
+    { id: 'e-web-cf', source: 'web-storefront', target: 'cloud-front', label: 'Origin HTTPS' },
+    { id: 'e-mob-cf', source: 'mobile-bff', target: 'cloud-front', label: 'Origin HTTPS' }
   ],
   downstreamGraph: {
     'aurora-orders-db': ['payment-service', 'order-service'],

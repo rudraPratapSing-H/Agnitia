@@ -77,11 +77,14 @@ export function playScenario(scenarioId: string) {
   resetStore();
   currentActiveScenario = scenarioId;
 
-  // Run the immediate local simulation so UI responds instantly
+  // Run the immediate local simulation so UI responds instantly at 60ms
   runLocalSimulation(scenarioId);
 
-  // Notify live backend in parallel
-  fetch(`http://localhost:8000/api/chaos/${scenarioId}`, { method: 'POST' }).catch(() => {});
+  // Notify live backend in parallel only when testing K8s core
+  const isK8s = getState().activePresetId === 'k8s-core';
+  if (isK8s) {
+    fetch(`http://localhost:8000/api/chaos/${scenarioId}`, { method: 'POST' }).catch(() => {});
+  }
 }
 
 export function resetAll() {
@@ -109,7 +112,7 @@ function runLocalSimulation(scenarioId: string) {
     }
   } else {
     if (scenarioId === 'db_oom') {
-      eventsList = dbOomMockData.events;
+      eventsList = getK8sDbOomMockEvents();
     } else if (scenarioId === 'bad_config') {
       eventsList = getK8sBadConfigMockEvents();
     } else if (scenarioId === 'cpu_spike') {
@@ -350,18 +353,91 @@ function executeK8sSlowLeakHeal() {
   });
 }
 
+function getK8sDbOomMockEvents() {
+  return [
+    // T = 60ms: ROOT FAILURE EXPLODES INSTANTLY -> Pod grows red, alerts immediately fire
+    { delay: 60, type: 'service_update', payload: { id: 'postgres', status: 'root_cause', metrics: { mem_mb: 64, mem_limit_mb: 64, cpu_pct: 45, restarts: 1 } } },
+    { delay: 80, type: 'alert', payload: { id: 'a-001', service: 'postgres', severity: 'critical', message: 'Pod postgres-0 OOMKilled: container exceeded 64Mi limit (ExitCode 137)', ts: '03:14:07.102' } },
+    { delay: 100, type: 'agent_step', payload: { agent: 'triage', text: 'CRITICAL INGEST: postgres-0 OOMKilled (ExitCode 137). Outgoing laser blast wave initiated...', status: 'running' } },
+
+    // Tier 2 Cascade (T = 1600ms): auth-service & payment-service fail as blast wave reaches them
+    { delay: 1600, type: 'service_update', payload: { id: 'auth-service', status: 'impacted', metrics: { mem_mb: 42, mem_limit_mb: 128, cpu_pct: 8, restarts: 0 } } },
+    { delay: 1650, type: 'service_update', payload: { id: 'payment-service', status: 'impacted', metrics: { mem_mb: 78, mem_limit_mb: 256, cpu_pct: 12, restarts: 0 } } },
+    { delay: 1750, type: 'alert', payload: { id: 'a-002', service: 'auth-service', severity: 'critical', message: 'PG_CONN_TIMEOUT: dial tcp 10.96.0.4:5432 i/o timeout', ts: '03:14:08.800' } },
+    { delay: 1850, type: 'alert', payload: { id: 'a-012', service: 'payment-service', severity: 'critical', message: 'Transaction ledger write failed: database connection closed', ts: '03:14:08.850' } },
+    { delay: 1950, type: 'alert', payload: { id: 'a-005', service: 'auth-service', severity: 'critical', message: 'Circuit breaker OPEN for upstream postgres:5432', ts: '03:14:08.900' } },
+
+    // Tier 3 Cascade (T = 3200ms): api-gateway fails as blast wave propagates downstream
+    { delay: 3200, type: 'service_update', payload: { id: 'api-gateway', status: 'impacted', metrics: { mem_mb: 110, mem_limit_mb: 256, cpu_pct: 34, restarts: 0 } } },
+    { delay: 3300, type: 'alert', payload: { id: 'a-027', service: 'api-gateway', severity: 'critical', message: '502 Bad Gateway: upstream auth-service returned 503', ts: '03:14:10.500' } },
+    { delay: 3400, type: 'alert', payload: { id: 'a-028', service: 'api-gateway', severity: 'critical', message: '504 Gateway Timeout: payment-service took > 5000ms', ts: '03:14:10.550' } },
+    { delay: 3500, type: 'alert', payload: { id: 'a-033', service: 'api-gateway', severity: 'critical', message: 'Ingress HTTP 5xx error rate exceeded 5% threshold (currently 82%)', ts: '03:14:10.600' } },
+
+    // Tier 4 Cascade (T = 4800ms): web-ui storefront degrades
+    { delay: 4800, type: 'service_update', payload: { id: 'web-ui', status: 'impacted', metrics: { mem_mb: 65, mem_limit_mb: 128, cpu_pct: 18, restarts: 0 } } },
+    { delay: 4900, type: 'alert', payload: { id: 'a-045', service: 'web-ui', severity: 'critical', message: 'Frontend SSR render failed: Auth endpoint returned 502', ts: '03:14:12.200' } },
+    { delay: 5000, type: 'alert', payload: { id: 'a-046', service: 'web-ui', severity: 'critical', message: 'Client telemetry: Checkout modal throwing Uncaught Error', ts: '03:14:12.250' } },
+
+    // AI Agents correlation & diagnosis
+    { delay: 6000, type: 'agent_step', payload: { agent: 'triage', text: 'Topological correlation applied: 56 alerts collapsed into 1 root incident (postgres-0).', status: 'done' } },
+    { delay: 7000, type: 'agent_step', payload: { agent: 'diagnose', text: 'Hard evidence identified: postgres-0 ExitCode 137, Memory 64MiB/64MiB, log: FATAL out of memory.', status: 'done' } },
+    { delay: 8000, type: 'agent_step', payload: { agent: 'plan', text: 'Topological sequential recovery playbook synthesized. High-risk patch requires Human-in-the-Loop approval.', status: 'done' } },
+    {
+      delay: 8600,
+      type: 'incident_update',
+      payload: {
+        id: 'INC-104',
+        status: 'awaiting_approval',
+        scenario: 'db_oom',
+        root_service: 'postgres',
+        impacted_services: ['auth-service', 'payment-service', 'api-gateway', 'web-ui'],
+        raw_alert_count: 56,
+        started_at: '2026-10-09T03:14:07Z',
+        resolved_at: null,
+        rca: {
+          root_cause: 'PostgreSQL terminated with exit code 137 (OOMKilled) after saturating its 64Mi container limit.',
+          category: 'OOMKilled',
+          confidence: 0.97,
+          evidence: [
+            { type: 'k8s_event', source: 'postgres-0', text: 'Reason: OOMKilled, Exit Code: 137', verified: true },
+            { type: 'log', source: 'postgres-0', line: 42, text: 'FATAL: out of memory allocating 4194304 bytes buffer', verified: true },
+            { type: 'metric', source: 'postgres-0', text: 'container_memory_working_set_bytes reached 63.8Mi of 64Mi limit', verified: true }
+          ]
+        },
+        playbook: {
+          diff: 'resources.limits.memory: 64Mi -> 256Mi\nresources.requests.memory: 32Mi -> 128Mi',
+          steps: [
+            { order: 1, service: 'postgres', action: 'patch_memory_limit', params: { from: '64Mi', to: '256Mi' }, risk: 'high', requires_approval: true, verify: 'port 5432 accepting connections' },
+            { order: 2, service: 'postgres', action: 'wait_for_ready', params: { timeout_s: 30 }, risk: 'low', requires_approval: false, verify: 'readiness probe 200 OK' },
+            { order: 3, service: 'auth-service', action: 'rollout_restart', risk: 'low', requires_approval: false, verify: 'reconnects to postgres' },
+            { order: 4, service: 'payment-service', action: 'rollout_restart', risk: 'low', requires_approval: false, verify: 'payment queue draining' },
+            { order: 5, service: 'api-gateway', action: 'verify_health', risk: 'low', requires_approval: false, verify: 'error rate 0%' }
+          ]
+        }
+      }
+    }
+  ];
+}
+
 function getK8sBadConfigMockEvents() {
   return [
-    { delay: 300, type: 'agent_step', payload: { agent: 'triage', text: 'CrashLoopBackOff detected on payment-service...', status: 'running' } },
-    { delay: 600, type: 'service_update', payload: { id: 'payment-service', status: 'root_cause', metrics: { mem_mb: 22, mem_limit_mb: 256, cpu_pct: 2, restarts: 5 } } },
-    { delay: 800, type: 'service_update', payload: { id: 'api-gateway', status: 'impacted', metrics: { mem_mb: 95, mem_limit_mb: 256, cpu_pct: 28, restarts: 0 } } },
-    { delay: 900, type: 'service_update', payload: { id: 'web-ui', status: 'impacted', metrics: { mem_mb: 60, mem_limit_mb: 128, cpu_pct: 19, restarts: 0 } } },
-    { delay: 1000, type: 'alert', payload: { id: 'a-bc-1', service: 'payment-service', severity: 'critical', message: 'Fatal panic: environment variable STRIPE_API_SECRET missing in revision #24', ts: '03:18:01' } },
-    { delay: 1200, type: 'alert', payload: { id: 'a-bc-2', service: 'api-gateway', severity: 'critical', message: '503 Service Unavailable: upstream payment-service unhealthy', ts: '03:18:02' } },
-    { delay: 1400, type: 'agent_step', payload: { agent: 'diagnose', text: 'Extracted crash log: panic: missing STRIPE_API_SECRET during init()', status: 'done' } },
-    { delay: 1800, type: 'agent_step', payload: { agent: 'plan', text: 'Proposing 1-click rollback: kubectl rollout undo deployment/payment-service', status: 'done' } },
+    // T = 60ms: ROOT FAILURE EXPLODES INSTANTLY -> payment-service enters CrashLoopBackOff
+    { delay: 60, type: 'service_update', payload: { id: 'payment-service', status: 'root_cause', metrics: { mem_mb: 22, mem_limit_mb: 256, cpu_pct: 2, restarts: 5 } } },
+    { delay: 80, type: 'alert', payload: { id: 'a-bc-1', service: 'payment-service', severity: 'critical', message: 'Fatal panic: environment variable STRIPE_API_SECRET missing in revision #24', ts: '03:18:01' } },
+    { delay: 100, type: 'agent_step', payload: { agent: 'triage', text: 'CrashLoopBackOff detected on payment-service revision #24. Outgoing laser blast wave initiated...', status: 'running' } },
+
+    // Tier 2 Cascade (T = 1600ms): api-gateway fails as upstream payment is dead
+    { delay: 1600, type: 'service_update', payload: { id: 'api-gateway', status: 'impacted', metrics: { mem_mb: 95, mem_limit_mb: 256, cpu_pct: 28, restarts: 0 } } },
+    { delay: 1700, type: 'alert', payload: { id: 'a-bc-2', service: 'api-gateway', severity: 'critical', message: '503 Service Unavailable: upstream payment-service unhealthy', ts: '03:18:02' } },
+
+    // Tier 3 Cascade (T = 3200ms): web-ui fails
+    { delay: 3200, type: 'service_update', payload: { id: 'web-ui', status: 'impacted', metrics: { mem_mb: 60, mem_limit_mb: 128, cpu_pct: 19, restarts: 0 } } },
+    { delay: 3300, type: 'alert', payload: { id: 'a-bc-3', service: 'web-ui', severity: 'critical', message: 'Checkout button disabled: payment backend unreachable', ts: '03:18:04' } },
+
+    { delay: 4400, type: 'agent_step', payload: { agent: 'diagnose', text: 'Extracted crash log: panic: missing STRIPE_API_SECRET during init()', status: 'done' } },
+    { delay: 5600, type: 'agent_step', payload: { agent: 'plan', text: 'Proposing 1-click rollback: kubectl rollout undo deployment/payment-service', status: 'done' } },
     {
-      delay: 2200,
+      delay: 6400,
       type: 'incident_update',
       payload: {
         id: 'INC-105',
@@ -394,15 +470,19 @@ function getK8sBadConfigMockEvents() {
 
 function getK8sCpuSpikeMockEvents() {
   return [
-    { delay: 300, type: 'agent_step', payload: { agent: 'triage', text: 'CPU throttling alarm detected on auth-service (100% saturation)...', status: 'running' } },
-    { delay: 600, type: 'service_update', payload: { id: 'auth-service', status: 'root_cause', metrics: { mem_mb: 48, mem_limit_mb: 128, cpu_pct: 99, restarts: 0 } } },
-    { delay: 800, type: 'alert', payload: { id: 'a-cpu-1', service: 'auth-service', severity: 'warning', message: 'CPU throttle ratio > 85% for 60s window', ts: '03:22:10' } },
-    { delay: 1000, type: 'service_update', payload: { id: 'api-gateway', status: 'impacted', metrics: { mem_mb: 95, mem_limit_mb: 256, cpu_pct: 42, restarts: 0 } } },
-    { delay: 1200, type: 'alert', payload: { id: 'a-cpu-2', service: 'api-gateway', severity: 'warning', message: 'P99 Latency degradation: /v1/auth taking 3200ms', ts: '03:22:14' } },
-    { delay: 1500, type: 'agent_step', payload: { agent: 'diagnose', text: 'RCA verified: Cryptographic worker pool CPU starvation. Topology check passed.', status: 'done' } },
-    { delay: 1800, type: 'agent_step', payload: { agent: 'plan', text: 'Autoscaling recommendation: Scale auth-service replicas from 1 to 3', status: 'done' } },
+    // T = 60ms: ROOT FAILURE EXPLODES INSTANTLY -> auth-service hits 100% CPU
+    { delay: 60, type: 'service_update', payload: { id: 'auth-service', status: 'root_cause', metrics: { mem_mb: 48, mem_limit_mb: 128, cpu_pct: 100, restarts: 0 } } },
+    { delay: 80, type: 'alert', payload: { id: 'a-cpu-1', service: 'auth-service', severity: 'warning', message: 'CPU throttle ratio > 85% for 60s window (100% saturation)', ts: '03:22:10' } },
+    { delay: 100, type: 'agent_step', payload: { agent: 'triage', text: 'CPU throttling alarm detected on auth-service (100% saturation). Laser blast wave initiated...', status: 'running' } },
+
+    // Tier 2 Cascade (T = 1600ms): api-gateway degrades
+    { delay: 1600, type: 'service_update', payload: { id: 'api-gateway', status: 'impacted', metrics: { mem_mb: 95, mem_limit_mb: 256, cpu_pct: 42, restarts: 0 } } },
+    { delay: 1700, type: 'alert', payload: { id: 'a-cpu-2', service: 'api-gateway', severity: 'warning', message: 'P99 Latency degradation: /v1/auth taking 3200ms', ts: '03:22:14' } },
+
+    { delay: 3000, type: 'agent_step', payload: { agent: 'diagnose', text: 'RCA verified: Cryptographic worker pool CPU starvation. Topology check passed.', status: 'done' } },
+    { delay: 4200, type: 'agent_step', payload: { agent: 'plan', text: 'Autoscaling recommendation: Scale auth-service replicas from 1 to 3', status: 'done' } },
     {
-      delay: 2200,
+      delay: 5000,
       type: 'incident_update',
       payload: {
         id: 'INC-106',
@@ -487,49 +567,49 @@ function getK8sSlowLeakMockEvents() {
 // ─────────────────────────────────────────────────────────────────────────────
 function getAmazonDbOomMockEvents() {
   const events: any[] = [
-    { delay: 200, type: 'agent_step', payload: { agent: 'triage', text: 'AWS CloudWatch & EKS telemetry stream ingested. Processing 84 raw cluster alerts...', status: 'running' } },
-    { delay: 400, type: 'metric_point', payload: { service: 'aurora-orders-db', mem_mb: 3600, mem_limit_mb: 4096, cpu_pct: 35 } },
-    { delay: 700, type: 'metric_point', payload: { service: 'aurora-orders-db', mem_mb: 4088, mem_limit_mb: 4096, cpu_pct: 88 } },
-    { delay: 1000, type: 'service_update', payload: { id: 'aurora-orders-db', status: 'root_cause', metrics: { mem_mb: 4096, mem_limit_mb: 4096, cpu_pct: 95, restarts: 1 } } },
-    { delay: 1100, type: 'alert', payload: { id: 'amz-01', service: 'aurora-orders-db', severity: 'critical', message: 'RDS OOMKilled: shared_buffers saturated 4096Mi ceiling (ExitCode 137)', ts: '03:14:07.010' } },
+    // T = 60ms: ROOT FAILURE EXPLODES INSTANTLY -> aurora-orders-db OOMKilled, Pod grows red, alerts immediately fire
+    { delay: 60, type: 'service_update', payload: { id: 'aurora-orders-db', status: 'root_cause', metrics: { mem_mb: 4096, mem_limit_mb: 4096, cpu_pct: 95, restarts: 1 } } },
+    { delay: 80, type: 'alert', payload: { id: 'amz-01', service: 'aurora-orders-db', severity: 'critical', message: 'RDS OOMKilled: shared_buffers saturated 4096Mi ceiling (ExitCode 137)', ts: '03:14:07.010' } },
+    { delay: 100, type: 'agent_step', payload: { agent: 'triage', text: 'AWS CloudWatch Alert Ingested: aurora-orders-db RDS OOMKilled (ExitCode 137). Outgoing crimson blast wave initiated...', status: 'running' } },
 
-    // Cascade 1: Direct DB dependents
-    { delay: 1200, type: 'service_update', payload: { id: 'payment-service', status: 'impacted', metrics: { mem_mb: 410, mem_limit_mb: 1024, cpu_pct: 32, restarts: 0 } } },
-    { delay: 1250, type: 'alert', payload: { id: 'amz-02', service: 'payment-service', severity: 'critical', message: 'Aurora PostgreSQL connection pool exhausted (0/150 connections available)', ts: '03:14:07.080' } },
-    { delay: 1300, type: 'alert', payload: { id: 'amz-03', service: 'payment-service', severity: 'critical', message: 'Amazon Pay 1-Click checkout write failure: connection timeout to aurora-orders-db', ts: '03:14:07.120' } },
+    // Tier 2 Cascade (T = 1600ms): payment-service & order-service fail -> Outgoing arrows to cart & SQS turn Glowing Amber
+    { delay: 1600, type: 'service_update', payload: { id: 'payment-service', status: 'impacted', metrics: { mem_mb: 410, mem_limit_mb: 1024, cpu_pct: 32, restarts: 0 } } },
+    { delay: 1650, type: 'service_update', payload: { id: 'order-service', status: 'impacted', metrics: { mem_mb: 650, mem_limit_mb: 1024, cpu_pct: 48, restarts: 0 } } },
+    { delay: 1750, type: 'alert', payload: { id: 'amz-02', service: 'payment-service', severity: 'critical', message: 'Aurora PostgreSQL connection pool exhausted (0/150 connections available)', ts: '03:14:08.800' } },
+    { delay: 1850, type: 'alert', payload: { id: 'amz-03', service: 'payment-service', severity: 'critical', message: 'Amazon Pay 1-Click checkout write failure: connection timeout to aurora-orders-db', ts: '03:14:08.850' } },
+    { delay: 1950, type: 'alert', payload: { id: 'amz-04', service: 'order-service', severity: 'critical', message: 'Saga order orchestrator failed: transaction ledger uncommitted', ts: '03:14:08.900' } },
+    { delay: 2050, type: 'alert', payload: { id: 'amz-05', service: 'order-service', severity: 'critical', message: 'Circuit breaker OPEN for upstream aurora-orders-db.orders_ledger', ts: '03:14:08.950' } },
 
-    { delay: 1350, type: 'service_update', payload: { id: 'order-service', status: 'impacted', metrics: { mem_mb: 650, mem_limit_mb: 1024, cpu_pct: 48, restarts: 0 } } },
-    { delay: 1400, type: 'alert', payload: { id: 'amz-04', service: 'order-service', severity: 'critical', message: 'Saga order orchestrator failed: transaction ledger uncommitted', ts: '03:14:07.180' } },
-    { delay: 1450, type: 'alert', payload: { id: 'amz-05', service: 'order-service', severity: 'critical', message: 'Circuit breaker OPEN for upstream aurora-orders-db.orders_ledger', ts: '03:14:07.240' } },
+    // Tier 3 Cascade (T = 3200ms): cart-service & sqs-event-bus fail -> Outgoing arrows to api-gateway & logistics turn Glowing Amber
+    { delay: 3200, type: 'service_update', payload: { id: 'cart-service', status: 'impacted', metrics: { mem_mb: 390, mem_limit_mb: 512, cpu_pct: 38, restarts: 0 } } },
+    { delay: 3250, type: 'service_update', payload: { id: 'sqs-event-bus', status: 'impacted', metrics: { mem_mb: 260, mem_limit_mb: 512, cpu_pct: 22, restarts: 0 } } },
+    { delay: 3350, type: 'alert', payload: { id: 'amz-06', service: 'cart-service', severity: 'critical', message: 'Checkout cart reservation failed: Order saga timeout on /v1/checkout/lock', ts: '03:14:10.500' } },
+    { delay: 3450, type: 'alert', payload: { id: 'amz-07', service: 'sqs-event-bus', severity: 'warning', message: 'Dead Letter Queue (DLQ) alert: order_dispatch_queue received 340 dropouts', ts: '03:14:10.550' } },
 
-    // Cascade 2: Dependent Cart & Event Stream
-    { delay: 1550, type: 'service_update', payload: { id: 'cart-service', status: 'impacted', metrics: { mem_mb: 390, mem_limit_mb: 512, cpu_pct: 38, restarts: 0 } } },
-    { delay: 1600, type: 'alert', payload: { id: 'amz-06', service: 'cart-service', severity: 'critical', message: 'Checkout cart reservation failed: Order saga timeout on /v1/checkout/lock', ts: '03:14:07.310' } },
+    // Tier 4 Cascade (T = 4800ms): api-gateway, shipping-service, notification-service fail -> Outgoing arrows to frontends turn Glowing Amber
+    { delay: 4800, type: 'service_update', payload: { id: 'api-gateway', status: 'impacted', metrics: { mem_mb: 790, mem_limit_mb: 1024, cpu_pct: 64, restarts: 0 } } },
+    { delay: 4850, type: 'service_update', payload: { id: 'shipping-service', status: 'impacted', metrics: { mem_mb: 240, mem_limit_mb: 512, cpu_pct: 18, restarts: 0 } } },
+    { delay: 4900, type: 'service_update', payload: { id: 'notification-service', status: 'impacted', metrics: { mem_mb: 210, mem_limit_mb: 512, cpu_pct: 14, restarts: 0 } } },
+    { delay: 5000, type: 'alert', payload: { id: 'amz-08', service: 'api-gateway', severity: 'critical', message: '504 Gateway Timeout: /api/v2/orders/checkout took > 6000ms', ts: '03:14:12.200' } },
+    { delay: 5100, type: 'alert', payload: { id: 'amz-09', service: 'api-gateway', severity: 'critical', message: 'HTTP 5xx rate exceeded 15% threshold across retail cluster (currently 86%)', ts: '03:14:12.250' } },
 
-    { delay: 1650, type: 'service_update', payload: { id: 'sqs-event-bus', status: 'impacted', metrics: { mem_mb: 260, mem_limit_mb: 512, cpu_pct: 22, restarts: 0 } } },
-    { delay: 1700, type: 'alert', payload: { id: 'amz-07', service: 'sqs-event-bus', severity: 'warning', message: 'Dead Letter Queue (DLQ) alert: order_dispatch_queue received 340 dropouts', ts: '03:14:07.380' } },
+    // Tier 5 Cascade (T = 6400ms): web-storefront & mobile-bff fail -> Outgoing arrows to CloudFront turn Glowing Amber
+    { delay: 6400, type: 'service_update', payload: { id: 'web-storefront', status: 'impacted', metrics: { mem_mb: 520, mem_limit_mb: 1024, cpu_pct: 35, restarts: 0 } } },
+    { delay: 6450, type: 'service_update', payload: { id: 'mobile-bff', status: 'impacted', metrics: { mem_mb: 440, mem_limit_mb: 1024, cpu_pct: 29, restarts: 0 } } },
+    { delay: 6550, type: 'alert', payload: { id: 'amz-10', service: 'web-storefront', severity: 'critical', message: 'Storefront checkout banner throwing 500: Unable to complete order', ts: '03:14:13.900' } },
+    { delay: 6650, type: 'alert', payload: { id: 'amz-11', service: 'mobile-bff', severity: 'critical', message: 'Amazon iOS/Android app sync error: Order submission dropped', ts: '03:14:13.950' } },
 
-    // Cascade 3: API Gateway & Edge Ingress
-    { delay: 1800, type: 'service_update', payload: { id: 'api-gateway', status: 'impacted', metrics: { mem_mb: 790, mem_limit_mb: 1024, cpu_pct: 64, restarts: 0 } } },
-    { delay: 1850, type: 'alert', payload: { id: 'amz-08', service: 'api-gateway', severity: 'critical', message: '504 Gateway Timeout: /api/v2/orders/checkout took > 6000ms', ts: '03:14:07.450' } },
-    { delay: 1900, type: 'alert', payload: { id: 'amz-09', service: 'api-gateway', severity: 'critical', message: 'HTTP 5xx rate exceeded 15% threshold across retail cluster (currently 86%)', ts: '03:14:07.500' } },
+    // Tier 6 Cascade (T = 8000ms): cloud-front fails
+    { delay: 8000, type: 'service_update', payload: { id: 'cloud-front', status: 'impacted', metrics: { mem_mb: 230, mem_limit_mb: 512, cpu_pct: 25, restarts: 0 } } },
+    { delay: 8100, type: 'alert', payload: { id: 'amz-12', service: 'cloud-front', severity: 'critical', message: 'CloudFront edge PoP error budget burned: Origin return rate 91% 5xx', ts: '03:14:15.600' } },
 
-    // Cascade 4: Frontends & CloudFront
-    { delay: 2000, type: 'service_update', payload: { id: 'web-storefront', status: 'impacted', metrics: { mem_mb: 520, mem_limit_mb: 1024, cpu_pct: 35, restarts: 0 } } },
-    { delay: 2050, type: 'alert', payload: { id: 'amz-10', service: 'web-storefront', severity: 'critical', message: 'Storefront checkout banner throwing 500: Unable to complete order', ts: '03:14:07.580' } },
-
-    { delay: 2100, type: 'service_update', payload: { id: 'mobile-bff', status: 'impacted', metrics: { mem_mb: 440, mem_limit_mb: 1024, cpu_pct: 29, restarts: 0 } } },
-    { delay: 2150, type: 'alert', payload: { id: 'amz-11', service: 'mobile-bff', severity: 'critical', message: 'Amazon iOS/Android app sync error: Order submission dropped', ts: '03:14:07.640' } },
-
-    { delay: 2200, type: 'service_update', payload: { id: 'cloud-front', status: 'impacted', metrics: { mem_mb: 230, mem_limit_mb: 512, cpu_pct: 25, restarts: 0 } } },
-    { delay: 2250, type: 'alert', payload: { id: 'amz-12', service: 'cloud-front', severity: 'critical', message: 'CloudFront edge PoP error budget burned: Origin return rate 91% 5xx', ts: '03:14:07.720' } },
-
-    { delay: 2400, type: 'agent_step', payload: { agent: 'triage', text: 'Graph topological correlation applied: 84 raw alerts collapsed into 1 root incident.', status: 'done' } },
-    { delay: 2800, type: 'agent_step', payload: { agent: 'diagnose', text: 'RCA Confirmed: aurora-orders-db breached 4096Mi cgroup ceiling. Connection pool deadlocks propagated to 8 downstream microservices.', status: 'done' } },
-    { delay: 3300, type: 'agent_step', payload: { agent: 'plan', text: 'Synthesized 6-stage AWS RDS recovery playbook (Buffer pool patch -> Probes -> Circuit breaker reset).', status: 'done' } },
+    // AI Agents correlation & diagnosis
+    { delay: 9200, type: 'agent_step', payload: { agent: 'triage', text: 'Graph topological correlation applied: 84 raw alerts collapsed into 1 root incident (aurora-orders-db).', status: 'done' } },
+    { delay: 10400, type: 'agent_step', payload: { agent: 'diagnose', text: 'RCA Confirmed: aurora-orders-db breached 4096Mi cgroup ceiling. Connection pool deadlocks propagated to 8 downstream microservices.', status: 'done' } },
+    { delay: 11400, type: 'agent_step', payload: { agent: 'plan', text: 'Synthesized 6-stage AWS RDS recovery playbook (Buffer pool patch -> Probes -> Circuit breaker reset). Awaiting SRE authorization.', status: 'done' } },
 
     {
-      delay: 3700,
+      delay: 12200,
       type: 'incident_update',
       payload: {
         id: 'INC-204',
@@ -542,6 +622,8 @@ function getAmazonDbOomMockEvents() {
           'cart-service',
           'sqs-event-bus',
           'api-gateway',
+          'shipping-service',
+          'notification-service',
           'web-storefront',
           'mobile-bff',
           'cloud-front'
@@ -572,12 +654,14 @@ function getAmazonDbOomMockEvents() {
           ]
         },
         timeline: [
-          { t_s: 0, event: 'Memory ramp detected on aurora-orders-db (3420Mi -> 4088Mi)' },
-          { t_s: 1.0, event: 'ExitCode 137: aurora-orders-db OOMKilled' },
-          { t_s: 1.8, event: 'Blast radius propagated across 8 downstream tiers (84 raw alerts)' },
-          { t_s: 2.4, event: 'Topological correlation collapsed 84 alerts -> 1 root incident' },
-          { t_s: 3.3, event: 'Zero-hallucination evidence confirmed (confidence 98%)' },
-          { t_s: 3.7, event: 'Recovery playbook generated. Awaiting SRE authorization' }
+          { t_s: 0, event: 'ExitCode 137: aurora-orders-db OOMKilled (Crimson wave triggered)' },
+          { t_s: 1.6, event: 'Blast radius propagated across Tier 2 (payment & order services degraded)' },
+          { t_s: 3.2, event: 'Blast radius propagated across Tier 3 & 4 (cart & SQS event bus degraded)' },
+          { t_s: 4.8, event: 'Blast radius propagated across Tier 4 (API Gateway & Logistics degraded)' },
+          { t_s: 6.4, event: 'Blast radius propagated across Tier 5 (Web Storefront & Mobile BFF degraded)' },
+          { t_s: 8.0, event: 'Blast radius propagated across Tier 6 (CloudFront Edge CDN error budget burned)' },
+          { t_s: 9.2, event: 'Topological correlation collapsed 84 alerts -> 1 root incident' },
+          { t_s: 11.4, event: 'Recovery playbook synthesized. Awaiting SRE authorization' }
         ]
       }
     }
@@ -589,35 +673,35 @@ function getAmazonDbOomMockEvents() {
 function executeAmazonDbOomHeal() {
   const healSteps = [
     { delay: 300, type: 'agent_step', payload: { agent: 'execute', text: 'Step 1: Expanding Aurora memory limit to 8192Mi...', status: 'running' } },
-    { delay: 700, type: 'playbook_step', payload: { order: 1, status: 'done' } },
-    { delay: 1000, type: 'service_update', payload: { id: 'aurora-orders-db', status: 'recovering', metrics: { mem_mb: 3200, mem_limit_mb: 8192, cpu_pct: 22, restarts: 0 } } },
+    { delay: 800, type: 'playbook_step', payload: { order: 1, status: 'done' } },
+    { delay: 1200, type: 'service_update', payload: { id: 'aurora-orders-db', status: 'recovering', metrics: { mem_mb: 3200, mem_limit_mb: 8192, cpu_pct: 22, restarts: 0 } } },
 
-    { delay: 1300, type: 'agent_step', payload: { agent: 'verify', text: 'Step 2: Probing Aurora PostgreSQL readiness (port 5432)...', status: 'running' } },
-    { delay: 1700, type: 'playbook_step', payload: { order: 2, status: 'done' } },
-    { delay: 1900, type: 'service_update', payload: { id: 'aurora-orders-db', status: 'healthy', metrics: { mem_mb: 3100, mem_limit_mb: 8192, cpu_pct: 16, restarts: 0 } } },
+    { delay: 1600, type: 'agent_step', payload: { agent: 'verify', text: 'Step 2: Probing Aurora PostgreSQL readiness (port 5432)...', status: 'running' } },
+    { delay: 2100, type: 'playbook_step', payload: { order: 2, status: 'done' } },
+    { delay: 2300, type: 'service_update', payload: { id: 'aurora-orders-db', status: 'healthy', metrics: { mem_mb: 3100, mem_limit_mb: 8192, cpu_pct: 16, restarts: 0 } } },
 
-    { delay: 2200, type: 'agent_step', payload: { agent: 'execute', text: 'Step 3: Rolling restart of payment-service...', status: 'running' } },
-    { delay: 2600, type: 'playbook_step', payload: { order: 3, status: 'done' } },
-    { delay: 2800, type: 'service_update', payload: { id: 'payment-service', status: 'healthy', metrics: { mem_mb: 340, mem_limit_mb: 1024, cpu_pct: 12, restarts: 0 } } },
-
-    { delay: 3000, type: 'agent_step', payload: { agent: 'execute', text: 'Step 4: Rolling restart of order-service saga...', status: 'running' } },
-    { delay: 3400, type: 'playbook_step', payload: { order: 4, status: 'done' } },
+    { delay: 2700, type: 'agent_step', payload: { agent: 'execute', text: 'Step 3: Rolling restart of payment-service & order-service...', status: 'running' } },
+    { delay: 3300, type: 'playbook_step', payload: { order: 3, status: 'done' } },
+    { delay: 3500, type: 'service_update', payload: { id: 'payment-service', status: 'healthy', metrics: { mem_mb: 340, mem_limit_mb: 1024, cpu_pct: 12, restarts: 0 } } },
     { delay: 3600, type: 'service_update', payload: { id: 'order-service', status: 'healthy', metrics: { mem_mb: 480, mem_limit_mb: 1024, cpu_pct: 18, restarts: 0 } } },
-    { delay: 3800, type: 'service_update', payload: { id: 'cart-service', status: 'healthy', metrics: { mem_mb: 320, mem_limit_mb: 512, cpu_pct: 14, restarts: 0 } } },
-    { delay: 4000, type: 'service_update', payload: { id: 'sqs-event-bus', status: 'healthy', metrics: { mem_mb: 195, mem_limit_mb: 512, cpu_pct: 7, restarts: 0 } } },
 
-    { delay: 4200, type: 'agent_step', payload: { agent: 'verify', text: 'Step 5: Resetting circuit breakers on api-gateway...', status: 'running' } },
-    { delay: 4500, type: 'playbook_step', payload: { order: 5, status: 'done' } },
-    { delay: 4700, type: 'service_update', payload: { id: 'api-gateway', status: 'healthy', metrics: { mem_mb: 610, mem_limit_mb: 1024, cpu_pct: 25, restarts: 0 } } },
+    { delay: 4200, type: 'service_update', payload: { id: 'cart-service', status: 'healthy', metrics: { mem_mb: 320, mem_limit_mb: 512, cpu_pct: 14, restarts: 0 } } },
+    { delay: 4400, type: 'service_update', payload: { id: 'sqs-event-bus', status: 'healthy', metrics: { mem_mb: 195, mem_limit_mb: 512, cpu_pct: 7, restarts: 0 } } },
 
-    { delay: 4900, type: 'playbook_step', payload: { order: 6, status: 'done' } },
-    { delay: 5100, type: 'service_update', payload: { id: 'web-storefront', status: 'healthy', metrics: { mem_mb: 410, mem_limit_mb: 1024, cpu_pct: 18, restarts: 0 } } },
-    { delay: 5300, type: 'service_update', payload: { id: 'mobile-bff', status: 'healthy', metrics: { mem_mb: 370, mem_limit_mb: 1024, cpu_pct: 15, restarts: 0 } } },
-    { delay: 5500, type: 'service_update', payload: { id: 'cloud-front', status: 'healthy', metrics: { mem_mb: 190, mem_limit_mb: 512, cpu_pct: 12, restarts: 0 } } },
+    { delay: 5000, type: 'agent_step', payload: { agent: 'verify', text: 'Step 4: Resetting circuit breakers on api-gateway & downstream logistics...', status: 'running' } },
+    { delay: 5600, type: 'playbook_step', payload: { order: 5, status: 'done' } },
+    { delay: 5800, type: 'service_update', payload: { id: 'api-gateway', status: 'healthy', metrics: { mem_mb: 610, mem_limit_mb: 1024, cpu_pct: 25, restarts: 0 } } },
+    { delay: 6000, type: 'service_update', payload: { id: 'shipping-service', status: 'healthy', metrics: { mem_mb: 210, mem_limit_mb: 512, cpu_pct: 7, restarts: 0 } } },
+    { delay: 6200, type: 'service_update', payload: { id: 'notification-service', status: 'healthy', metrics: { mem_mb: 180, mem_limit_mb: 512, cpu_pct: 6, restarts: 0 } } },
 
-    { delay: 5800, type: 'agent_step', payload: { agent: 'verify', text: 'All 20 nodes verified 200 OK. Amazon Hyperscale topology fully restored in 42s.', status: 'done' } },
+    { delay: 6800, type: 'playbook_step', payload: { order: 6, status: 'done' } },
+    { delay: 7100, type: 'service_update', payload: { id: 'web-storefront', status: 'healthy', metrics: { mem_mb: 410, mem_limit_mb: 1024, cpu_pct: 18, restarts: 0 } } },
+    { delay: 7300, type: 'service_update', payload: { id: 'mobile-bff', status: 'healthy', metrics: { mem_mb: 370, mem_limit_mb: 1024, cpu_pct: 15, restarts: 0 } } },
+    { delay: 8200, type: 'service_update', payload: { id: 'cloud-front', status: 'healthy', metrics: { mem_mb: 190, mem_limit_mb: 512, cpu_pct: 12, restarts: 0 } } },
+
+    { delay: 8800, type: 'agent_step', payload: { agent: 'verify', text: 'All 20 nodes verified 200 OK. Amazon Hyperscale topology fully restored in 42s.', status: 'done' } },
     {
-      delay: 6100,
+      delay: 9400,
       type: 'incident_update',
       payload: {
         id: 'INC-204',
@@ -655,20 +739,28 @@ function executeAmazonDbOomHeal() {
 
 function getAmazonBadConfigMockEvents() {
   return [
-    { delay: 300, type: 'agent_step', payload: { agent: 'triage', text: 'CrashLoopBackOff detected on payment-service revision #43...', status: 'running' } },
-    { delay: 600, type: 'service_update', payload: { id: 'payment-service', status: 'root_cause', metrics: { mem_mb: 110, mem_limit_mb: 1024, cpu_pct: 2, restarts: 6 } } },
-    { delay: 800, type: 'service_update', payload: { id: 'order-service', status: 'impacted', metrics: { mem_mb: 580, mem_limit_mb: 1024, cpu_pct: 35, restarts: 0 } } },
-    { delay: 1000, type: 'service_update', payload: { id: 'cart-service', status: 'impacted', metrics: { mem_mb: 360, mem_limit_mb: 512, cpu_pct: 28, restarts: 0 } } },
-    { delay: 1100, type: 'service_update', payload: { id: 'api-gateway', status: 'impacted', metrics: { mem_mb: 750, mem_limit_mb: 1024, cpu_pct: 48, restarts: 0 } } },
-    { delay: 1200, type: 'service_update', payload: { id: 'web-storefront', status: 'impacted', metrics: { mem_mb: 490, mem_limit_mb: 1024, cpu_pct: 26, restarts: 0 } } },
-    { delay: 1300, type: 'service_update', payload: { id: 'mobile-bff', status: 'impacted', metrics: { mem_mb: 420, mem_limit_mb: 1024, cpu_pct: 24, restarts: 0 } } },
-    { delay: 1400, type: 'alert', payload: { id: 'amz-bc-1', service: 'payment-service', severity: 'critical', message: 'Fatal panic: STRIPE_API_SECRET and AMAZON_PAY_KEY missing in deployment #43', ts: '03:18:01' } },
-    { delay: 1500, type: 'alert', payload: { id: 'amz-bc-2', service: 'order-service', severity: 'critical', message: 'Downstream payment-service 503: Unable to charge order #884920', ts: '03:18:03' } },
-    { delay: 1600, type: 'alert', payload: { id: 'amz-bc-3', service: 'api-gateway', severity: 'critical', message: 'Route /api/v2/checkout failing with 503 Service Unavailable', ts: '03:18:04' } },
-    { delay: 1800, type: 'agent_step', payload: { agent: 'diagnose', text: 'Crash log identified: Missing environment variable secrets in revision #43. Order saga impacted.', status: 'done' } },
-    { delay: 2200, type: 'agent_step', payload: { agent: 'plan', text: 'Generated 1-click rollback to revision #42 (payment-service:v3.2.0-stable).', status: 'done' } },
+    // T = 60ms: ROOT FAILURE EXPLODES INSTANTLY -> payment-service enters CrashLoopBackOff
+    { delay: 60, type: 'service_update', payload: { id: 'payment-service', status: 'root_cause', metrics: { mem_mb: 110, mem_limit_mb: 1024, cpu_pct: 2, restarts: 6 } } },
+    { delay: 80, type: 'alert', payload: { id: 'amz-bc-1', service: 'payment-service', severity: 'critical', message: 'Fatal panic: STRIPE_API_SECRET and AMAZON_PAY_KEY missing in deployment #43', ts: '03:18:01' } },
+    { delay: 100, type: 'agent_step', payload: { agent: 'triage', text: 'CrashLoopBackOff detected on payment-service revision #43. Outgoing crimson blast wave initiated...', status: 'running' } },
+
+    // Tier 2 Cascade (T = 1600ms): order-service & cart-service fail
+    { delay: 1600, type: 'service_update', payload: { id: 'order-service', status: 'impacted', metrics: { mem_mb: 580, mem_limit_mb: 1024, cpu_pct: 35, restarts: 0 } } },
+    { delay: 1650, type: 'service_update', payload: { id: 'cart-service', status: 'impacted', metrics: { mem_mb: 360, mem_limit_mb: 512, cpu_pct: 28, restarts: 0 } } },
+    { delay: 1750, type: 'alert', payload: { id: 'amz-bc-2', service: 'order-service', severity: 'critical', message: 'Downstream payment-service 503: Unable to charge order #884920', ts: '03:18:03' } },
+
+    // Tier 3 Cascade (T = 3200ms): api-gateway fails
+    { delay: 3200, type: 'service_update', payload: { id: 'api-gateway', status: 'impacted', metrics: { mem_mb: 750, mem_limit_mb: 1024, cpu_pct: 48, restarts: 0 } } },
+    { delay: 3300, type: 'alert', payload: { id: 'amz-bc-3', service: 'api-gateway', severity: 'critical', message: 'Route /api/v2/checkout failing with 503 Service Unavailable', ts: '03:18:04' } },
+
+    // Tier 4 Cascade (T = 4800ms): web-storefront & mobile-bff fail
+    { delay: 4800, type: 'service_update', payload: { id: 'web-storefront', status: 'impacted', metrics: { mem_mb: 490, mem_limit_mb: 1024, cpu_pct: 26, restarts: 0 } } },
+    { delay: 4850, type: 'service_update', payload: { id: 'mobile-bff', status: 'impacted', metrics: { mem_mb: 420, mem_limit_mb: 1024, cpu_pct: 24, restarts: 0 } } },
+
+    { delay: 6000, type: 'agent_step', payload: { agent: 'diagnose', text: 'Crash log identified: Missing environment variable secrets in revision #43. Order saga impacted.', status: 'done' } },
+    { delay: 7200, type: 'agent_step', payload: { agent: 'plan', text: 'Generated 1-click rollback to revision #42 (payment-service:v3.2.0-stable).', status: 'done' } },
     {
-      delay: 2600,
+      delay: 8000,
       type: 'incident_update',
       payload: {
         id: 'INC-205',
@@ -708,14 +800,14 @@ function executeAmazonBadConfigHeal() {
     { delay: 1200, type: 'agent_step', payload: { agent: 'verify', text: 'Step 2: Probing /healthz (Stripe & Amazon Pay keys loaded)...', status: 'running' } },
     { delay: 1600, type: 'playbook_step', payload: { order: 2, status: 'done' } },
     { delay: 1800, type: 'service_update', payload: { id: 'payment-service', status: 'healthy', metrics: { mem_mb: 340, mem_limit_mb: 1024, cpu_pct: 12, restarts: 0 } } },
-    { delay: 2000, type: 'service_update', payload: { id: 'order-service', status: 'healthy', metrics: { mem_mb: 480, mem_limit_mb: 1024, cpu_pct: 22, restarts: 0 } } },
-    { delay: 2200, type: 'service_update', payload: { id: 'cart-service', status: 'healthy', metrics: { mem_mb: 320, mem_limit_mb: 512, cpu_pct: 16, restarts: 0 } } },
-    { delay: 2400, type: 'service_update', payload: { id: 'api-gateway', status: 'healthy', metrics: { mem_mb: 620, mem_limit_mb: 1024, cpu_pct: 28, restarts: 0 } } },
-    { delay: 2600, type: 'service_update', payload: { id: 'web-storefront', status: 'healthy', metrics: { mem_mb: 420, mem_limit_mb: 1024, cpu_pct: 20, restarts: 0 } } },
-    { delay: 2800, type: 'service_update', payload: { id: 'mobile-bff', status: 'healthy', metrics: { mem_mb: 380, mem_limit_mb: 1024, cpu_pct: 18, restarts: 0 } } },
-    { delay: 3000, type: 'agent_step', payload: { agent: 'verify', text: 'Rollback verified 200 OK across Amazon e-commerce cluster.', status: 'done' } },
+    { delay: 2400, type: 'service_update', payload: { id: 'order-service', status: 'healthy', metrics: { mem_mb: 480, mem_limit_mb: 1024, cpu_pct: 22, restarts: 0 } } },
+    { delay: 2600, type: 'service_update', payload: { id: 'cart-service', status: 'healthy', metrics: { mem_mb: 320, mem_limit_mb: 512, cpu_pct: 16, restarts: 0 } } },
+    { delay: 3200, type: 'service_update', payload: { id: 'api-gateway', status: 'healthy', metrics: { mem_mb: 620, mem_limit_mb: 1024, cpu_pct: 28, restarts: 0 } } },
+    { delay: 3800, type: 'service_update', payload: { id: 'web-storefront', status: 'healthy', metrics: { mem_mb: 420, mem_limit_mb: 1024, cpu_pct: 20, restarts: 0 } } },
+    { delay: 4000, type: 'service_update', payload: { id: 'mobile-bff', status: 'healthy', metrics: { mem_mb: 380, mem_limit_mb: 1024, cpu_pct: 18, restarts: 0 } } },
+    { delay: 4500, type: 'agent_step', payload: { agent: 'verify', text: 'Rollback verified 200 OK across Amazon e-commerce cluster.', status: 'done' } },
     {
-      delay: 3200,
+      delay: 4900,
       type: 'incident_update',
       payload: {
         id: 'INC-205',
@@ -750,17 +842,23 @@ function executeAmazonBadConfigHeal() {
 
 function getAmazonCpuSpikeMockEvents() {
   return [
-    { delay: 300, type: 'agent_step', payload: { agent: 'triage', text: 'CPU throttle alarm triggered on Cognito / IAM auth-service (100% saturation)...', status: 'running' } },
-    { delay: 600, type: 'service_update', payload: { id: 'auth-service', status: 'root_cause', metrics: { mem_mb: 380, mem_limit_mb: 512, cpu_pct: 99, restarts: 0 } } },
-    { delay: 800, type: 'alert', payload: { id: 'amz-cpu-1', service: 'auth-service', severity: 'warning', message: 'Cryptographic token verification thread pool saturated (CPU > 98%)', ts: '03:22:10' } },
-    { delay: 1000, type: 'service_update', payload: { id: 'api-gateway', status: 'impacted', metrics: { mem_mb: 780, mem_limit_mb: 1024, cpu_pct: 54, restarts: 0 } } },
-    { delay: 1100, type: 'service_update', payload: { id: 'web-storefront', status: 'impacted', metrics: { mem_mb: 480, mem_limit_mb: 1024, cpu_pct: 32, restarts: 0 } } },
-    { delay: 1200, type: 'service_update', payload: { id: 'mobile-bff', status: 'impacted', metrics: { mem_mb: 430, mem_limit_mb: 1024, cpu_pct: 28, restarts: 0 } } },
-    { delay: 1300, type: 'alert', payload: { id: 'amz-cpu-2', service: 'api-gateway', severity: 'warning', message: 'P99 Latency degradation: /v2/auth taking 4100ms', ts: '03:22:15' } },
-    { delay: 1600, type: 'agent_step', payload: { agent: 'diagnose', text: 'Cryptographic worker starvation confirmed. Auto-scaling HPA recommended.', status: 'done' } },
-    { delay: 1900, type: 'agent_step', payload: { agent: 'plan', text: 'Autoscale recommendation: Scale auth-service replicas from 2 to 6.', status: 'done' } },
+    // T = 60ms: ROOT FAILURE EXPLODES INSTANTLY -> auth-service hits 100% CPU
+    { delay: 60, type: 'service_update', payload: { id: 'auth-service', status: 'root_cause', metrics: { mem_mb: 380, mem_limit_mb: 512, cpu_pct: 100, restarts: 0 } } },
+    { delay: 80, type: 'alert', payload: { id: 'amz-cpu-1', service: 'auth-service', severity: 'warning', message: 'Cryptographic token verification thread pool saturated (CPU > 98%)', ts: '03:22:10' } },
+    { delay: 100, type: 'agent_step', payload: { agent: 'triage', text: 'CPU throttle alarm triggered on Cognito / IAM auth-service (100% saturation). Laser blast wave initiated...', status: 'running' } },
+
+    // Tier 2 Cascade (T = 1600ms): api-gateway degrades
+    { delay: 1600, type: 'service_update', payload: { id: 'api-gateway', status: 'impacted', metrics: { mem_mb: 780, mem_limit_mb: 1024, cpu_pct: 54, restarts: 0 } } },
+    { delay: 1700, type: 'alert', payload: { id: 'amz-cpu-2', service: 'api-gateway', severity: 'warning', message: 'P99 Latency degradation: /v2/auth taking 4100ms', ts: '03:22:15' } },
+
+    // Tier 3 Cascade (T = 3200ms): web-storefront & mobile-bff degrade
+    { delay: 3200, type: 'service_update', payload: { id: 'web-storefront', status: 'impacted', metrics: { mem_mb: 480, mem_limit_mb: 1024, cpu_pct: 32, restarts: 0 } } },
+    { delay: 3250, type: 'service_update', payload: { id: 'mobile-bff', status: 'impacted', metrics: { mem_mb: 430, mem_limit_mb: 1024, cpu_pct: 28, restarts: 0 } } },
+
+    { delay: 4400, type: 'agent_step', payload: { agent: 'diagnose', text: 'Cryptographic worker starvation confirmed. Auto-scaling HPA recommended.', status: 'done' } },
+    { delay: 5600, type: 'agent_step', payload: { agent: 'plan', text: 'Autoscale recommendation: Scale auth-service replicas from 2 to 6.', status: 'done' } },
     {
-      delay: 2300,
+      delay: 6400,
       type: 'incident_update',
       payload: {
         id: 'INC-206',

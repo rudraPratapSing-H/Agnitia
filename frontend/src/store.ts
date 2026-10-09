@@ -53,15 +53,29 @@ export function applyWsEvent(event: any) {
   switch (type) {
     case 'service_update': {
       if (globalState.services[payload.id]) {
+        const currentService = globalState.services[payload.id];
+        let nextStatus = payload.status !== undefined ? payload.status : currentService.status;
+
+        // Protection: do not allow routine telemetry healthy pings to wipe out active root_cause or impacted state
+        if (
+          (currentService.status === 'root_cause' || currentService.status === 'impacted') &&
+          nextStatus === 'healthy' &&
+          (globalState.isSimulating || (globalState.incident && globalState.incident.status !== 'resolved')) &&
+          payload.status !== 'recovering'
+        ) {
+          nextStatus = currentService.status;
+        }
+
         globalState = {
           ...globalState,
           services: {
             ...globalState.services,
             [payload.id]: {
-              ...globalState.services[payload.id],
+              ...currentService,
               ...payload,
+              status: nextStatus,
               metrics: {
-                ...globalState.services[payload.id].metrics,
+                ...currentService.metrics,
                 ...(payload.metrics || {})
               }
             }
