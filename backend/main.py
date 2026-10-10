@@ -5,6 +5,7 @@ from collections import defaultdict, deque
 from datetime import datetime, timezone
 import logging
 import os
+import sys
 from pathlib import Path
 import time
 from typing import Any, Dict, Optional, Set
@@ -14,7 +15,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-load_dotenv()
+load_dotenv(override=True)
 
 from backend.bus import bus, emit
 import backend.executor as executor
@@ -84,6 +85,11 @@ def init_predictor() -> Any:
     RealPredictor = None
 
     if os.getenv("PREDICTIVE_HEAL") == "on":
+        if sys.platform == "win32":
+            try:
+                os.add_dll_directory(r"C:\Windows\System32")
+            except Exception:
+                pass
         model_path = Path(__file__).resolve().parent / "ml" / "model.joblib"
         try:
             from backend.ml.predict import Predictor as _LoadedPredictor
@@ -666,7 +672,11 @@ def ml_status():
     return {
         "enabled": os.getenv("PREDICTIVE_HEAL") == "on",
         "threshold": THRESHOLD,
-        "model_loaded": bool(RealPredictor is not None and isinstance(predictor, RealPredictor)),
+        "model_loaded": bool(
+            predictor is not None
+            and getattr(type(predictor), "__name__", "") == "Predictor"
+            and hasattr(predictor, "model")
+        ),
         "kill_switch": policy_state.kill_switch,
         "level": policy_state.level,
     }
