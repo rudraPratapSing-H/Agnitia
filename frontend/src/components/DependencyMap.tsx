@@ -79,15 +79,16 @@ function AutoZoomController({
       const centerY = pos.y + 70;
 
       const currentZoom = getZoom() || 1.0;
-      // Smoothly zoom in by exactly 20%
-      const targetZoom = Math.min(1.85, Math.max(1.15, currentZoom * 1.20));
+      // Exactly 20% zoom increase without overshooting or minimum clamp
+      const targetZoom = currentZoom * 1.20;
 
-      setCenter(centerX, centerY, { zoom: targetZoom, duration: 1000 });
+      // Slow, smooth cinematic easing transition (2000ms)
+      setCenter(centerX, centerY, { zoom: targetZoom, duration: 2000 });
     } else if (isAllHealthy && lastTargetRef.current !== null) {
-      // Incident resolved / topology healthy: glide back out to full cluster view
+      // Incident resolved / topology healthy: slowly glide back out to full cluster view
       lastTargetRef.current = null;
       if (!isInteracting) {
-        fitView({ duration: 900, padding: isFullscreen ? 0.08 : 0.14 });
+        fitView({ duration: 1800, padding: isFullscreen ? 0.08 : 0.14 });
       }
     }
   }, [
