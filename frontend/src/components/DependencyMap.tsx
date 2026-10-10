@@ -399,7 +399,7 @@ export default function DependencyMap({
         minZoom={0.2}
         maxZoom={2.4}
       >
-        <Background color="#24262b" gap={isFullscreen ? 28 : 24} size={1.2} />
+        <Background color="#cbd5e1" gap={isFullscreen ? 28 : 24} size={1.2} />
         <Controls className="!bg-ink-850 !border-ink-600 !fill-ink-300 !shadow-lg" />
       </ReactFlow>
     </div>

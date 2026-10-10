@@ -2,43 +2,71 @@
 @import "tailwindcss";
 
 /*
-  Agnitia design tokens -- a dark "operations console" palette (near-black ink,
-  warm copper accent, hairline borders) rather than a light SaaS-card theme.
-  Status hues (rose/amber/emerald/sky) are kept as-is everywhere else in the
-  app; only the neutral/surface scale lives here.
+  Agnitia design tokens -- Clean, high-clarity white/light theme.
+  Sleek operations console styling with crisp cards, subtle slate borders,
+  and vibrant status indicators.
 */
 @theme {
-  --color-ink-950: #08090b;
-  --color-ink-900: #0e1013;
-  --color-ink-850: #121418;
-  --color-ink-800: #17191e;
-  --color-ink-700: #1f2127;
-  --color-ink-600: #2a2d34;
-  --color-ink-500: #3a3d45;
-  --color-ink-400: #6b6e76;
-  --color-ink-300: #9a9ca3;
-  --color-ink-200: #c2c3c8;
-  --color-ink-100: #e4e3df;
-  --color-ink-50: #f2f1ed;
+  --color-ink-950: #f8fafc;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #ffffff;
+  --color-ink-800: #f1f5f9;
+  --color-ink-700: #e2e8f0;
+  --color-ink-600: #cbd5e1;
+  --color-ink-500: #64748b;
+  --color-ink-400: #475569;
+  --color-ink-300: #334155;
+  --color-ink-200: #1e293b;
+  --color-ink-100: #0f172a;
+  --color-ink-50: #020617;
 
-  --color-copper-600: #a96a34;
-  --color-copper-500: #c2813f;
-  --color-copper-400: #d6974f;
-  --color-copper-300: #e5b377;
+  --color-copper-600: #9a5518;
+  --color-copper-500: #b46b28;
+  --color-copper-400: #c2813f;
+  --color-copper-300: #854d19;
 
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 @layer base {
+  html {
+    font-size: 17.5px;
+  }
+
+  /* Gently scale micro badges and labels for better legibility on high-res displays */
+  .text-\[10px\] {
+    font-size: 0.72rem !important;
+  }
+  .text-\[11px\] {
+    font-size: 0.76rem !important;
+  }
+
+  /* Crisp status text contrast against light/white cards */
+  .text-emerald-300, .text-emerald-400 {
+    color: #047857 !important;
+  }
+  .text-rose-300, .text-rose-400 {
+    color: #b91c1c !important;
+  }
+  .text-amber-300, .text-amber-400 {
+    color: #b45309 !important;
+  }
+  .text-sky-300, .text-sky-400 {
+    color: #0369a1 !important;
+  }
+  .text-copper-300, .text-copper-400 {
+    color: #9a5518 !important;
+  }
+
   body {
     margin: 0;
     padding: 0;
     background-color: var(--color-ink-950);
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 138, 75, 0.06), transparent),
-      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(194, 129, 63, 0.08), transparent),
+      linear-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.035) 1px, transparent 1px);
     background-size: auto, 28px 28px, 28px 28px;
     color: var(--color-ink-100);
     font-family: var(--font-sans);
@@ -47,7 +75,7 @@
   }
 
   ::selection {
-    background-color: rgba(194, 129, 63, 0.35);
+    background-color: rgba(194, 129, 63, 0.25);
     color: var(--color-ink-50);
   }
 }
@@ -58,39 +86,39 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.04);
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.16);
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.28);
 }
 
 /* Pulsing Red Root Cause Glow & Grow Animation */
 @keyframes growRedRoot {
   0% {
     transform: scale(1.02);
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.6), 0 0 14px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5), 0 0 14px rgba(239, 68, 68, 0.25);
     border-color: #ef4444;
   }
   35% {
     transform: scale(1.10);
-    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.85), 0 0 45px rgba(239, 68, 68, 0.95);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.7), 0 0 35px rgba(239, 68, 68, 0.6);
     border-color: #dc2626;
   }
   65% {
     transform: scale(1.06);
-    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.7), 0 0 28px rgba(239, 68, 68, 0.75);
+    box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.6), 0 0 22px rgba(239, 68, 68, 0.45);
     border-color: #ef4444;
   }
   100% {
     transform: scale(1.10);
-    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.85), 0 0 45px rgba(239, 68, 68, 0.95);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.7), 0 0 35px rgba(239, 68, 68, 0.6);
     border-color: #b91c1c;
   }
 }
@@ -109,7 +137,7 @@
   }
   50% {
     transform: scale(1.03);
-    box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.6), 0 0 22px rgba(245, 158, 11, 0.5);
+    box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.35);
     border-color: #d97706;
   }
 }
@@ -137,37 +165,37 @@
 /* React Flow Handle Styling */
 .react-flow__handle {
   transition: transform 0.15s ease, background-color 0.15s ease;
-  background-color: #6b6e76 !important;
-  border: 2px solid #121418 !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  background-color: #94a3b8 !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
 .react-flow__handle:hover {
   transform: scale(1.35);
-  background-color: #e4e3df !important;
+  background-color: #0f172a !important;
 }
 
 .react-flow__controls button {
-  background-color: #121418 !important;
-  border-color: #2a2d34 !important;
-  color: #c2c3c8 !important;
-  fill: #c2c3c8 !important;
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+  fill: #334155 !important;
 }
 
 .react-flow__controls button:hover {
-  background-color: #1f2127 !important;
+  background-color: #f1f5f9 !important;
 }
 
 .react-flow__controls button svg {
-  fill: #c2c3c8 !important;
+  fill: #334155 !important;
 }
 
 .react-flow__attribution {
-  background: rgba(8, 9, 11, 0.6) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
 }
 
 .react-flow__attribution a {
-  color: #6b6e76 !important;
+  color: #94a3b8 !important;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -198,7 +226,7 @@
 .react-flow__edge.edge-root-cascade path.react-flow__edge-path {
   stroke-dasharray: 10 5 !important;
   animation: react-flow-dash-fast 0.45s linear infinite !important;
-  filter: drop-shadow(0 0 10px rgba(239, 68, 68, 1)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.8)) !important;
+  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8)) !important;
 }
 
 @keyframes react-flow-dash-fast {
@@ -214,19 +242,5 @@
 .react-flow__edge.edge-impact-cascade path.react-flow__edge-path {
   stroke-dasharray: 8 5 !important;
   animation: react-flow-dash-forward 0.75s linear infinite !important;
-  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.95)) drop-shadow(0 0 3px rgba(255, 255, 255, 0.7)) !important;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.75)) !important;
 }
-
-/* What-If Simulation Electric Cyan Beam */
-.react-flow__edge.edge-what-if path.react-flow__edge-path {
-  stroke-dasharray: 8 6 !important;
-  animation: react-flow-dash-forward 0.9s linear infinite !important;
-  filter: drop-shadow(0 0 8px rgba(2, 132, 199, 0.85)) !important;
-}
-
-/* Smooth Curved Edge Hover Effect */
-.react-flow__edge:hover path.react-flow__edge-path {
-  stroke-width: 4.5px !important;
-  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.95)) !important;
-}
-
