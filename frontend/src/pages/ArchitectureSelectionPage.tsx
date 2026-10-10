@@ -121,7 +121,7 @@ export default function ArchitectureSelectionPage({
                 type="button"
                 className="bg-copper-500 group-hover:bg-copper-400 text-ink-950 px-4 py-2 rounded-lg text-xs font-bold font-mono tracking-wider flex items-center gap-2 transition-colors"
               >
-                <span>SIMULATE THIS</span>
+                <span>ENTER CONSOLE</span>
                 <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>
@@ -187,7 +187,7 @@ export default function ArchitectureSelectionPage({
                 type="button"
                 className="bg-amber-500 hover:bg-amber-400 text-ink-950 px-4 py-2 rounded-lg text-xs font-bold font-mono tracking-wider flex items-center gap-2 transition-colors"
               >
-                <span>SIMULATE THIS</span>
+                <span>ENTER CONSOLE</span>
                 <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>
@@ -198,7 +198,7 @@ export default function ArchitectureSelectionPage({
       {/* Footer */}
       <footer className="max-w-5xl mx-auto w-full pt-4 border-t border-ink-700 flex items-center justify-between text-[11px] text-ink-500 font-mono">
         <span>OpsOracle AIOps Platform</span>
-        <span>Click an architecture to launch immediate simulation</span>
+        <span>Click an architecture to launch SRE mission control</span>
       </footer>
     </div>
   );

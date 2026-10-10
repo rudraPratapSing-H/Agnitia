@@ -24,11 +24,14 @@ import TimerDemo from './components/extras/dev/TimerDemo';
 import ReasoningDemo from './components/extras/dev/ReasoningDemo';
 import PostmortemDemo from './components/extras/dev/PostmortemDemo';
 
-type AppPage = 'selection' | 'simulation';
+type AppPage = 'selection' | 'console';
 
 function getInitialPage(): AppPage {
-  if (typeof window !== 'undefined' && window.location.pathname === '/simulation') {
-    return 'simulation';
+  if (typeof window !== 'undefined') {
+    const p = window.location.pathname.toLowerCase();
+    if (p === '/console' || p === '/dashboard' || p === '/ops' || p === '/live' || p === '/simulation') {
+      return 'console';
+    }
   }
   return 'selection';
 }
@@ -80,7 +83,7 @@ export default function App() {
   // Handle URL navigation with browser history
   const navigateTo = useCallback((page: AppPage) => {
     setCurrentPage(page);
-    const targetPath = page === 'simulation' ? '/simulation' : '/';
+    const targetPath = page === 'console' ? '/console' : '/';
     if (window.location.pathname !== targetPath) {
       window.history.pushState(null, '', targetPath);
     }
@@ -88,7 +91,12 @@ export default function App() {
 
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentPage(window.location.pathname === '/simulation' ? 'simulation' : 'selection');
+      const p = window.location.pathname.toLowerCase();
+      setCurrentPage(
+        p === '/console' || p === '/dashboard' || p === '/ops' || p === '/live' || p === '/simulation'
+          ? 'console'
+          : 'selection'
+      );
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -147,7 +155,7 @@ export default function App() {
       const targetTag = (e.target as HTMLElement)?.tagName;
       if (targetTag === 'INPUT' || targetTag === 'TEXTAREA') return;
 
-      if (currentPage === 'simulation') {
+      if (currentPage === 'console') {
         if (e.key === '1') {
           playClickTone();
           playScenario('db_oom');
@@ -216,7 +224,7 @@ export default function App() {
 
   const handleSelectArchitecture = (presetId: PresetId) => {
     setActivePreset(presetId);
-    navigateTo('simulation');
+    navigateTo('console');
   };
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -277,7 +285,7 @@ export default function App() {
             ) : (
               <Server size={12} className="text-ink-400" />
             )}
-            <span className="text-ink-500 font-normal">SIMULATING:</span>
+            <span className="text-ink-500 font-normal">CLUSTER:</span>
             <span>{currentPreset.name}</span>
             <span className="text-[10px] bg-ink-700 px-1.5 py-0.2 rounded font-mono font-semibold text-ink-300">
               {currentPreset.nodeCount} PODS
