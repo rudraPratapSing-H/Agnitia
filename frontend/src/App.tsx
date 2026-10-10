@@ -257,7 +257,7 @@ export default function App() {
           </div>
           <div>
             <h1 className="text-sm font-bold tracking-tight text-ink-50 flex items-center gap-2">
-              AGNITIA
+              OPSORACLE
               <span className="text-[11px] font-semibold text-copper-300 bg-copper-500/10 px-2 py-0.5 rounded border border-copper-500/25">
                 SRE MISSION CONTROL
               </span>

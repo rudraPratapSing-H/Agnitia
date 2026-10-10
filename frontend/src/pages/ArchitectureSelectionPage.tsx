@@ -29,7 +29,7 @@ export default function ArchitectureSelectionPage({
           </div>
           <div>
             <span className="text-sm font-black tracking-tight text-ink-50 flex items-center gap-2">
-              AGNITIA
+              OPSORACLE
               <span className="text-[10px] font-bold text-ink-300 bg-ink-800 px-2 py-0.5 rounded border border-ink-600">
                 SRE CONTROL PLANE
               </span>
@@ -197,7 +197,7 @@ export default function ArchitectureSelectionPage({
 
       {/* Footer */}
       <footer className="max-w-5xl mx-auto w-full pt-4 border-t border-ink-700 flex items-center justify-between text-[11px] text-ink-500 font-mono">
-        <span>Agnitia AIOps Platform</span>
+        <span>OpsOracle AIOps Platform</span>
         <span>Click an architecture to launch immediate simulation</span>
       </footer>
     </div>

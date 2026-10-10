@@ -110,7 +110,7 @@ class AgnitiaBotEngine:
             f"⏱️ *Authorized at:* {now_utc}\n"
             f"🚀 *Status:* Executing recovery playbook in dependency order.\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"System nodes are recovering on the Agnitia mission control screen."
+            f"System nodes are recovering on the OpsOracle mission control screen."
         )
 
     @staticmethod
@@ -144,8 +144,8 @@ if TELEGRAM_LIB_AVAILABLE:
     async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handles /start command."""
         welcome = (
-            "👋 *Welcome to the Agnitia On-Call Approval Bot!*\n\n"
-            "Agnitia is an AI on-call engineer that turns storms of 50+ alerts "
+            "👋 *Welcome to the OpsOracle On-Call Approval Bot!*\n\n"
+            "OpsOracle is an AI on-call engineer that turns storms of 50+ alerts "
             "into a single verified root cause and ordered recovery plan.\n\n"
             "*Available Commands:*\n"
             "• `/ping` — Health check (answers `pong`)\n"
@@ -165,18 +165,18 @@ if TELEGRAM_LIB_AVAILABLE:
                     inc = resp.json()
                     if inc:
                         status_msg = (
-                            f"📡 *Agnitia Incident Status:*\n"
+                            f"📡 *OpsOracle Incident Status:*\n"
                             f"• Active Incident: `{inc.get('id')}`\n"
                             f"• Status: `{inc.get('status')}`\n"
                             f"• Root Cause Service: `{inc.get('root_service')}`\n"
                             f"• Raw Alerts: {inc.get('raw_alert_count')}"
                         )
                     else:
-                        status_msg = "🟢 *Agnitia Status:* All 6 microservices healthy. No active incidents."
+                        status_msg = "🟢 *OpsOracle Status:* All 6 microservices healthy. No active incidents."
                 else:
                     status_msg = f"⚠️ Backend returned HTTP {resp.status_code}"
         except Exception as e:
-            status_msg = f"🔴 Could not reach Agnitia backend at `{BACKEND_URL}`: {e}"
+            status_msg = f"🔴 Could not reach OpsOracle backend at `{BACKEND_URL}`: {e}"
 
         await update.message.reply_text(status_msg, parse_mode=ParseMode.MARKDOWN)
 

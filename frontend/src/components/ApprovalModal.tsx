@@ -126,7 +126,7 @@ export default function ApprovalModal({
                 </span>
               </div>
               <p className="text-[10px] text-ink-500 font-sans">
-                Agnitia Policy APEX-04: Mutation of production specs requires operator authorization
+                OpsOracle Policy APEX-04: Mutation of production specs requires operator authorization
               </p>
             </div>
           </div>

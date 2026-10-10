@@ -63,13 +63,17 @@ const DEFAULT_BASELINE_LOGS: AgentStep[] = [
 ];
 
 export default function ReasoningPanel({ steps, isSimulating }: ReasoningPanelProps) {
-  const terminalEndRef = useRef<HTMLDivElement>(null);
+  const logBodyRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
   const logsToDisplay = steps.length > 0 ? steps : DEFAULT_BASELINE_LOGS;
 
   useEffect(() => {
-    terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll only this panel's own log body, never the page -- scrollIntoView()
+    // walks up through every ancestor scroll container (including the page itself),
+    // which was yanking the whole viewport on every new log line.
+    const el = logBodyRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [steps]);
 
   const lastLog = logsToDisplay[logsToDisplay.length - 1];
@@ -119,7 +123,7 @@ export default function ReasoningPanel({ steps, isSimulating }: ReasoningPanelPr
       </div>
 
       {/* Terminal Body: Black Background, Increased Font Size, Pod-Only Paths */}
-      <div className="flex-1 p-3 overflow-y-auto space-y-1.5 text-[12px] leading-relaxed custom-scrollbar bg-ink-950 text-ink-200">
+      <div ref={logBodyRef} className="flex-1 p-3 overflow-y-auto space-y-1.5 text-[12px] leading-relaxed custom-scrollbar bg-ink-950 text-ink-200">
         {logsToDisplay.map((st, idx) => {
           const pod = derivePodName(st);
           const timestamp = st.ts || `15:32:${String(idx * 2 + 10).padStart(2, '0')}`;
@@ -151,8 +155,6 @@ export default function ReasoningPanel({ steps, isSimulating }: ReasoningPanelPr
           <span className="text-emerald-400 font-bold">{activePromptPod}&gt;</span>
           <span className="inline-block w-2 h-4 bg-ink-200 ml-1.5 animate-pulse" />
         </div>
-
-        <div ref={terminalEndRef} />
       </div>
     </div>
   );

@@ -114,7 +114,7 @@ def init_predictor() -> Any:
 
 predictor = init_predictor()
 
-app = FastAPI(title="Agnitia API", version="1.0.0")
+app = FastAPI(title="OpsOracle API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,

@@ -279,7 +279,7 @@ export default function EvidenceDrawer({ isOpen, onClose, incident }: EvidenceDr
         {/* Footer */}
         <div className="p-3.5 border-t border-ink-700 bg-ink-850 flex items-center justify-between shrink-0">
           <span className="text-[10px] text-ink-500">
-            Agnitia SRE Verification Engine v0.1
+            OpsOracle SRE Verification Engine v0.1
           </span>
           <button
             onClick={onClose}

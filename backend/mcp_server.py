@@ -31,7 +31,7 @@ except ImportError:
 
 BACKEND_URL: str = os.environ.get("BACKEND_URL", "http://localhost:8000").rstrip("/")
 
-mcp = FastMCP("Agnitia")
+mcp = FastMCP("OpsOracle")
 
 
 @mcp.tool()
@@ -147,7 +147,7 @@ async def request_fix(incident_id: str) -> dict[str, Any] | str:
                 "incident_id": current_id,
                 "steps": steps,
                 "diff": diff,
-                "message": "Human approval required: approve in the Agnitia UI or the Telegram bot",
+                "message": "Human approval required: approve in the OpsOracle UI or the Telegram bot",
             }
     except Exception as exc:
         return f"Error: Backend unreachable at {BACKEND_URL} ({exc})"

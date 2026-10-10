@@ -1,6 +1,6 @@
-# Agnitia — Autonomous Incident Remediation Agent
+# OpsOracle — Autonomous Incident Remediation Agent
 
-> **One-line pitch:** Agnitia is an AI on-call engineer. It turns a storm of 50+ alerts into one root cause with verifiable proof, builds a dependency-ordered recovery playbook, and heals the system upon human authorization.
+> **One-line pitch:** OpsOracle is an AI on-call engineer. It turns a storm of 50+ alerts into one root cause with verifiable proof, builds a dependency-ordered recovery playbook, and heals the system upon human authorization.
 
 ---
 
@@ -62,7 +62,7 @@ make reset
 - `make demo` runs `DEMO_MODE=cache` only, from a frozen git tag — the demo laptop never runs a branch.
 
 ## ⚡ Chaos Scenarios
-Agnitia includes 4 deterministic chaos scenarios:
+OpsOracle includes 4 deterministic chaos scenarios:
 1. `db_oom`: PostgreSQL memory limit exceeded (OOMKilled), 56 downstream alerts collapsed into 1 incident.
 2. `bad_config`: Payment-service misconfiguration crash loop.
 3. `cpu_spike`: CPU throttling inducing high gateway latency.

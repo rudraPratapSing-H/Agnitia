@@ -194,7 +194,7 @@ export default function PostmortemView({ isOpen, onClose, incident }: Postmortem
                 </span>
               </div>
               <p className="text-[11px] text-ink-500 font-sans">
-                Generated live by Agnitia's AI postmortem writer
+                Generated live by OpsOracle's AI postmortem writer
               </p>
             </div>
           </div>
