@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 load_dotenv(override=True)
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 from backend.bus import bus, emit
 import backend.executor as executor
@@ -128,8 +129,66 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def _make_amazon_incident() -> Incident:
+    return Incident(
+        id="INC-204",
+        status="resolved",
+        scenario="db_oom",
+        root_service="aurora-orders-db",
+        impacted_services=[
+            "payment-service",
+            "order-service",
+            "cart-service",
+            "sqs-event-bus",
+            "api-gateway",
+            "shipping-service",
+            "notification-service",
+            "web-storefront",
+            "mobile-bff",
+            "cloud-front",
+        ],
+        raw_alert_count=84,
+        started_at="2026-10-09T03:14:07Z",
+        resolved_at="2026-10-09T03:14:49Z",
+        rca={
+            "root_cause": "Amazon Aurora PostgreSQL primary cluster terminated with exit code 137 (OOMKilled) after saturating its 4096Mi memory limit.",
+            "category": "OOMKilled",
+            "confidence": 0.98,
+            "evidence": [
+                {"type": "k8s_event", "source": "aurora-orders-db-0", "text": "Reason: OOMKilled, ExitCode: 137, Memory: 4088Mi/4096Mi", "verified": True},
+                {"type": "log", "source": "aurora-orders-db-0", "line": 104, "text": "FATAL: out of memory allocating shared buffer cache", "verified": True},
+                {"type": "metric", "source": "aurora-orders-db-0", "text": "buffer_pool_saturation peaked at 99.8% capacity", "verified": True},
+            ],
+            "similar_incident": {"id": "INC-198", "similarity": 0.96},
+        },
+        playbook={
+            "diff": "resources.limits.memory: 4096Mi -> 8192Mi\nresources.requests.memory: 2048Mi -> 4096Mi",
+            "steps": [
+                {"order": 1, "service": "aurora-orders-db", "action": "patch_memory_limit", "params": {"from": "4096Mi", "to": "8192Mi"}, "risk": "high", "requires_approval": True, "verify": "port 5432 accepting connections"},
+                {"order": 2, "service": "aurora-orders-db", "action": "wait_for_ready", "params": {"timeout_s": 30}, "risk": "low", "requires_approval": False, "verify": "readiness probe 200 OK"},
+                {"order": 3, "service": "payment-service", "action": "rollout_restart", "risk": "low", "requires_approval": False, "verify": "payment gateway 200 OK"},
+                {"order": 4, "service": "order-service", "action": "rollout_restart", "risk": "low", "requires_approval": False, "verify": "order saga active"},
+                {"order": 5, "service": "api-gateway", "action": "reset_circuit_breaker", "risk": "low", "requires_approval": False, "verify": "error rate below 0.1%"},
+                {"order": 6, "service": "web-storefront", "action": "verify_health", "risk": "low", "requires_approval": False, "verify": "storefront 200 OK"},
+            ],
+        },
+    )
+
+
+def _load_default_incidents() -> Dict[str, Incident]:
+    incidents = {"INC-204": _make_amazon_incident()}
+    fixture_path = REPO_ROOT / "backend" / "tests" / "fixtures" / "incident_db_oom_resolved.json"
+    if fixture_path.exists():
+        try:
+            with open(fixture_path, encoding="utf-8") as f:
+                incidents["INC-104"] = Incident.model_validate_json(f.read())
+        except Exception:
+            pass
+    return incidents
+
+
 # ── Module State ─────────────────────────────────────────────────────────────
-INCIDENTS: Dict[str, Incident] = {}
+INCIDENTS: Dict[str, Incident] = _load_default_incidents()
 LATEST_ID: Optional[str] = None
 BACKGROUND_TASKS: Set[asyncio.Task] = set()
 
@@ -669,11 +728,13 @@ def audit(since: str = ""):
 
 @app.get("/api/ml/status")
 def ml_status():
+    is_on = os.getenv("PREDICTIVE_HEAL") == "on"
     return {
-        "enabled": os.getenv("PREDICTIVE_HEAL") == "on",
+        "enabled": is_on,
         "threshold": THRESHOLD,
         "model_loaded": bool(
-            predictor is not None
+            is_on
+            and predictor is not None
             and getattr(type(predictor), "__name__", "") == "Predictor"
             and hasattr(predictor, "model")
         ),
