@@ -155,26 +155,46 @@ export default function EvidenceDrawer({ isOpen, onClose, incident }: EvidenceDr
             </div>
 
             {/* Terminal Log Box */}
-            <div className="bg-ink-950 text-ink-300 rounded-lg p-2.5 text-[10px] font-mono overflow-x-auto border border-ink-700">
-              {rawLogs.map((log) => (
-                <div
-                  key={log.line}
-                  className={`flex items-start gap-2 py-0.5 px-1.5 rounded transition-colors ${
-                    log.highlight
-                      ? 'bg-rose-500/15 text-rose-300 border border-rose-500/35 font-bold'
-                      : 'hover:bg-ink-900'
-                  }`}
-                >
-                  <span className="text-ink-500 w-6 shrink-0 text-right select-none">
-                    {log.line}
+            <div className="rounded-xl overflow-hidden border border-[#30363d] font-mono bg-[#0d1117] shadow-xl">
+              {/* Terminal Window Header Bar */}
+              <div className="bg-[#161b22] px-3 py-1.5 border-b border-[#30363d] flex items-center justify-between select-none">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/50 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/50 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/50 inline-block" />
+                  </div>
+                  <span className="text-[10px] text-[#8b949e] pl-1.5 border-l border-[#30363d]">
+                    cat <strong className="text-[#e6edf3]">postgres-0.stderr.log</strong>
                   </span>
-                  <span className="text-ink-500 shrink-0 select-none">{log.ts}</span>
-                  <span className="truncate whitespace-pre-wrap">{log.text}</span>
                 </div>
-              ))}
+                <div className="text-[9px] text-[#8b949e] font-mono">
+                  <span>UTF-8 | LF | 5 lines</span>
+                </div>
+              </div>
+
+              {/* Terminal Screen */}
+              <div className="p-2 text-[10.5px] font-mono overflow-x-auto space-y-0.5 bg-[#0d1117] text-[#c9d1d9]">
+                {rawLogs.map((log) => (
+                  <div
+                    key={log.line}
+                    className={`flex items-start gap-2 py-0.5 px-1.5 rounded transition-colors ${
+                      log.highlight
+                        ? 'bg-[#f85149]/15 text-[#ff7b72] border border-[#f85149]/40 font-bold shadow-[0_0_12px_rgba(248,81,73,0.15)]'
+                        : 'hover:bg-[#161b22] text-[#8b949e]'
+                    }`}
+                  >
+                    <span className="text-[#484f58] w-6 shrink-0 text-right select-none font-mono">
+                      {log.line}
+                    </span>
+                    <span className="text-[#6e7681] shrink-0 select-none">[{log.ts}]</span>
+                    <span className="truncate whitespace-pre-wrap">{log.text}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="text-[9px] text-ink-500 flex items-center justify-between pt-1">
+            <div className="text-[9px] text-ink-500 flex items-center justify-between pt-0.5">
               <span>Source: /var/log/pods/default_postgres-0/postgres/0.log</span>
               <span>SHA-256: 7f83b1...verified</span>
             </div>

@@ -61,7 +61,7 @@ function renderMarkdown(md: string): React.ReactNode[] {
         codeBuffer = [];
       } else {
         out.push(
-          <pre key={key} className="bg-ink-950 text-ink-200 text-[10px] p-2.5 rounded-lg overflow-x-auto font-mono">
+          <pre key={key} className="bg-[#0d1117] text-[#c9d1d9] border border-[#30363d] text-[10px] p-2.5 rounded-lg overflow-x-auto font-mono">
             {codeBuffer.join('\n')}
           </pre>
         );
