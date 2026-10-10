@@ -1,6 +1,6 @@
 // frontend/src/components/ChaosPanel.tsx - SRE Chaos Engine + Hotkey Badges
 import React from 'react';
-import { RotateCcw, Flame, AlertOctagon, Cpu, TrendingUp, Sliders } from 'lucide-react';
+import { RotateCcw, Flame, AlertOctagon, Cpu, TrendingUp, Sliders, Sparkles } from 'lucide-react';
 import { playScenario, resetAll, setAutonomyBackend } from '../ws';
 import { setAutonomyLevel, useAgnitiaStore } from '../store';
 import { playClickTone } from '../lib/sounds';
@@ -53,10 +53,19 @@ export default function ChaosPanel({
       id: 'slow_leak',
       key: '4',
       title: 'Slow Memory Leak',
-      badge: 'PREDICTIVE',
+      badge: 'FORECAST + APPROVE',
       desc: isAmazon ? 'Exhaustion in 2m 58s' : 'Exhaustion in 2m 22s',
       icon: TrendingUp,
       color: 'hover:border-sky-500/50 hover:bg-sky-500/8 text-sky-400'
+    },
+    {
+      id: 'predictive_save',
+      key: '5',
+      title: 'Predictive Auto-Heal',
+      badge: 'ZERO CLICKS',
+      desc: 'Fixed before it ever becomes an incident',
+      icon: Sparkles,
+      color: 'hover:border-copper-500/50 hover:bg-copper-500/10 text-copper-400'
     }
   ];
 
@@ -88,7 +97,7 @@ export default function ChaosPanel({
             Chaos Injection Vectors
           </span>
           <span className="text-[9px] text-ink-500 font-sans block">
-            Press <kbd className="px-1 py-0.2 bg-ink-800 border border-ink-600 rounded text-ink-300 font-mono font-bold">1</kbd>–<kbd className="px-1 py-0.2 bg-ink-800 border border-ink-600 rounded text-ink-300 font-mono font-bold">4</kbd> to inject • <kbd className="px-1 py-0.2 bg-ink-800 border border-ink-600 rounded text-ink-300 font-mono font-bold">R</kbd> to reset
+            Press <kbd className="px-1 py-0.2 bg-ink-800 border border-ink-600 rounded text-ink-300 font-mono font-bold">1</kbd>–<kbd className="px-1 py-0.2 bg-ink-800 border border-ink-600 rounded text-ink-300 font-mono font-bold">5</kbd> to inject • <kbd className="px-1 py-0.2 bg-ink-800 border border-ink-600 rounded text-ink-300 font-mono font-bold">R</kbd> to reset
           </span>
         </div>
       </div>

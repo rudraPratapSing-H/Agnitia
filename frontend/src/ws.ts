@@ -71,6 +71,10 @@ export function triggerBackendReset() {
   fetch('http://localhost:8000/api/reset', { method: 'POST' }).catch(() => {});
 }
 
+// Scenarios that exist only as a local scripted timeline -- not real backend chaos
+// injections, so playScenario must not fire a (guaranteed-404) backend call for them.
+const LOCAL_ONLY_SCENARIOS = new Set(['predictive_save']);
+
 // Deterministic Simulation Runner
 export function playScenario(scenarioId: string) {
   clearActiveSimulation();
@@ -82,7 +86,7 @@ export function playScenario(scenarioId: string) {
 
   // Notify live backend in parallel only when testing K8s core
   const isK8s = getState().activePresetId === 'k8s-core';
-  if (isK8s) {
+  if (isK8s && !LOCAL_ONLY_SCENARIOS.has(scenarioId)) {
     fetch(`http://localhost:8000/api/chaos/${scenarioId}`, { method: 'POST' }).catch(() => {});
   }
 }
@@ -129,7 +133,9 @@ function runLocalSimulation(scenarioId: string) {
 
   let eventsList: any[] = [];
 
-  if (isAmazon) {
+  if (scenarioId === 'predictive_save') {
+    eventsList = isAmazon ? getAmazonPredictiveSaveMockEvents() : getK8sPredictiveSaveMockEvents();
+  } else if (isAmazon) {
     if (scenarioId === 'db_oom') {
       eventsList = getAmazonDbOomMockEvents();
     } else if (scenarioId === 'bad_config') {
@@ -606,6 +612,113 @@ function getK8sSlowLeakMockEvents() {
         }
       }
     }
+  ];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PREDICTIVE AUTO-HEAL DEMO -- a dedicated, fully scripted timeline (no backend
+// dependency) that drives the ML-shaped `prediction` (probability gauge) and
+// `healed_auto` (banner) events the real predictive layer emits. Unlike every
+// other scenario here, this one never raises an incident: the entire point is
+// that the fix lands before anything becomes incident-worthy.
+// ─────────────────────────────────────────────────────────────────────────────
+function getK8sPredictiveSaveMockEvents() {
+  const service = 'postgres';
+  return [
+    { delay: 200, type: 'agent_step', payload: { agent: 'triage', text: 'Predictive model watching postgres memory gradient...', status: 'running' } },
+    { delay: 700, type: 'metric_point', payload: { service, mem_mb: 45, mem_limit_mb: 64, cpu_pct: 14 } },
+    { delay: 1400, type: 'prediction', payload: { service, probability: 0.31, threshold: 0.85, streak: 0, seconds_to_limit: 150 } },
+    { delay: 2200, type: 'prediction', payload: { service, probability: 0.52, threshold: 0.85, streak: 0, seconds_to_limit: 120 } },
+    { delay: 3000, type: 'prediction', payload: { service, probability: 0.68, threshold: 0.85, streak: 0, seconds_to_limit: 95 } },
+    { delay: 3800, type: 'prediction', payload: { service, probability: 0.79, threshold: 0.85, streak: 0, seconds_to_limit: 70 } },
+    { delay: 4600, type: 'prediction', payload: { service, probability: 0.89, threshold: 0.85, streak: 1, seconds_to_limit: 52 } },
+    { delay: 5000, type: 'agent_step', payload: { agent: 'diagnose', text: 'Failure probability crossed threshold (p=0.89). Persistence window started.', status: 'running' } },
+    { delay: 5400, type: 'prediction', payload: { service, probability: 0.93, threshold: 0.85, streak: 2, seconds_to_limit: 40 } },
+    { delay: 6200, type: 'prediction', payload: { service, probability: 0.96, threshold: 0.85, streak: 3, seconds_to_limit: 28 } },
+    { delay: 7000, type: 'prediction', payload: { service, probability: 0.97, threshold: 0.85, streak: 4, seconds_to_limit: 18 } },
+    { delay: 7800, type: 'prediction', payload: { service, probability: 0.98, threshold: 0.85, streak: 5, seconds_to_limit: 10 } },
+    {
+      delay: 8000,
+      type: 'healed_auto',
+      payload: {
+        id: 'AUTO-DEMO-1',
+        service,
+        action: 'patch_memory_limit',
+        params: { from_mb: 64, to_mb: 128 },
+        phase: 'applied',
+        probability: 0.98,
+        policy: 'auto-v1'
+      }
+    },
+    { delay: 8200, type: 'service_update', payload: { id: service, metrics: { mem_limit_mb: 128 } } },
+    { delay: 8500, type: 'metric_point', payload: { service, mem_mb: 58, mem_limit_mb: 128, cpu_pct: 15 } },
+    { delay: 9600, type: 'prediction', payload: { service, probability: 0.55, threshold: 0.85, streak: 0, seconds_to_limit: null } },
+    { delay: 10800, type: 'prediction', payload: { service, probability: 0.22, threshold: 0.85, streak: 0, seconds_to_limit: null } },
+    {
+      delay: 11600,
+      type: 'healed_auto',
+      payload: {
+        id: 'AUTO-DEMO-1',
+        service,
+        action: 'patch_memory_limit',
+        params: { from_mb: 64, to_mb: 128 },
+        phase: 'verified',
+        result: 'healthy',
+        probability: 0.98,
+        policy: 'auto-v1'
+      }
+    },
+    { delay: 12000, type: 'agent_step', payload: { agent: 'verify', text: 'Zero downtime. Incident never materialized -- fixed before threshold breach.', status: 'done' } }
+  ];
+}
+
+function getAmazonPredictiveSaveMockEvents() {
+  const service = 'aurora-orders-db';
+  return [
+    { delay: 200, type: 'agent_step', payload: { agent: 'triage', text: 'Predictive model watching aurora-orders-db buffer pool gradient...', status: 'running' } },
+    { delay: 700, type: 'metric_point', payload: { service, mem_mb: 2900, mem_limit_mb: 4096, cpu_pct: 22 } },
+    { delay: 1400, type: 'prediction', payload: { service, probability: 0.34, threshold: 0.85, streak: 0, seconds_to_limit: 160 } },
+    { delay: 2200, type: 'prediction', payload: { service, probability: 0.55, threshold: 0.85, streak: 0, seconds_to_limit: 128 } },
+    { delay: 3000, type: 'prediction', payload: { service, probability: 0.71, threshold: 0.85, streak: 0, seconds_to_limit: 98 } },
+    { delay: 3800, type: 'prediction', payload: { service, probability: 0.81, threshold: 0.85, streak: 0, seconds_to_limit: 74 } },
+    { delay: 4600, type: 'prediction', payload: { service, probability: 0.90, threshold: 0.85, streak: 1, seconds_to_limit: 55 } },
+    { delay: 5000, type: 'agent_step', payload: { agent: 'diagnose', text: 'Failure probability crossed threshold (p=0.90). Persistence window started.', status: 'running' } },
+    { delay: 5400, type: 'prediction', payload: { service, probability: 0.94, threshold: 0.85, streak: 2, seconds_to_limit: 42 } },
+    { delay: 6200, type: 'prediction', payload: { service, probability: 0.96, threshold: 0.85, streak: 3, seconds_to_limit: 30 } },
+    { delay: 7000, type: 'prediction', payload: { service, probability: 0.98, threshold: 0.85, streak: 4, seconds_to_limit: 19 } },
+    { delay: 7800, type: 'prediction', payload: { service, probability: 0.99, threshold: 0.85, streak: 5, seconds_to_limit: 11 } },
+    {
+      delay: 8000,
+      type: 'healed_auto',
+      payload: {
+        id: 'AUTO-DEMO-1',
+        service,
+        action: 'patch_memory_limit',
+        params: { from_mb: 4096, to_mb: 8192 },
+        phase: 'applied',
+        probability: 0.99,
+        policy: 'auto-v1'
+      }
+    },
+    { delay: 8200, type: 'service_update', payload: { id: service, metrics: { mem_limit_mb: 8192 } } },
+    { delay: 8500, type: 'metric_point', payload: { service, mem_mb: 3300, mem_limit_mb: 8192, cpu_pct: 24 } },
+    { delay: 9600, type: 'prediction', payload: { service, probability: 0.58, threshold: 0.85, streak: 0, seconds_to_limit: null } },
+    { delay: 10800, type: 'prediction', payload: { service, probability: 0.25, threshold: 0.85, streak: 0, seconds_to_limit: null } },
+    {
+      delay: 11600,
+      type: 'healed_auto',
+      payload: {
+        id: 'AUTO-DEMO-1',
+        service,
+        action: 'patch_memory_limit',
+        params: { from_mb: 4096, to_mb: 8192 },
+        phase: 'verified',
+        result: 'healthy',
+        probability: 0.99,
+        policy: 'auto-v1'
+      }
+    },
+    { delay: 12000, type: 'agent_step', payload: { agent: 'verify', text: 'Zero downtime. Incident never materialized -- fixed before threshold breach.', status: 'done' } }
   ];
 }
 

@@ -160,6 +160,9 @@ export default function App() {
         } else if (e.key === '4') {
           playClickTone();
           playScenario('slow_leak');
+        } else if (e.key === '5') {
+          playClickTone();
+          playScenario('predictive_save');
         } else if (e.key === 'r' || e.key === 'R') {
           playClickTone();
           resetStore();
