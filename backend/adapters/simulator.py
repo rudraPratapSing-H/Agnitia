@@ -98,10 +98,16 @@ class SimulatorAdapter:
         self,
         speed: Optional[float] = None,
         step_delay_s: Optional[float] = None,
+        force_probe_fail: Optional[bool] = None,
     ) -> None:
         self.speed: float = speed if speed is not None else float(os.getenv("SIM_SPEED", "1.0"))
         self.step_delay_s: float = (
             step_delay_s if step_delay_s is not None else float(os.getenv("SIM_STEP_DELAY_S", "2.0"))
+        )
+        self.force_probe_fail: bool = (
+            force_probe_fail
+            if force_probe_fail is not None
+            else (os.getenv("SIM_FORCE_PROBE_FAIL") == "1")
         )
 
         # State
@@ -111,6 +117,8 @@ class SimulatorAdapter:
         self._events: Dict[str, List[K8sEvent]] = {s: [] for s in DEPENDS_ON}
         self._cpu_limits: Dict[str, dict] = {}
         self._replica_scales: Dict[str, dict] = {}
+        self._patched_services: Set[str] = set()
+        self._is_generated_scenario: bool = False
 
         self._scenario: Optional[Dict[str, Any]] = None
         self._incident_counter: int = 104
@@ -170,6 +178,9 @@ class SimulatorAdapter:
 
         scenario = self._scenario
 
+        if step.action.startswith("patch_"):
+            self._patched_services.add(step.service)
+
         # --- patch_memory_limit: accepts both {"from":"64Mi","to":"256Mi"} and {"from_mb":64,"to_mb":128} ---
         if step.action == "patch_memory_limit":
             to_val = None
@@ -182,6 +193,18 @@ class SimulatorAdapter:
                 to_val = scenario["fix"]["to"]
             target_mb = _parse_mb(to_val) if to_val is not None else svc.metrics.mem_limit_mb
             svc.metrics.mem_limit_mb = target_mb
+
+            if getattr(self, "_is_generated_scenario", False):
+                # patch_memory_limit on postgres changes mem_limit_mb IN PLACE:
+                # no restart, no status change, emit service_update immediately.
+                await emit("service_update", svc.model_dump(mode="json"))
+                return ActionResult(
+                    ok=True,
+                    message=f"Patched memory limit on {step.service} to {target_mb}MB",
+                    step_order=step.order,
+                    service=step.service,
+                    action=step.action,
+                )
 
             # If it matches the scenario's fix action on the root service
             if (
@@ -310,7 +333,7 @@ class SimulatorAdapter:
 
     async def probe(self, service: str) -> bool:
         """Returns True only when derived status is healthy."""
-        if os.getenv("SIM_FORCE_PROBE_FAIL") == "1":
+        if self.force_probe_fail and service in self._patched_services:
             return False
         svc = self.services.get(service)
         if not svc:
@@ -324,37 +347,55 @@ class SimulatorAdapter:
         if self._scenario is not None:
             raise RuntimeError("A scenario is already running; call reset() first")
 
-        # Load from scenarios dir first, fall back to test fixtures or synth generator
-        scenario_path = SCENARIOS_DIR / f"{scenario_id}.json"
-        if scenario_path.exists():
-            with open(scenario_path, "r", encoding="utf-8") as f:
-                self._scenario = json.load(f)
-        elif scenario_id in ("healthy_spike", "sawtooth"):
+        GENERATED_SCENARIOS = {"slow_leak", "healthy_spike", "sawtooth"}
+        if scenario_id in GENERATED_SCENARIOS:
             import numpy as np
+            from backend.ml import config
             from backend.ml.synth import generate_run
-            from backend.ml.config import DEMO_SEED
-            kind = "spike" if scenario_id == "healthy_spike" else "sawtooth"
-            points, _ = generate_run(kind, np.random.default_rng(DEMO_SEED))
+
+            self._is_generated_scenario = True
+            if scenario_id == "slow_leak":
+                kind = "slow_leak"
+                seed = getattr(config, "DEMO_SEED", 42)
+            elif scenario_id == "healthy_spike":
+                kind = "spike"
+                seed = getattr(config, "SPIKE_SEED", 1)
+            elif scenario_id == "sawtooth":
+                kind = "sawtooth"
+                seed = getattr(config, "SAWTOOTH_SEED", 2)
+            else:
+                raise ValueError(f"Unknown generated scenario: {scenario_id}")
+
+            rng = np.random.default_rng(seed)
+            limit_mb = self.services["postgres"].metrics.mem_limit_mb
+            points, fail_t = generate_run(kind, rng, limit_mb=limit_mb)
+
             self._scenario = {
                 "id": scenario_id,
-                "title": f"Synthetic {scenario_id}",
+                "title": f"Generated {scenario_id}",
                 "root_service": "postgres",
-                "duration_s": 300,
-                "metrics": {"postgres": points},
-                "events": [],
-                "logs": {},
-                "alerts": [],
-                "fix": {},
+                "duration_s": 900.0 if kind == "slow_leak" else 300.0,
+                "kind": kind,
+                "seed": seed,
+                "fail_t": fail_t,
+                "points": points,
             }
         else:
-            fixture_path = (
-                Path(__file__).resolve().parent.parent / "tests" / "fixtures" / f"{scenario_id}_fixture.json"
-            )
-            if fixture_path.exists():
-                with open(fixture_path, "r", encoding="utf-8") as f:
+            self._is_generated_scenario = False
+            # Load from scenarios dir first, fall back to test fixtures
+            scenario_path = SCENARIOS_DIR / f"{scenario_id}.json"
+            if scenario_path.exists():
+                with open(scenario_path, "r", encoding="utf-8") as f:
                     self._scenario = json.load(f)
             else:
-                raise ValueError(f"Unknown scenario: {scenario_id}")
+                fixture_path = (
+                    Path(__file__).resolve().parent.parent / "tests" / "fixtures" / f"{scenario_id}_fixture.json"
+                )
+                if fixture_path.exists():
+                    with open(fixture_path, "r", encoding="utf-8") as f:
+                        self._scenario = json.load(f)
+                else:
+                    raise ValueError(f"Unknown scenario: {scenario_id}")
 
         # Reserve the incident id
         incident_id = f"INC-{self._incident_counter}"
@@ -391,11 +432,14 @@ class SimulatorAdapter:
 
         # Restore state
         self.services = _build_default_services()
+        self.services["postgres"].metrics.mem_limit_mb = 64.0
         self._logs = {s: [] for s in DEPENDS_ON}
         self._metrics = {s: [] for s in DEPENDS_ON}
         self._events = {s: [] for s in DEPENDS_ON}
         self._cpu_limits.clear()
         self._replica_scales.clear()
+        self._patched_services.clear()
+        self._is_generated_scenario = False
         self._scenario = None
         self._current_incident_id = None
         self._incident_counter = 104
@@ -409,6 +453,10 @@ class SimulatorAdapter:
         """Plays all scenario items in t_s order, ties in file order."""
         scenario = self._scenario
         if not scenario:
+            return
+
+        if getattr(self, "_is_generated_scenario", False):
+            await self._run_generated_playback()
             return
 
         root_service = scenario["root_service"]
@@ -611,3 +659,199 @@ class SimulatorAdapter:
         """Emit service_update for all services (after recompute)."""
         for svc in self.services.values():
             await emit("service_update", svc.model_dump(mode="json"))
+
+    async def _run_generated_playback(self) -> None:
+        """Playback for generated scenarios: slow_leak, healthy_spike, sawtooth."""
+        scenario = self._scenario
+        if not scenario:
+            return
+
+        points: List[dict] = scenario["points"]
+        kind: str = scenario["kind"]
+        seed: int = scenario["seed"]
+
+        prev_t = 0.0
+        failed = False
+
+        try:
+            for pt in points:
+                t_s = float(pt["t_s"])
+                delta = t_s - prev_t
+                if delta > 0:
+                    await self._sleep(delta)
+                self._playback_time = t_s
+                prev_t = t_s
+
+                svc = self.services["postgres"]
+                mem_mb = float(pt["mem_mb"])
+                current_limit_mb = float(svc.metrics.mem_limit_mb)
+                cpu_pct = float(pt["cpu_pct"])
+                err_pct = float(pt.get("err_pct", 0.0))
+                restarts = int(svc.metrics.restarts)
+
+                # Failure condition:
+                # "when a point's mem_mb >= the current mem_limit_mb, postgres becomes root_cause (service_update),
+                # store the K8sEvent 'Reason: OOMKilled, Exit Code: 137', restarts += 1, stop playback.
+                # No alerts and no incident; on_alerts_complete is never called for these scenarios."
+                if kind == "slow_leak" and mem_mb >= current_limit_mb:
+                    svc.status = "root_cause"
+                    svc.metrics.restarts += 1
+                    restarts = svc.metrics.restarts
+                    svc.metrics.mem_mb = mem_mb
+                    svc.metrics.cpu_pct = cpu_pct
+
+                    await emit("metric_point", {
+                        "service": "postgres",
+                        "t_s": t_s,
+                        "mem_mb": mem_mb,
+                        "mem_limit_mb": current_limit_mb,
+                        "cpu_pct": cpu_pct,
+                        "restarts": restarts,
+                        "err_pct": err_pct,
+                    })
+                    self._metrics["postgres"].append(
+                        MetricPoint(
+                            t_s=t_s,
+                            mem_mb=mem_mb,
+                            cpu_pct=cpu_pct,
+                            service="postgres",
+                            mem_limit_mb=current_limit_mb,
+                            restarts=restarts,
+                            err_pct=err_pct,
+                        )
+                    )
+                    k8s_ev = K8sEvent(
+                        t_s=t_s,
+                        service="postgres",
+                        text="Reason: OOMKilled, Exit Code: 137",
+                    )
+                    self._events["postgres"].append(k8s_ev)
+                    await emit("service_update", svc.model_dump(mode="json"))
+                    failed = True
+                    break
+
+                # Normal point
+                svc.metrics.mem_mb = mem_mb
+                svc.metrics.cpu_pct = cpu_pct
+
+                await emit("metric_point", {
+                    "service": "postgres",
+                    "t_s": t_s,
+                    "mem_mb": mem_mb,
+                    "mem_limit_mb": current_limit_mb,
+                    "cpu_pct": cpu_pct,
+                    "restarts": restarts,
+                    "err_pct": err_pct,
+                })
+                self._metrics["postgres"].append(
+                    MetricPoint(
+                        t_s=t_s,
+                        mem_mb=mem_mb,
+                        cpu_pct=cpu_pct,
+                        service="postgres",
+                        mem_limit_mb=current_limit_mb,
+                        restarts=restarts,
+                        err_pct=err_pct,
+                    )
+                )
+                await emit("service_update", svc.model_dump(mode="json"))
+
+            # Extrapolation:
+            # "The synthetic series ends at fail_t. If playback is still running after the last point
+            # (because the limit was raised), extrapolate linearly: slope from np.polyfit over the last 20 points,
+            # plus Gaussian noise std 0.64 MB from np.random.default_rng(seed + 1) so it stays deterministic,
+            # until failure or 900 s total."
+            if kind == "slow_leak" and not failed and len(points) >= 20:
+                import numpy as np
+
+                recent = points[-20:]
+                x = [p["t_s"] for p in recent]
+                y = [p["mem_mb"] for p in recent]
+                slope, _ = np.polyfit(x, y, 1)
+
+                extrap_rng = np.random.default_rng(seed + 1)
+                last_t = float(points[-1]["t_s"])
+                last_mem = float(points[-1]["mem_mb"])
+                last_cpu = float(points[-1]["cpu_pct"])
+                last_err = float(points[-1].get("err_pct", 0.0))
+
+                curr_t = last_t
+                while curr_t < 900.0:
+                    delta = 0.5
+                    await self._sleep(delta)
+                    curr_t = round(curr_t + 0.5, 3)
+                    self._playback_time = curr_t
+
+                    svc = self.services["postgres"]
+                    current_limit_mb = float(svc.metrics.mem_limit_mb)
+                    t_offset = curr_t - last_t
+                    base_mem = last_mem + slope * t_offset
+                    noise = float(extrap_rng.normal(0.0, 0.64))
+                    mem_mb = round(float(base_mem + noise), 3)
+                    cpu_pct = float(last_cpu)
+                    err_pct = float(last_err)
+                    restarts = int(svc.metrics.restarts)
+
+                    if mem_mb >= current_limit_mb:
+                        svc.status = "root_cause"
+                        svc.metrics.restarts += 1
+                        restarts = svc.metrics.restarts
+                        svc.metrics.mem_mb = mem_mb
+                        svc.metrics.cpu_pct = cpu_pct
+
+                        await emit("metric_point", {
+                            "service": "postgres",
+                            "t_s": curr_t,
+                            "mem_mb": mem_mb,
+                            "mem_limit_mb": current_limit_mb,
+                            "cpu_pct": cpu_pct,
+                            "restarts": restarts,
+                            "err_pct": err_pct,
+                        })
+                        self._metrics["postgres"].append(
+                            MetricPoint(
+                                t_s=curr_t,
+                                mem_mb=mem_mb,
+                                cpu_pct=cpu_pct,
+                                service="postgres",
+                                mem_limit_mb=current_limit_mb,
+                                restarts=restarts,
+                                err_pct=err_pct,
+                            )
+                        )
+                        k8s_ev = K8sEvent(
+                            t_s=curr_t,
+                            service="postgres",
+                            text="Reason: OOMKilled, Exit Code: 137",
+                        )
+                        self._events["postgres"].append(k8s_ev)
+                        await emit("service_update", svc.model_dump(mode="json"))
+                        break
+
+                    # Normal extrapolated point
+                    svc.metrics.mem_mb = mem_mb
+                    svc.metrics.cpu_pct = cpu_pct
+
+                    await emit("metric_point", {
+                        "service": "postgres",
+                        "t_s": curr_t,
+                        "mem_mb": mem_mb,
+                        "mem_limit_mb": current_limit_mb,
+                        "cpu_pct": cpu_pct,
+                        "restarts": restarts,
+                        "err_pct": err_pct,
+                    })
+                    self._metrics["postgres"].append(
+                        MetricPoint(
+                            t_s=curr_t,
+                            mem_mb=mem_mb,
+                            cpu_pct=cpu_pct,
+                            service="postgres",
+                            mem_limit_mb=current_limit_mb,
+                            restarts=restarts,
+                            err_pct=err_pct,
+                        )
+                    )
+                    await emit("service_update", svc.model_dump(mode="json"))
+        except asyncio.CancelledError:
+            return

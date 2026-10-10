@@ -453,3 +453,230 @@ async def test_patch_memory_limit_both_param_shapes():
     finally:
         await adapter.reset()
 
+
+# ── Generated Scenarios Tests (TASK P6.3b) ───────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_generated_slow_leak_metric_point_seven_keys():
+    """(a) slow_leak metric_point has all 7 keys."""
+    adapter = _make_adapter()
+    events, listener = _collector()
+    bus.add_listener(listener)
+    try:
+        await adapter.inject("slow_leak")
+        for task in list(adapter._running_tasks):
+            try:
+                await asyncio.wait_for(task, timeout=5.0)
+            except (asyncio.CancelledError, asyncio.TimeoutError):
+                pass
+
+        metric_events = [e for e in events if e["type"] == "metric_point"]
+        assert len(metric_events) > 0
+        expected_keys = {
+            "service",
+            "t_s",
+            "mem_mb",
+            "mem_limit_mb",
+            "cpu_pct",
+            "restarts",
+            "err_pct",
+        }
+        for me in metric_events:
+            assert set(me["payload"].keys()) == expected_keys
+            assert me["payload"]["service"] == "postgres"
+    finally:
+        bus.remove_listener(listener)
+        await adapter.reset()
+
+
+@pytest.mark.asyncio
+async def test_generated_slow_leak_no_heal_fails_at_fail_t_and_probe_false():
+    """(b) with no heal, postgres is root_cause at fail_t and probe is False."""
+    adapter = _make_adapter()
+    events, listener = _collector()
+    bus.add_listener(listener)
+    try:
+        await adapter.inject("slow_leak")
+        fail_t = adapter._scenario["fail_t"]
+        for task in list(adapter._running_tasks):
+            try:
+                await asyncio.wait_for(task, timeout=5.0)
+            except (asyncio.CancelledError, asyncio.TimeoutError):
+                pass
+
+        assert adapter.services["postgres"].status == "root_cause"
+        assert adapter.services["postgres"].metrics.restarts >= 1
+        assert await adapter.probe("postgres") is False
+        assert adapter._playback_time == pytest.approx(fail_t, abs=0.1)
+
+        # Check K8sEvent
+        evs = await adapter.get_events("postgres")
+        assert any("Reason: OOMKilled, Exit Code: 137" in ev.text for ev in evs)
+
+        # No alerts and no incident
+        alerts = [e for e in events if e["type"] == "alert"]
+        assert len(alerts) == 0
+    finally:
+        bus.remove_listener(listener)
+        await adapter.reset()
+
+
+@pytest.mark.asyncio
+async def test_generated_slow_leak_heal_raises_limit_and_extrapolates():
+    """(c) apply patch_memory_limit {"from_mb":64,"to_mb":128} when t_s >= 50:
+    no failure at the old fail_t, later points carry mem_limit_mb 128 and mem keeps rising.
+    """
+    adapter = _make_adapter()
+    events, listener = _collector()
+    bus.add_listener(listener)
+    try:
+        await adapter.inject("slow_leak")
+        old_fail_t = adapter._scenario["fail_t"]
+
+        # Run until t_s >= 50, then patch
+        patched = False
+        while not patched:
+            await asyncio.sleep(0.01)
+            if adapter._playback_time >= 50.0:
+                step = PlaybookStep(
+                    order=1,
+                    service="postgres",
+                    action="patch_memory_limit",
+                    params={"from_mb": 64, "to_mb": 128},
+                )
+                res = await adapter.apply_action(step)
+                assert res.ok is True
+                patched = True
+
+        # Let playback proceed past old_fail_t
+        while adapter._playback_time <= (old_fail_t + 10.0):
+            if any(t.done() for t in adapter._running_tasks):
+                break
+            await asyncio.sleep(0.01)
+
+        # At old_fail_t, postgres did not fail
+        metrics = await adapter.get_metrics("postgres")
+        pts_at_old_fail = [m for m in metrics if m.t_s >= old_fail_t]
+        assert len(pts_at_old_fail) > 0
+        assert pts_at_old_fail[0].mem_limit_mb == 128.0
+
+        # Later points carry mem_limit_mb 128 and memory keeps rising
+        later_pts = [m for m in metrics if m.t_s >= 55.0]
+        assert all(m.mem_limit_mb == 128.0 for m in later_pts)
+        assert later_pts[-1].mem_mb > later_pts[0].mem_mb
+    finally:
+        bus.remove_listener(listener)
+        await adapter.reset()
+
+
+@pytest.mark.asyncio
+async def test_generated_healthy_spike_and_sawtooth_no_failure():
+    """(d) healthy_spike and sawtooth run to the end with no failure."""
+    for scen in ("healthy_spike", "sawtooth"):
+        adapter = _make_adapter()
+        events, listener = _collector()
+        bus.add_listener(listener)
+        try:
+            await adapter.inject(scen)
+            for task in list(adapter._running_tasks):
+                try:
+                    await asyncio.wait_for(task, timeout=5.0)
+                except (asyncio.CancelledError, asyncio.TimeoutError):
+                    pass
+
+            assert adapter.services["postgres"].status == "healthy"
+            assert await adapter.probe("postgres") is True
+            assert adapter.services["postgres"].metrics.restarts == 0
+            # No alerts
+            alerts = [e for e in events if e["type"] == "alert"]
+            assert len(alerts) == 0
+        finally:
+            bus.remove_listener(listener)
+            await adapter.reset()
+
+
+@pytest.mark.asyncio
+async def test_generated_determinism_identical_events():
+    """(e) two runs give identical events (ignore ts)."""
+    async def _run_and_collect():
+        a = _make_adapter()
+        evs, lis = _collector()
+        bus.add_listener(lis)
+        try:
+            await a.inject("slow_leak")
+            for task in list(a._running_tasks):
+                try:
+                    await asyncio.wait_for(task, timeout=5.0)
+                except (asyncio.CancelledError, asyncio.TimeoutError):
+                    pass
+            return evs
+        finally:
+            bus.remove_listener(lis)
+            await a.reset()
+
+    evs1 = await _run_and_collect()
+    evs2 = await _run_and_collect()
+
+    assert len(evs1) == len(evs2)
+    for e1, e2 in zip(evs1, evs2):
+        assert e1["type"] == e2["type"]
+        p1 = e1["payload"]
+        p2 = e2["payload"]
+        if e1["type"] == "metric_point":
+            assert p1["t_s"] == p2["t_s"]
+            assert p1["mem_mb"] == p2["mem_mb"]
+            assert p1["cpu_pct"] == p2["cpu_pct"]
+            assert p1["mem_limit_mb"] == p2["mem_limit_mb"]
+
+
+@pytest.mark.asyncio
+async def test_force_probe_fail_after_patch(monkeypatch):
+    """(f) SIM_FORCE_PROBE_FAIL=1 makes probe False after a patch."""
+    monkeypatch.setenv("SIM_FORCE_PROBE_FAIL", "1")
+    adapter = SimulatorAdapter(speed=200, step_delay_s=0.01)
+
+    try:
+        assert await adapter.probe("postgres") is True
+
+        step = PlaybookStep(
+            order=1,
+            service="postgres",
+            action="patch_memory_limit",
+            params={"from_mb": 64, "to_mb": 128},
+        )
+        await adapter.apply_action(step)
+
+        # After patch, probe returns False
+        assert await adapter.probe("postgres") is False
+
+        # Other services without patch still return True
+        assert await adapter.probe("redis") is True
+    finally:
+        await adapter.reset()
+
+
+@pytest.mark.asyncio
+async def test_reset_restores_limit_64():
+    """(g) reset restores limit 64."""
+    adapter = _make_adapter()
+    try:
+        await adapter.inject("slow_leak")
+        step = PlaybookStep(
+            order=1,
+            service="postgres",
+            action="patch_memory_limit",
+            params={"from_mb": 64, "to_mb": 128},
+        )
+        await adapter.apply_action(step)
+        assert adapter.services["postgres"].metrics.mem_limit_mb == 128.0
+
+        await adapter.reset()
+        assert adapter.services["postgres"].metrics.mem_limit_mb == 64.0
+        assert adapter.services["postgres"].status == "healthy"
+        assert len(await adapter.get_metrics("postgres")) == 0
+        assert len(await adapter.get_events("postgres")) == 0
+    finally:
+        await adapter.reset()
+
+
