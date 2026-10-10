@@ -25,6 +25,7 @@ from backend.models import Alert
 
 @pytest.fixture(autouse=True)
 def ensure_sim_speed(monkeypatch):
+    monkeypatch.setenv("DEMO_MODE", "cache")
     adapter.speed = 200.0
     orig_sleep = asyncio.sleep
     async def fast_sleep(s, *args, **kwargs):
@@ -32,6 +33,7 @@ def ensure_sim_speed(monkeypatch):
     try:
         import backend.agents.pipeline as pipeline_mod
         monkeypatch.setattr(pipeline_mod.asyncio, "sleep", fast_sleep)
+        monkeypatch.setattr(pipeline_mod, "_demo_mode", lambda: "cache")
     except Exception:
         pass
     yield
