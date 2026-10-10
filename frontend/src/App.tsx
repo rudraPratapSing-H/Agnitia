@@ -342,6 +342,7 @@ export default function App() {
             whatIfNode={whatIfNode}
             onSelectWhatIf={setWhatIfNode}
             mlPrediction={mlPrediction}
+            incident={incident}
           />
         </section>
 

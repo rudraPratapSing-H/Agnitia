@@ -43,7 +43,7 @@ interface AutoZoomControllerProps {
   positions: Record<string, { x: number; y: number }>;
   isFullscreen: boolean;
   whatIfActive: boolean;
-  isUserInteracting: () => boolean;
+  isInteracting: boolean;
 }
 
 function AutoZoomController({
@@ -52,41 +52,56 @@ function AutoZoomController({
   positions,
   isFullscreen,
   whatIfActive,
-  isUserInteracting
+  isInteracting
 }: AutoZoomControllerProps) {
-  const { setCenter, fitView, getZoom } = useReactFlow();
+  const { setCenter, fitView, getZoom, getNode } = useReactFlow();
   const lastTargetRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // If user is actively exploring what-if, don't auto-navigate
+    // If user is actively exploring What-If blast radius, don't interrupt
     if (whatIfActive) return;
 
-    if (rootServiceId && positions[rootServiceId]) {
-      // If user is actively dragging, clicking or panning, don't interrupt
-      if (isUserInteracting()) return;
+    if (rootServiceId) {
+      // Don't interrupt if user is actively holding mouse down or dragging
+      if (isInteracting) return;
 
-      // Don't re-trigger if already centered on this failing root service
+      // Avoid re-zooming repeatedly to the same node
       if (lastTargetRef.current === rootServiceId) return;
       lastTargetRef.current = rootServiceId;
 
-      const pos = positions[rootServiceId];
-      // Center on standard 240px x ~180px service node
+      // Get node position from ReactFlow node or preset layout
+      const flowNode = getNode ? getNode(rootServiceId) : null;
+      const pos = flowNode?.position || positions[rootServiceId];
+      if (!pos) return;
+
+      // Center of standard 240px x 140px node
       const centerX = pos.x + 120;
-      const centerY = pos.y + 90;
+      const centerY = pos.y + 70;
 
       const currentZoom = getZoom() || 1.0;
       // Smoothly zoom in by exactly 20%
-      const targetZoom = Math.min(2.2, Math.max(1.15, currentZoom * 1.20));
+      const targetZoom = Math.min(1.85, Math.max(1.15, currentZoom * 1.20));
 
-      setCenter(centerX, centerY, { zoom: targetZoom, duration: 1200 });
+      setCenter(centerX, centerY, { zoom: targetZoom, duration: 1000 });
     } else if (isAllHealthy && lastTargetRef.current !== null) {
-      // Returned to healthy state (healed / reset): glide back out to full cluster view
+      // Incident resolved / topology healthy: glide back out to full cluster view
       lastTargetRef.current = null;
-      if (!isUserInteracting()) {
-        fitView({ duration: 1000, padding: isFullscreen ? 0.08 : 0.14 });
+      if (!isInteracting) {
+        fitView({ duration: 900, padding: isFullscreen ? 0.08 : 0.14 });
       }
     }
-  }, [rootServiceId, isAllHealthy, positions, isFullscreen, whatIfActive, isUserInteracting, setCenter, fitView, getZoom]);
+  }, [
+    rootServiceId,
+    isAllHealthy,
+    positions,
+    isFullscreen,
+    whatIfActive,
+    isInteracting,
+    setCenter,
+    fitView,
+    getZoom,
+    getNode
+  ]);
 
   return null;
 }
@@ -99,6 +114,7 @@ interface DependencyMapProps {
   onSelectWhatIf?: (nodeId: string | null) => void;
   onOpenCatalog?: () => void;
   mlPrediction?: { service: string; probability: number; threshold: number; seconds_to_limit: number | null } | null;
+  incident?: any;
 }
 
 export default function DependencyMap({
@@ -108,7 +124,8 @@ export default function DependencyMap({
   whatIfNode,
   onSelectWhatIf,
   onOpenCatalog,
-  mlPrediction
+  mlPrediction,
+  incident
 }: DependencyMapProps) {
   const currentPreset = PRESETS[activePresetId] || PRESETS['k8s-core'];
   const downstreamGraph = currentPreset.downstreamGraph;
@@ -143,6 +160,7 @@ export default function DependencyMap({
         setIsFullscreen(false);
       }
     };
+
     document.addEventListener('fullscreenchange', handleFsChange);
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, [isFullscreen]);
@@ -172,7 +190,6 @@ export default function DependencyMap({
 
   const onNodeClick = useCallback(
     (_: any, node: Node) => {
-      lastInteractionTimeRef.current = Date.now();
       if (onSelectWhatIf) {
         if (whatIfNode === node.id) {
           onSelectWhatIf(null);
@@ -185,52 +202,57 @@ export default function DependencyMap({
   );
 
   // User interaction tracking (mouse drag, pan, zoom, click)
-  const isMouseDownRef = useRef(false);
-  const isDraggingNodeRef = useRef(false);
-  const lastInteractionTimeRef = useRef(0);
-
-  const isUserInteracting = useCallback(() => {
-    if (isMouseDownRef.current) return true;
-    if (isDraggingNodeRef.current) return true;
-    // Debounce window: if user manually touched/panned/zoomed in the last 2 seconds
-    if (Date.now() - lastInteractionTimeRef.current < 2000) return true;
-    return false;
-  }, []);
+  const [isInteracting, setIsInteracting] = useState(false);
 
   const onPaneMouseDown = useCallback(() => {
-    isMouseDownRef.current = true;
-    lastInteractionTimeRef.current = Date.now();
+    setIsInteracting(true);
   }, []);
 
   const onPaneMouseUp = useCallback(() => {
-    isMouseDownRef.current = false;
-    lastInteractionTimeRef.current = Date.now();
-  }, []);
-
-  const onMoveStart = useCallback((event: any) => {
-    if (event) {
-      // User-initiated movement (mouse drag, wheel zoom, touch)
-      lastInteractionTimeRef.current = Date.now();
-    }
+    setIsInteracting(false);
   }, []);
 
   const onNodeDragStart = useCallback(() => {
-    isDraggingNodeRef.current = true;
-    lastInteractionTimeRef.current = Date.now();
+    setIsInteracting(true);
   }, []);
 
   const onNodeDragStop = useCallback(() => {
-    isDraggingNodeRef.current = false;
-    lastInteractionTimeRef.current = Date.now();
+    setIsInteracting(false);
   }, []);
 
   // Root cause service detection
   const rootServiceId = useMemo(() => {
+    // 1. Direct status flag on service (root_cause, crashloop, failing)
     for (const [id, s] of Object.entries(services)) {
-      if ((s as any)?.status === 'root_cause') return id;
+      const status = (s as any)?.status;
+      if (status === 'root_cause' || status === 'crashloop' || status === 'failing') {
+        return id;
+      }
     }
+
+    // 2. Incident root service if incident is active
+    if (incident && incident.status !== 'resolved') {
+      const root = incident.root_service || incident.rca?.root_cause;
+      if (root && (services[root] || positions[root])) {
+        return root;
+      }
+    }
+
+    // 3. Active scenario target
+    if (activeScenario && (!incident || incident.status !== 'resolved')) {
+      if (activePresetId === 'amazon-scale') {
+        if (activeScenario === 'db_oom' || activeScenario === 'slow_leak') return 'aurora-orders-db';
+        if (activeScenario === 'bad_config') return 'payment-service';
+        if (activeScenario === 'cpu_spike') return 'auth-service';
+      } else {
+        if (activeScenario === 'db_oom' || activeScenario === 'slow_leak') return 'postgres';
+        if (activeScenario === 'bad_config') return 'payment-service';
+        if (activeScenario === 'cpu_spike') return 'auth-service';
+      }
+    }
+
     return null;
-  }, [services]);
+  }, [services, incident, activeScenario, activePresetId, positions]);
 
   const isAllHealthy = useMemo(() => {
     const vals = Object.values(services);
@@ -503,7 +525,6 @@ export default function DependencyMap({
         onNodeClick={onNodeClick}
         onMouseDown={onPaneMouseDown}
         onMouseUp={onPaneMouseUp}
-        onMoveStart={onMoveStart}
         onNodeDragStart={onNodeDragStart}
         onNodeDragStop={onNodeDragStop}
         fitView
@@ -521,7 +542,7 @@ export default function DependencyMap({
           positions={positions}
           isFullscreen={isFullscreen}
           whatIfActive={!!whatIfNode}
-          isUserInteracting={isUserInteracting}
+          isInteracting={isInteracting}
         />
       </ReactFlow>
     </div>
