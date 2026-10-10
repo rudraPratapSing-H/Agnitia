@@ -1,4 +1,4 @@
-"""Unit and integration tests for backend/predictor.py (Member 2, TASK 3.1)."""
+"""Unit and integration tests for backend/predictor.py (Member 2, TASK P4-helper)."""
 
 import asyncio
 from datetime import datetime, timezone
@@ -13,10 +13,33 @@ from backend.main import (
     LATEST_ID,
     METRIC_HISTORY,
     LAST_PREDICTION_TS,
-    _bus_event_listener,
 )
 from backend.models import MetricPoint
 from backend.predictor import seconds_to_limit
+
+
+def test_leak_ten_seconds_gives_about_70_5():
+    """A leak of 0.3 MB/s from 40 MB sampled every 0.5 s for 10 s (limit 64) gives about 70.5 (+/- 1)."""
+    # 20 points over 10 s (t=0.0 to 9.5 s)
+    t_s = [i * 0.5 for i in range(20)]
+    points = [
+        MetricPoint(t_s=t, mem_mb=40.0 + 0.3 * t, cpu_pct=10.0, service="postgres")
+        for t in t_s
+    ]
+    sec = seconds_to_limit(points, limit_mb=64.0)
+    assert sec is not None
+    assert 69.5 <= sec <= 71.5
+
+
+def test_dict_and_metric_point_inputs_give_same_answer():
+    """Dict and MetricPoint inputs give the same answer."""
+    t_s = [i * 0.5 for i in range(10)]
+    dict_points = [{"t_s": t, "mem_mb": 40.0 + 0.25 * t} for t in t_s]
+    metric_points = [
+        MetricPoint(t_s=t, mem_mb=40.0 + 0.25 * t, cpu_pct=10.0, service="postgres")
+        for t in t_s
+    ]
+    assert seconds_to_limit(dict_points, 64.0) == seconds_to_limit(metric_points, 64.0)
 
 
 def test_synthetic_leak_gives_about_80s():
@@ -79,7 +102,6 @@ async def test_slow_leak_simulator_run_emits_prediction_and_creates_preventive_i
         if envelope.get("type") == "prediction":
             prediction_events.append(envelope["payload"])
 
-    bus.add_listener(_bus_event_listener)
     bus.add_listener(capture_predictions)
 
     transport = ASGITransport(app=app)

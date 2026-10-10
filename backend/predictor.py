@@ -1,54 +1,56 @@
-"""Crash Predictor: Estimates time-to-exhaustion from memory growth trends (Member 2, Task 3.1)"""
+"""Crash Predictor: Estimates time-to-exhaustion from memory growth trends (Member 2, Task P4-helper)."""
 
-from typing import List, Optional
-from backend.models import MetricPoint
+from typing import Any, List, Optional
+import numpy as np
 
 
-def seconds_to_limit(points: List[MetricPoint], limit_mb: float) -> Optional[float]:
+def _val(p: Any, key: str) -> float:
+    """Helper to extract numeric value from either a dict or a MetricPoint object."""
+    if isinstance(p, dict):
+        return float(p[key])
+    return float(getattr(p, key))
+
+
+def seconds_to_limit(points: List[Any], limit_mb: float) -> Optional[float]:
     """
     Fits a linear regression to the LAST 20 points (mem_mb versus t_s).
-    - If fewer than 3 points or the slope is <= 0.01 MB/s -> None.
-    - If the last mem_mb is already >= limit_mb -> 0.0.
-    - Otherwise returns (limit_mb - predicted_current) / slope, never negative.
+    - If fewer than 3 points -> None.
+    - Fits mem_mb versus t_s with np.polyfit.
+    - If slope <= 0.01 MB/s -> None.
+    - If last mem_mb >= limit_mb -> 0.0.
+    - Otherwise returns (limit_mb - predicted_current) / slope, never negative, rounded to 1 decimal.
     """
     if len(points) < 3:
         return None
 
-    def _t(p):
-        return p["t_s"] if isinstance(p, dict) else p.t_s
-
-    def _m(p):
-        return p["mem_mb"] if isinstance(p, dict) else p.mem_mb
-
     # Take the last 20 points, sorted by timestamp
-    pts = sorted(points, key=_t)[-20:]
+    pts = sorted(points, key=lambda p: _val(p, "t_s"))[-20:]
     if len(pts) < 3:
         return None
 
     last_pt = pts[-1]
-    if _m(last_pt) >= limit_mb:
+    last_m = _val(last_pt, "mem_mb")
+    if last_m >= limit_mb:
         return 0.0
 
-    n = len(pts)
-    sum_t = sum(_t(p) for p in pts)
-    sum_m = sum(_m(p) for p in pts)
-    mean_t = sum_t / n
-    mean_m = sum_m / n
+    t_arr = np.array([_val(p, "t_s") for p in pts], dtype=float)
+    m_arr = np.array([_val(p, "mem_mb") for p in pts], dtype=float)
 
-    denom = sum((_t(p) - mean_t) ** 2 for p in pts)
-    if denom == 0.0:
+    if np.all(t_arr == t_arr[0]):
         return None
 
-    slope = sum((_t(p) - mean_t) * (_m(p) - mean_m) for p in pts) / denom
+    poly = np.polyfit(t_arr, m_arr, 1)
+    slope = float(poly[0])
+    intercept = float(poly[1])
+
     if slope <= 0.01:
         return None
 
-    # Intercept a on the regression line: y = a + slope * t
-    intercept = mean_m - slope * mean_t
-    predicted_current = intercept + slope * _t(last_pt)
+    last_t = t_arr[-1]
+    predicted_current = intercept + slope * last_t
 
     if predicted_current >= limit_mb:
         return 0.0
 
     rem = (limit_mb - predicted_current) / slope
-    return max(0.0, rem)
+    return round(float(max(0.0, rem)), 1)
