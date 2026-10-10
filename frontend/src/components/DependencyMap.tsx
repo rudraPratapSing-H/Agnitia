@@ -1,12 +1,13 @@
 // frontend/src/components/DependencyMap.tsx - Dynamic Multi-Architecture Topological Dependency Tree
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   MarkerType,
   Node,
-  Edge
+  Edge,
+  useReactFlow
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import ServiceNode from './ServiceNode';
@@ -34,6 +35,60 @@ function getReachableDownstream(startNode: string, downstreamGraph: Record<strin
   }
 
   return visited;
+}
+
+interface AutoZoomControllerProps {
+  rootServiceId: string | null;
+  isAllHealthy: boolean;
+  positions: Record<string, { x: number; y: number }>;
+  isFullscreen: boolean;
+  whatIfActive: boolean;
+  isUserInteracting: () => boolean;
+}
+
+function AutoZoomController({
+  rootServiceId,
+  isAllHealthy,
+  positions,
+  isFullscreen,
+  whatIfActive,
+  isUserInteracting
+}: AutoZoomControllerProps) {
+  const { setCenter, fitView, getZoom } = useReactFlow();
+  const lastTargetRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    // If user is actively exploring what-if, don't auto-navigate
+    if (whatIfActive) return;
+
+    if (rootServiceId && positions[rootServiceId]) {
+      // If user is actively dragging, clicking or panning, don't interrupt
+      if (isUserInteracting()) return;
+
+      // Don't re-trigger if already centered on this failing root service
+      if (lastTargetRef.current === rootServiceId) return;
+      lastTargetRef.current = rootServiceId;
+
+      const pos = positions[rootServiceId];
+      // Center on standard 240px x ~180px service node
+      const centerX = pos.x + 120;
+      const centerY = pos.y + 90;
+
+      const currentZoom = getZoom() || 1.0;
+      // Smoothly zoom in by exactly 20%
+      const targetZoom = Math.min(2.2, Math.max(1.15, currentZoom * 1.20));
+
+      setCenter(centerX, centerY, { zoom: targetZoom, duration: 1200 });
+    } else if (isAllHealthy && lastTargetRef.current !== null) {
+      // Returned to healthy state (healed / reset): glide back out to full cluster view
+      lastTargetRef.current = null;
+      if (!isUserInteracting()) {
+        fitView({ duration: 1000, padding: isFullscreen ? 0.08 : 0.14 });
+      }
+    }
+  }, [rootServiceId, isAllHealthy, positions, isFullscreen, whatIfActive, isUserInteracting, setCenter, fitView, getZoom]);
+
+  return null;
 }
 
 interface DependencyMapProps {
@@ -117,6 +172,7 @@ export default function DependencyMap({
 
   const onNodeClick = useCallback(
     (_: any, node: Node) => {
+      lastInteractionTimeRef.current = Date.now();
       if (onSelectWhatIf) {
         if (whatIfNode === node.id) {
           onSelectWhatIf(null);
@@ -127,6 +183,59 @@ export default function DependencyMap({
     },
     [whatIfNode, onSelectWhatIf]
   );
+
+  // User interaction tracking (mouse drag, pan, zoom, click)
+  const isMouseDownRef = useRef(false);
+  const isDraggingNodeRef = useRef(false);
+  const lastInteractionTimeRef = useRef(0);
+
+  const isUserInteracting = useCallback(() => {
+    if (isMouseDownRef.current) return true;
+    if (isDraggingNodeRef.current) return true;
+    // Debounce window: if user manually touched/panned/zoomed in the last 2 seconds
+    if (Date.now() - lastInteractionTimeRef.current < 2000) return true;
+    return false;
+  }, []);
+
+  const onPaneMouseDown = useCallback(() => {
+    isMouseDownRef.current = true;
+    lastInteractionTimeRef.current = Date.now();
+  }, []);
+
+  const onPaneMouseUp = useCallback(() => {
+    isMouseDownRef.current = false;
+    lastInteractionTimeRef.current = Date.now();
+  }, []);
+
+  const onMoveStart = useCallback((event: any) => {
+    if (event) {
+      // User-initiated movement (mouse drag, wheel zoom, touch)
+      lastInteractionTimeRef.current = Date.now();
+    }
+  }, []);
+
+  const onNodeDragStart = useCallback(() => {
+    isDraggingNodeRef.current = true;
+    lastInteractionTimeRef.current = Date.now();
+  }, []);
+
+  const onNodeDragStop = useCallback(() => {
+    isDraggingNodeRef.current = false;
+    lastInteractionTimeRef.current = Date.now();
+  }, []);
+
+  // Root cause service detection
+  const rootServiceId = useMemo(() => {
+    for (const [id, s] of Object.entries(services)) {
+      if ((s as any)?.status === 'root_cause') return id;
+    }
+    return null;
+  }, [services]);
+
+  const isAllHealthy = useMemo(() => {
+    const vals = Object.values(services);
+    return vals.length > 0 && vals.every((s: any) => s.status === 'healthy' || !s.status);
+  }, [services]);
 
   const nodes = useMemo<Node[]>(() => {
     return Object.values(services).map((srv: any) => {
@@ -392,6 +501,11 @@ export default function DependencyMap({
         edges={edges}
         nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}
+        onMouseDown={onPaneMouseDown}
+        onMouseUp={onPaneMouseUp}
+        onMoveStart={onMoveStart}
+        onNodeDragStart={onNodeDragStart}
+        onNodeDragStop={onNodeDragStop}
         fitView
         fitViewOptions={{ padding: isFullscreen ? 0.08 : 0.14 }}
         proOptions={{ hideAttribution: true }}
@@ -401,6 +515,14 @@ export default function DependencyMap({
       >
         <Background color="#cbd5e1" gap={isFullscreen ? 28 : 24} size={1.2} />
         <Controls className="!bg-ink-850 !border-ink-600 !fill-ink-300 !shadow-lg" />
+        <AutoZoomController
+          rootServiceId={rootServiceId}
+          isAllHealthy={isAllHealthy}
+          positions={positions}
+          isFullscreen={isFullscreen}
+          whatIfActive={!!whatIfNode}
+          isUserInteracting={isUserInteracting}
+        />
       </ReactFlow>
     </div>
   );

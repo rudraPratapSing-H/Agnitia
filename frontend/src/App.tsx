@@ -287,7 +287,9 @@ export default function App() {
           {/* MTTR Stopwatch */}
           <Stopwatch
             isActive={!!incident && incident.status !== 'resolved'}
+            startedAt={incident?.started_at}
             resolvedAt={incident?.resolved_at}
+            isAutoHealed={autoHeals.length > 0 && autoHeals[autoHeals.length - 1].phase === 'verified'}
           />
 
           {/* Predictive Auto-Heal Kill Switch */}
