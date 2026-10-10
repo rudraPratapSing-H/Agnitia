@@ -61,35 +61,45 @@ function AutoZoomController({
     // If user is actively exploring What-If blast radius, don't interrupt
     if (whatIfActive) return;
 
-    if (rootServiceId) {
-      // Don't interrupt if user is actively holding mouse down or dragging
-      if (isInteracting) return;
-
-      // Avoid re-zooming repeatedly to the same node
-      if (lastTargetRef.current === rootServiceId) return;
-      lastTargetRef.current = rootServiceId;
-
-      // Get node position from ReactFlow node or preset layout
-      const flowNode = getNode ? getNode(rootServiceId) : null;
-      const pos = flowNode?.position || positions[rootServiceId];
-      if (!pos) return;
-
-      // Center of standard 240px x 140px node
-      const centerX = pos.x + 120;
-      const centerY = pos.y + 70;
-
-      const currentZoom = getZoom() || 1.0;
-      // Exactly 20% zoom increase without overshooting or minimum clamp
-      const targetZoom = currentZoom * 1.20;
-
-      // Slow, smooth cinematic easing transition (2000ms)
-      setCenter(centerX, centerY, { zoom: targetZoom, duration: 2000 });
-    } else if (isAllHealthy && lastTargetRef.current !== null) {
-      // Incident resolved / topology healthy: slowly glide back out to full cluster view
+    // If topology returned to healthy: cancel any pending zoom and glide back out
+    if (isAllHealthy && lastTargetRef.current !== null) {
       lastTargetRef.current = null;
       if (!isInteracting) {
         fitView({ duration: 1800, padding: isFullscreen ? 0.08 : 0.14 });
       }
+      return;
+    }
+
+    // Active failure detected: wait 2 seconds before zooming
+    if (rootServiceId) {
+      // If user is actively interacting (holding mouse down / dragging), don't start zoom
+      if (isInteracting) return;
+
+      // Avoid re-zooming repeatedly to the same node
+      if (lastTargetRef.current === rootServiceId) return;
+
+      // Delay 2 seconds. If user interacts or status changes before 2s, this timeout is cancelled.
+      const timer = setTimeout(() => {
+        lastTargetRef.current = rootServiceId;
+
+        // Get node position from ReactFlow node or preset layout
+        const flowNode = getNode ? getNode(rootServiceId) : null;
+        const pos = flowNode?.position || positions[rootServiceId];
+        if (!pos) return;
+
+        // Center of standard 240px x 140px node
+        const centerX = pos.x + 120;
+        const centerY = pos.y + 70;
+
+        const currentZoom = getZoom() || 1.0;
+        // Exactly 20% zoom increase without overshooting
+        const targetZoom = currentZoom * 1.20;
+
+        // Slow, smooth cinematic easing transition (2000ms)
+        setCenter(centerX, centerY, { zoom: targetZoom, duration: 2000 });
+      }, 2000);
+
+      return () => clearTimeout(timer);
     }
   }, [
     rootServiceId,
