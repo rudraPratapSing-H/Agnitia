@@ -127,7 +127,10 @@ async def _try_undo(adapter: Any, action: P.Action) -> bool:
     if inv is None:
         return False
     if action.name == "patch_memory_limit":  # lowering a limit below current use would kill the service
-        cur = (await adapter.get_metrics(action.service))[-1]
+        metrics = await adapter.get_metrics(action.service)
+        if not metrics:  # no data to judge safety by -- assume unsafe to undo
+            return False
+        cur = metrics[-1]
         cur_mem = cur.mem_mb if hasattr(cur, "mem_mb") else cur["mem_mb"]
         if cur_mem > 0.9 * action.params["from_mb"]:
             return False

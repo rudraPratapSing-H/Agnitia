@@ -3,6 +3,7 @@ import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Database, Shield, Server, Globe, Cpu, AlertTriangle, CheckCircle2, RotateCw, Flame } from 'lucide-react';
 import { ServiceNode as ServiceNodeType } from '../types';
+import PredictionGauge from './PredictionGauge';
 
 const TIER_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   data: Database,
@@ -16,12 +17,13 @@ interface ServiceNodeProps {
     _whatIfOrigin?: boolean;
     _whatIfImpacted?: boolean;
     _isDimmed?: boolean;
+    _mlPrediction?: { probability: number; threshold: number; seconds_to_limit: number | null } | null;
   };
   selected?: boolean;
 }
 
 export default function ServiceNode({ data, selected }: ServiceNodeProps) {
-  const { id, label, tier, status, metrics, _whatIfOrigin, _whatIfImpacted } = data;
+  const { id, label, tier, status, metrics, _whatIfOrigin, _whatIfImpacted, _mlPrediction } = data;
   const Icon = TIER_ICONS[tier] || Server;
 
   const memMb = metrics?.mem_mb ?? 0;
@@ -213,6 +215,14 @@ export default function ServiceNode({ data, selected }: ServiceNodeProps) {
             </span>
             <span className="text-ink-400 text-[8px] font-medium">Data Tier • 0 Upstream</span>
           </div>
+        )}
+
+        {_mlPrediction && (
+          <PredictionGauge
+            probability={_mlPrediction.probability}
+            threshold={_mlPrediction.threshold}
+            secondsToLimit={_mlPrediction.seconds_to_limit}
+          />
         )}
       </div>
     </div>

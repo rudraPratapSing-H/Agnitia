@@ -13,6 +13,13 @@ let globalState = {
   stepStatus: {} as Record<number, 'pending' | 'running' | 'done' | 'failed'>,
   metrics: {} as Record<string, any[]>,
   prediction: null as any,
+  // ML predictive-heal layer (backend/ml/*): shares the "prediction" WS event type with the
+  // legacy crash-predictor above but a different payload shape ({probability} vs {seconds}),
+  // so the reducer below routes them into separate fields instead of clobbering one another.
+  mlPrediction: null as any,
+  autoHeals: [] as any[],
+  blocked: null as any,
+  killSwitch: false,
   activeScenario: null as string | null,
   isSimulating: false,
   wsConnected: false,
@@ -183,9 +190,34 @@ export function applyWsEvent(event: any) {
     }
 
     case 'prediction': {
+      // Discriminate by shape: the ML predictor's payload carries `probability`,
+      // the legacy crash-predictor's carries `seconds` instead.
+      globalState =
+        payload && payload.probability !== undefined
+          ? { ...globalState, mlPrediction: payload }
+          : { ...globalState, prediction: payload };
+      break;
+    }
+
+    case 'healed_auto': {
+      const existing = globalState.autoHeals;
+      const idx = existing.findIndex((h) => h.id === payload.id);
+      const nextHeals =
+        idx >= 0
+          ? existing.map((h, i) => (i === idx ? { ...h, ...payload } : h))
+          : [...existing, payload].slice(-5);
       globalState = {
         ...globalState,
-        prediction: payload
+        autoHeals: nextHeals,
+        blocked: null
+      };
+      break;
+    }
+
+    case 'auto_blocked': {
+      globalState = {
+        ...globalState,
+        blocked: { ...payload, ts: Date.now() }
       };
       break;
     }
@@ -221,6 +253,10 @@ export function resetStore(presetIdOverride?: PresetId) {
     stepStatus: {},
     metrics: {},
     prediction: null,
+    mlPrediction: null,
+    autoHeals: [],
+    blocked: null,
+    killSwitch: globalState.killSwitch,
     activeScenario: null,
     isSimulating: false,
     wsConnected: globalState.wsConnected,
@@ -257,5 +293,10 @@ export function setWhatIfNode(nodeId: string | null) {
 
 export function setSoundMuted(muted: boolean) {
   globalState = { ...globalState, soundMuted: muted };
+  emitChange();
+}
+
+export function setKillSwitch(on: boolean) {
+  globalState = { ...globalState, killSwitch: on };
   emitChange();
 }

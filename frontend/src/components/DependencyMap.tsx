@@ -43,6 +43,7 @@ interface DependencyMapProps {
   whatIfNode?: string | null;
   onSelectWhatIf?: (nodeId: string | null) => void;
   onOpenCatalog?: () => void;
+  mlPrediction?: { service: string; probability: number; threshold: number; seconds_to_limit: number | null } | null;
 }
 
 export default function DependencyMap({
@@ -51,7 +52,8 @@ export default function DependencyMap({
   activeScenario,
   whatIfNode,
   onSelectWhatIf,
-  onOpenCatalog
+  onOpenCatalog,
+  mlPrediction
 }: DependencyMapProps) {
   const currentPreset = PRESETS[activePresetId] || PRESETS['k8s-core'];
   const downstreamGraph = currentPreset.downstreamGraph;
@@ -140,12 +142,13 @@ export default function DependencyMap({
           ...srv,
           _whatIfOrigin: isWhatIfOrigin,
           _whatIfImpacted: isWhatIfImpacted,
-          _isDimmed: isDimmed
+          _isDimmed: isDimmed,
+          _mlPrediction: mlPrediction && mlPrediction.service === srv.id ? mlPrediction : null
         } as Record<string, any>,
         style: isDimmed ? { opacity: 0.28, transition: 'opacity 0.25s ease' } : { transition: 'opacity 0.25s ease' }
       };
     });
-  }, [services, whatIfNode, whatIfDownstream, positions]);
+  }, [services, whatIfNode, whatIfDownstream, positions, mlPrediction]);
 
   const edges = useMemo<Edge[]>(() => {
     return rawPresetEdges.map((edge) => {

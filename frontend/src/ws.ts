@@ -102,6 +102,26 @@ export function setAutonomyBackend(level: number) {
   }).catch(() => {});
 }
 
+// POST /api/killswitch {on} -- instantly halts the predictive auto-heal layer.
+export function setKillSwitchBackend(on: boolean) {
+  fetch('http://localhost:8000/api/killswitch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ on }),
+  }).catch(() => {});
+}
+
+// GET /api/ml/status -- initial snapshot so the kill switch reflects real backend state on load.
+export async function fetchMlStatus(): Promise<{ kill_switch: boolean; level: number } | null> {
+  try {
+    const res = await fetch('http://localhost:8000/api/ml/status');
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 function runLocalSimulation(scenarioId: string) {
   const isAmazon = getState().activePresetId === 'amazon-scale';
   console.log(`Running simulation for: ${scenarioId} (Preset: ${isAmazon ? 'Amazon' : 'K8s Core'})`);

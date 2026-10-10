@@ -1,7 +1,7 @@
 // frontend/src/App.tsx - SRE Mission Control: Multi-Page Architecture Selection & Simulation
 import React, { useEffect, useState, useCallback } from 'react';
-import { useAgnitiaStore, setWhatIfNode, setSoundMuted, resetStore, setActivePreset } from './store';
-import { connectWebSocket, executeFullHealFlow, playScenario } from './ws';
+import { useAgnitiaStore, setWhatIfNode, setSoundMuted, resetStore, setActivePreset, setKillSwitch } from './store';
+import { connectWebSocket, executeFullHealFlow, playScenario, fetchMlStatus, setKillSwitchBackend } from './ws';
 import DependencyMap from './components/DependencyMap';
 import AlertFunnel from './components/AlertFunnel';
 import IncidentCard from './components/IncidentCard';
@@ -10,6 +10,8 @@ import ChaosPanel from './components/ChaosPanel';
 import EvidenceDrawer from './components/EvidenceDrawer';
 import ApprovalModal from './components/ApprovalModal';
 import PredictionBanner from './components/PredictionBanner';
+import AutoHealBanner from './components/AutoHealBanner';
+import KillSwitch from './components/KillSwitch';
 import PostmortemView from './components/extras/PostmortemView';
 import ReasoningPanel from './components/extras/ReasoningPanel';
 import Stopwatch from './components/extras/Stopwatch';
@@ -55,6 +57,10 @@ export default function App() {
     agentSteps,
     stepStatus,
     prediction,
+    mlPrediction,
+    autoHeals,
+    blocked,
+    killSwitch,
     activeScenario,
     isSimulating,
     wsConnected,
@@ -91,6 +97,21 @@ export default function App() {
   useEffect(() => {
     connectWebSocket();
   }, []);
+
+  // Initialize the kill switch from the backend's actual state on load, rather than
+  // assuming it's off -- it may already be on from a previous session.
+  useEffect(() => {
+    fetchMlStatus().then((status) => {
+      if (status) setKillSwitch(status.kill_switch);
+    });
+  }, []);
+
+  const toggleKillSwitch = () => {
+    playClickTone();
+    const next = !killSwitch;
+    setKillSwitch(next);
+    setKillSwitchBackend(next);
+  };
 
   // Audio cues on state changes -- keyed on incident id + status only, NOT autonomyLevel,
   // so moving the autonomy slider while an incident is awaiting approval doesn't replay the
@@ -266,6 +287,9 @@ export default function App() {
             resolvedAt={incident?.resolved_at}
           />
 
+          {/* Predictive Auto-Heal Kill Switch */}
+          <KillSwitch active={killSwitch} onToggle={toggleKillSwitch} />
+
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
@@ -297,6 +321,11 @@ export default function App() {
       {/* Early Predictive Capacity Alert Banner */}
       {prediction && <PredictionBanner prediction={prediction} />}
 
+      {/* Autonomous Predictive-Heal Status Banner */}
+      {(autoHeals.length > 0 || blocked) && (
+        <AutoHealBanner autoHeal={autoHeals[autoHeals.length - 1] || null} blocked={blocked} />
+      )}
+
       {/* Main Grid: Left 58% Vertical Topology Map, Right 42% Incident Dossier */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2.5 min-h-[580px]">
         {/* Left: Vertical Architecture Map with What-If Mode */}
@@ -307,6 +336,7 @@ export default function App() {
             activeScenario={activeScenario}
             whatIfNode={whatIfNode}
             onSelectWhatIf={setWhatIfNode}
+            mlPrediction={mlPrediction}
           />
         </section>
 
