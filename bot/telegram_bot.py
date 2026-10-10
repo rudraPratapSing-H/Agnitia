@@ -58,6 +58,26 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
 POLL_INTERVAL = float(os.getenv("TELEGRAM_POLL_INTERVAL", "2.0"))
 
+_INSTANCE_LOCK_SOCKET = None
+
+
+def acquire_single_instance_lock(port: int = 18443) -> bool:
+    """Binds to localhost:18443 to guarantee only one bot process polls Telegram at once."""
+    global _INSTANCE_LOCK_SOCKET
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.bind(("127.0.0.1", port))
+        s.listen(1)
+        _INSTANCE_LOCK_SOCKET = s
+        return True
+    except OSError:
+        logger.warning(
+            f"Another OpsOracle Telegram bot instance is already running (port {port} in use). "
+            "Terminating this duplicate process to prevent Telegram polling conflict."
+        )
+        return False
+
 
 class AgnitiaBotEngine:
     """Core logic engine decoupled from network I/O for 100% testability."""
@@ -568,6 +588,9 @@ def main():
         )
         run_self_test()
         return
+
+    if not acquire_single_instance_lock():
+        sys.exit(0)
 
     logger.info("Initializing OpsOracle Telegram Approval Bot...")
 

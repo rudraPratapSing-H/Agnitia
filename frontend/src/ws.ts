@@ -84,10 +84,13 @@ export function playScenario(scenarioId: string) {
   // Run the immediate local simulation so UI responds instantly at 60ms
   runLocalSimulation(scenarioId);
 
-  // Notify live backend in parallel only when testing K8s core
+  // Notify live backend in parallel for both K8s core and Amazon scale presets
   const isK8s = getState().activePresetId === 'k8s-core';
-  if (isK8s && !LOCAL_ONLY_SCENARIOS.has(scenarioId)) {
-    fetch(`http://localhost:8000/api/chaos/${scenarioId}`, { method: 'POST' }).catch(() => {});
+  if (!LOCAL_ONLY_SCENARIOS.has(scenarioId)) {
+    const url = isK8s
+      ? `http://localhost:8000/api/chaos/${scenarioId}`
+      : `http://localhost:8000/api/chaos/${scenarioId}?preset=amazon-scale`;
+    fetch(url, { method: 'POST' }).catch(() => {});
   }
 }
 
@@ -160,6 +163,13 @@ function runLocalSimulation(scenarioId: string) {
   eventsList.forEach((item) => {
     const timeout = setTimeout(() => {
       applyWsEvent(item);
+      if (item.type === 'incident_update' && item.payload) {
+        fetch('http://localhost:8000/api/incidents/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item.payload),
+        }).catch(() => {});
+      }
     }, item.delay);
     activeTimeouts.push(timeout);
   });

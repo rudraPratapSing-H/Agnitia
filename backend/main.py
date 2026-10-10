@@ -539,7 +539,17 @@ bus.subscribe(on_bus)
 # ── REST Endpoints ───────────────────────────────────────────────────────────
 
 @app.post("/api/chaos/{scenario}")
-async def inject_chaos(scenario: str):
+async def inject_chaos(scenario: str, preset: Optional[str] = None):
+    if preset in ("amazon-scale", "amazon") or scenario in ("amazon_db_oom", "aurora_oom"):
+        inc = _make_amazon_incident()
+        inc.status = "awaiting_approval"
+        inc.started_at = datetime.now(timezone.utc).isoformat()
+        INCIDENTS[inc.id] = inc
+        global LATEST_ID
+        LATEST_ID = inc.id
+        await emit("incident_update", inc)
+        return {"ok": True, "scenario": scenario, "preset": "amazon-scale", "incident_id": inc.id}
+
     if scenario not in VALID_SCENARIOS:
         raise HTTPException(status_code=404, detail=f"Unknown scenario '{scenario}'")
 
@@ -558,6 +568,23 @@ async def inject_chaos(scenario: str):
             BACKGROUND_TASKS.add(t)
 
     return {"ok": True, "scenario": scenario}
+
+
+@app.post("/api/incidents/sync")
+async def sync_incident(incident_data: dict):
+    global LATEST_ID
+    inc_id = incident_data.get("id")
+    if not inc_id:
+        raise HTTPException(status_code=400, detail="Missing incident id")
+
+    try:
+        inc = Incident.model_validate(incident_data)
+        INCIDENTS[inc_id] = inc
+        LATEST_ID = inc_id
+        await emit("incident_update", inc)
+        return {"ok": True, "incident": inc_id, "status": inc.status}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @app.post("/api/reset")
@@ -629,11 +656,22 @@ async def approve_incident(id: str, body: Optional[dict] = None):
     await emit("incident_update", incident)
 
     async def _execute_and_update(inc: Incident, adp: Any, approved_by_name: str) -> None:
+        global LATEST_ID
         curr = asyncio.current_task()
         try:
+            if inc.id == "INC-204" or getattr(inc, "root_service", "") == "aurora-orders-db":
+                inc.status = "healing"
+                await emit("incident_update", inc)
+                await asyncio.sleep(1.0)
+                inc.status = "resolved"
+                inc.resolved_at = datetime.now(timezone.utc).isoformat()
+                INCIDENTS[inc.id] = inc
+                LATEST_ID = inc.id
+                await emit("incident_update", inc)
+                return
+
             resolved_incident = await executor.execute(inc, adp, approved_by_name)
             INCIDENTS[resolved_incident.id] = resolved_incident
-            global LATEST_ID
             LATEST_ID = resolved_incident.id
             await emit("incident_update", resolved_incident)
 
