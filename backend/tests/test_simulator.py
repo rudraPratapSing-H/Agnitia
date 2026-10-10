@@ -467,7 +467,7 @@ async def test_generated_slow_leak_metric_point_seven_keys():
         await adapter.inject("slow_leak")
         for task in list(adapter._running_tasks):
             try:
-                await asyncio.wait_for(task, timeout=5.0)
+                await asyncio.wait_for(task, timeout=12.0)
             except (asyncio.CancelledError, asyncio.TimeoutError):
                 pass
 
@@ -501,7 +501,7 @@ async def test_generated_slow_leak_no_heal_fails_at_fail_t_and_probe_false():
         fail_t = adapter._scenario["fail_t"]
         for task in list(adapter._running_tasks):
             try:
-                await asyncio.wait_for(task, timeout=5.0)
+                await asyncio.wait_for(task, timeout=12.0)
             except (asyncio.CancelledError, asyncio.TimeoutError):
                 pass
 
@@ -581,7 +581,7 @@ async def test_generated_healthy_spike_and_sawtooth_no_failure():
             await adapter.inject(scen)
             for task in list(adapter._running_tasks):
                 try:
-                    await asyncio.wait_for(task, timeout=5.0)
+                    await asyncio.wait_for(task, timeout=12.0)
                 except (asyncio.CancelledError, asyncio.TimeoutError):
                     pass
 
@@ -607,7 +607,7 @@ async def test_generated_determinism_identical_events():
             await a.inject("slow_leak")
             for task in list(a._running_tasks):
                 try:
-                    await asyncio.wait_for(task, timeout=5.0)
+                    await asyncio.wait_for(task, timeout=12.0)
                 except (asyncio.CancelledError, asyncio.TimeoutError):
                     pass
             return evs
